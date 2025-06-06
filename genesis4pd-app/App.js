@@ -4,7 +4,10 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { useEffect, useState } from 'react';
+import { FastingProvider, useFasting } from './FastingContext';
+import { LogsProvider, useLogs } from './LogsContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -91,61 +94,46 @@ const SEVERITIES = [
 ];
 
 function HomeScreen() {
-  const [foodLog, setFoodLog] = React.useState([]);
-  const [foodModalVisible, setFoodModalVisible] = React.useState(false);
-  const [foodType, setFoodType] = React.useState('meal');
-  const [foodTime, setFoodTime] = React.useState(new Date());
-  const [foodNote, setFoodNote] = React.useState('');
-  const [showFoodPicker, setShowFoodPicker] = React.useState(false);
+  // Fasting timer state from context
+  const { isFasting, fastElapsed, startFast, stopFast, FAST_GOAL_SECONDS } = useFasting();
+  const [fastModalVisible, setFastModalVisible] = useState(false);
 
-  // For quick add symptom
-  const [symptomLog, setSymptomLog] = React.useState([]);
-  const [symptomModalVisible, setSymptomModalVisible] = React.useState(false);
-  const [symptomType, setSymptomType] = React.useState('tremor');
-  const [severity, setSeverity] = React.useState('mild');
-  const [symptomTime, setSymptomTime] = React.useState(new Date());
-  const [symptomNote, setSymptomNote] = React.useState('');
-  const [showSymptomPicker, setShowSymptomPicker] = React.useState(false);
+  // Food log state
+  const { foodLog, setFoodLog } = useLogs();
+  const [foodModalVisible, setFoodModalVisible] = useState(false);
+  const [foodType, setFoodType] = useState('meal');
+  const [foodNote, setFoodNote] = useState('');
 
-  // Load logs from storage
-  React.useEffect(() => {
-    (async () => {
-      const storedFood = await AsyncStorage.getItem('foodLog');
-      if (storedFood) setFoodLog(JSON.parse(storedFood));
-      const storedSymptom = await AsyncStorage.getItem('symptomLog');
-      if (storedSymptom) setSymptomLog(JSON.parse(storedSymptom));
-    })();
-  }, []);
+  // Symptom log state
+  const { symptomLog, setSymptomLog } = useLogs();
+  const [symptomModalVisible, setSymptomModalVisible] = useState(false);
+  const [symptomType, setSymptomType] = useState('tremor');
+  const [severity, setSeverity] = useState('mild');
+  const [symptomNote, setSymptomNote] = useState('');
 
-  // Save logs to storage
-  React.useEffect(() => {
-    AsyncStorage.setItem('foodLog', JSON.stringify(foodLog));
-  }, [foodLog]);
-  React.useEffect(() => {
-    AsyncStorage.setItem('symptomLog', JSON.stringify(symptomLog));
-  }, [symptomLog]);
+  // Fasting timer display
+  const progress = Math.min(fastElapsed / FAST_GOAL_SECONDS, 1);
+  const remaining = Math.max(FAST_GOAL_SECONDS - fastElapsed, 0);
 
-  // Add food entry
+  // Save food entry
   const handleSaveFood = () => {
     const entry = {
       type: foodType,
-      time: foodTime.toISOString(),
       note: foodNote,
       id: Date.now(),
     };
     setFoodLog([entry, ...foodLog]);
     setFoodModalVisible(false);
     setFoodType('meal');
-    setFoodTime(new Date());
     setFoodNote('');
   };
 
-  // Add symptom entry
+  // Save symptom entry
   const handleSaveSymptom = () => {
     const entry = {
       type: symptomType,
       severity,
-      time: symptomTime.toISOString(),
+      time: new Date().toISOString(),
       note: symptomNote,
       id: Date.now(),
     };
@@ -153,74 +141,91 @@ function HomeScreen() {
     setSymptomModalVisible(false);
     setSymptomType('tremor');
     setSeverity('mild');
-    setSymptomTime(new Date());
     setSymptomNote('');
   };
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Good afternoon, User</Text>
+      <Text style={styles.title}>Dashboard</Text>
+      {/* Fasting Timer */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Fasting Progress</Text>
-        <FastingScreenContent />
+        <Text style={styles.cardTitle}>Fasting Timer</Text>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={styles.fastingTime}>{formatTimeHM(fastElapsed)}</Text>
+          <Text style={styles.cardText}>Elapsed</Text>
+          <View style={styles.progressBarBg}>
+            <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+          </View>
+          <Text style={styles.cardText}>{formatTimeHM(remaining)} remaining</Text>
+          {isFasting ? (
+            <Pressable style={[styles.modalButton, { marginTop: 16 }]} onPress={stopFast}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Stop Fasting</Text>
+            </Pressable>
+          ) : (
+            <Pressable style={[styles.modalButton, { marginTop: 16 }]} onPress={() => setFastModalVisible(true)}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Start Fasting</Text>
+            </Pressable>
+          )}
+        </View>
       </View>
-      {/* Quick action buttons */}
+      {/* Quick Actions */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
         <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setFoodModalVisible(true)}>
-          <Text style={styles.quickActionText}>🍽️ Add Food</Text>
+          <Text style={styles.quickActionText}>🍽️ Add Meal</Text>
+        </Pressable>
+        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setFastModalVisible(true)}>
+          <Text style={styles.quickActionText}>⏱️ Add Fast</Text>
         </Pressable>
         <Pressable style={styles.quickActionButton} onPress={() => setSymptomModalVisible(true)}>
           <Text style={styles.quickActionText}>🩺 Add Symptom</Text>
         </Pressable>
       </View>
-      {/* Food modal */}
+      {/* Today Summary */}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Today's Summary</Text>
+        <Text style={styles.cardText}>Meals: {foodLog.filter(e => e.type === 'meal').length}</Text>
+        <Text style={styles.cardText}>Snacks: {foodLog.filter(e => e.type === 'snack').length}</Text>
+        <Text style={styles.cardText}>Symptoms: {symptomLog.length}</Text>
+      </View>
+      {/* Fast Modal */}
+      <Modal visible={fastModalVisible} transparent animationType="fade" onRequestClose={() => setFastModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setFastModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Start Fasting</Text>
+                <Text style={styles.modalDesc}>Start a new fast now.</Text>
+                <Pressable style={styles.modalButton} onPress={startFast} accessibilityLabel="Start Fasting">
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Start</Text>
+                </Pressable>
+                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setFastModalVisible(false)} accessibilityLabel="Cancel">
+                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+      {/* Food Modal */}
       <Modal visible={foodModalVisible} transparent animationType="fade" onRequestClose={() => setFoodModalVisible(false)}>
         <TouchableWithoutFeedback onPress={() => setFoodModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback onPress={() => {}}>
               <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Add Food Entry</Text>
+                <Text style={styles.modalTitle}>Add Meal</Text>
+                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Type:</Text>
                 <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-                  <Pressable
-                    style={[styles.foodTypeButton, foodType === 'meal' && styles.foodTypeButtonActive]}
-                    onPress={() => setFoodType('meal')}
-                    accessibilityLabel="Meal"
-                  >
+                  <Pressable style={[styles.foodTypeButton, foodType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setFoodType('meal')} accessibilityLabel="Meal">
                     <Text style={{ fontSize: 20 }}>🍽️ Meal</Text>
                   </Pressable>
-                  <Pressable
-                    style={[styles.foodTypeButton, foodType === 'snack' && styles.foodTypeButtonActive]}
-                    onPress={() => setFoodType('snack')}
-                    accessibilityLabel="Snack"
-                  >
+                  <Pressable style={[styles.foodTypeButton, foodType === 'snack' && styles.foodTypeButtonActive]} onPress={() => setFoodType('snack')} accessibilityLabel="Snack">
                     <Text style={{ fontSize: 20 }}>🥪 Snack</Text>
                   </Pressable>
                 </View>
-                <Pressable
-                  style={[styles.modalButton, { marginBottom: 12 }]}
-                  onPress={() => setShowFoodPicker(true)}
-                  accessibilityLabel="Edit time"
-                >
-                  <Text style={{ color: '#fff' }}>Time: {foodTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                </Pressable>
-                {showFoodPicker && (
-                  <DateTimePicker
-                    value={foodTime}
-                    mode="time"
-                    is24Hour={true}
-                    display="default"
-                    onChange={(e, date) => {
-                      setShowFoodPicker(false);
-                      if (date) setFoodTime(date);
-                    }}
-                  />
-                )}
                 <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
                 <View style={{ width: '100%', marginBottom: 16 }}>
                   <TextInput
-                    style={{
-                      borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40
-                    }}
+                    style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
                     numberOfLines={1}
                     onChangeText={setFoodNote}
                     value={foodNote}
@@ -228,7 +233,7 @@ function HomeScreen() {
                     accessibilityLabel="Food note input"
                   />
                 </View>
-                <Pressable style={styles.modalButton} onPress={handleSaveFood} accessibilityLabel="Save food entry">
+                <Pressable style={styles.modalButton} onPress={handleSaveFood} accessibilityLabel="Save meal entry">
                   <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
                 </Pressable>
                 <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setFoodModalVisible(false)} accessibilityLabel="Cancel">
@@ -239,7 +244,7 @@ function HomeScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-      {/* Symptom modal */}
+      {/* Symptom Modal */}
       <Modal visible={symptomModalVisible} transparent animationType="fade" onRequestClose={() => setSymptomModalVisible(false)}>
         <TouchableWithoutFeedback onPress={() => setSymptomModalVisible(false)}>
           <View style={styles.modalOverlay}>
@@ -247,20 +252,28 @@ function HomeScreen() {
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>Add Symptom</Text>
                 <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 8 }}>
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-evenly',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                  width: '100%',
+                  paddingHorizontal: 8
+                }}>
                   {SYMPTOM_TYPES.map(t => (
                     <Pressable
                       key={t.key}
                       style={[
                         {
-                          marginHorizontal: 4,
                           borderRadius: 18,
                           width: 36,
                           height: 36,
                           alignItems: 'center',
                           justifyContent: 'center',
-                        },
-                        symptomType === t.key && { backgroundColor: '#eaf6f6', borderWidth: 2, borderColor: '#6bb3b6' }
+                          backgroundColor: symptomType === t.key ? '#eaf6f6' : 'transparent',
+                          borderWidth: symptomType === t.key ? 2 : 0,
+                          borderColor: symptomType === t.key ? '#6bb3b6' : 'transparent'
+                        }
                       ]}
                       onPress={() => setSymptomType(t.key)}
                       accessibilityLabel={t.label}
@@ -285,31 +298,10 @@ function HomeScreen() {
                     </Pressable>
                   ))}
                 </View>
-                <Pressable
-                  style={[styles.modalButton, { marginBottom: 12 }]}
-                  onPress={() => setShowSymptomPicker(true)}
-                  accessibilityLabel="Edit time"
-                >
-                  <Text style={{ color: '#fff' }}>Time: {symptomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                </Pressable>
-                {showSymptomPicker && (
-                  <DateTimePicker
-                    value={symptomTime}
-                    mode="time"
-                    is24Hour={true}
-                    display="default"
-                    onChange={(e, date) => {
-                      setShowSymptomPicker(false);
-                      if (date) setSymptomTime(date);
-                    }}
-                  />
-                )}
                 <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
                 <View style={{ width: '100%', marginBottom: 16 }}>
                   <TextInput
-                    style={{
-                      borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40
-                    }}
+                    style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
                     numberOfLines={1}
                     onChangeText={setSymptomNote}
                     value={symptomNote}
@@ -333,127 +325,140 @@ function HomeScreen() {
 }
 
 function FastingScreen() {
-  const [startTime, setStartTime] = React.useState(null); // timestamp in ms
-  const [elapsed, setElapsed] = React.useState(0);
-  const [isFasting, setIsFasting] = React.useState(false);
-  const [modalVisible, setModalVisible] = React.useState(false);
-  const [selectedMilestone, setSelectedMilestone] = React.useState(null);
+  // Only show log/history and allow adding/editing/deleting past fasts
+  const { fastLog, setFastLog } = useLogs();
+  const [modalVisible, setModalVisible] = useState(false);
+  const [editIndex, setEditIndex] = useState(null);
+  const [fastStart, setFastStart] = useState(new Date());
+  const [fastEnd, setFastEnd] = useState(new Date());
+  const [fastNote, setFastNote] = useState('');
+  const [pickerMode, setPickerMode] = useState(null); // 'start' | 'end' | null
 
-  // Load fasting state from storage on mount
-  React.useEffect(() => {
-    (async () => {
-      const stored = await AsyncStorage.getItem('fastingStart');
-      if (stored) {
-        setStartTime(Number(stored));
-        setIsFasting(true);
-      }
-    })();
-  }, []);
-
-  // Timer interval
-  React.useEffect(() => {
-    let interval;
-    if (isFasting && startTime) {
-      interval = setInterval(() => {
-        setElapsed(Math.floor((Date.now() - startTime) / 1000));
-      }, 1000);
-      // Set initial elapsed
-      setElapsed(Math.floor((Date.now() - startTime) / 1000));
+  // Add or edit fast entry
+  const handleSave = () => {
+    const entry = {
+      start: fastStart.toISOString(),
+      end: fastEnd.toISOString(),
+      note: fastNote,
+      id: editIndex !== null ? fastLog[editIndex].id : Date.now(),
+    };
+    let updated;
+    if (editIndex !== null) {
+      updated = [...fastLog];
+      updated[editIndex] = entry;
     } else {
-      setElapsed(0);
+      updated = [entry, ...fastLog];
     }
-    return () => clearInterval(interval);
-  }, [isFasting, startTime]);
-
-  // Start fasting
-  const handleStart = async () => {
-    const now = Date.now();
-    await AsyncStorage.setItem('fastingStart', String(now));
-    setStartTime(now);
-    setIsFasting(true);
+    setFastLog(updated);
+    setModalVisible(false);
+    setEditIndex(null);
+    setFastStart(new Date());
+    setFastEnd(new Date());
+    setFastNote('');
   };
 
-  // Stop fasting
-  const handleStop = async () => {
-    await AsyncStorage.removeItem('fastingStart');
-    setStartTime(null);
-    setIsFasting(false);
-    setElapsed(0);
+  // Edit entry
+  const handleEdit = idx => {
+    const entry = fastLog[idx];
+    setEditIndex(idx);
+    setFastStart(new Date(entry.start));
+    setFastEnd(new Date(entry.end));
+    setFastNote(entry.note);
+    setModalVisible(true);
   };
 
-  const progress = Math.min(elapsed / FAST_GOAL_SECONDS, 1);
-  const remaining = Math.max(FAST_GOAL_SECONDS - elapsed, 0);
+  // Delete entry
+  const handleDelete = idx => {
+    const updated = [...fastLog];
+    updated.splice(idx, 1);
+    setFastLog(updated);
+  };
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Fasting</Text>
-      <View style={[styles.card, { alignItems: 'center' }]}> 
-        {isFasting ? (
-          <>
-            <Text style={styles.fastingTime}>{formatTimeHM(elapsed)}</Text>
-            <Text style={styles.cardText}>Elapsed</Text>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
-            </View>
-            <Text style={styles.cardText}>{formatTimeHM(remaining)} remaining</Text>
-            <Pressable style={[styles.modalButton, { marginTop: 16 }]} onPress={handleStop}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Stop Fasting</Text>
-            </Pressable>
-          </>
-        ) : (
-          <Pressable style={[styles.modalButton, { marginTop: 16 }]} onPress={handleStart}>
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Start Fasting</Text>
-          </Pressable>
-        )}
-        {/* Milestone/stepper */}
-        <View style={styles.milestoneRow}>
-          {MILESTONES.map((h, i) => (
-            <View key={h} style={styles.milestoneCol}>
-              <TouchableOpacity
-                onPress={() => {
-                  setSelectedMilestone(h);
-                  setModalVisible(true);
-                }}
-                accessibilityLabel={`Milestone ${h} hours`}
-              >
-                {MILESTONE_INFO[h].icon && ['pill','walk','emoticon-sad','fire','water'].includes(MILESTONE_INFO[h].icon) ? (
-                  <MaterialCommunityIcons
-                    name={MILESTONE_INFO[h].icon}
-                    size={28}
-                    color={elapsed >= h * 3600 ? '#6bb3b6' : '#e0e0e0'}
-                    style={{ marginBottom: 4 }}
-                  />
-                ) : (
-                  <Text style={{ fontSize: 28, marginBottom: 4 }}>
-                    {MILESTONE_INFO[h].emoji}
-                  </Text>
-                )}
-              </TouchableOpacity>
-              <Text style={styles.milestoneLabel}>{h}h</Text>
-            </View>
-          ))}
-        </View>
-        <Modal
-          visible={modalVisible}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{selectedMilestone ? MILESTONE_INFO[selectedMilestone].title : ''}</Text>
-              <Text style={styles.modalDesc}>{selectedMilestone ? MILESTONE_INFO[selectedMilestone].description : ''}</Text>
-              <Pressable style={styles.modalButton} onPress={() => setModalVisible(false)}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close</Text>
-              </Pressable>
-            </View>
-          </Pressable>
-        </Modal>
-      </View>
+      <Text style={styles.title}>Fasting Log</Text>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Beginner plans</Text>
-        <Text style={styles.cardText}>13:12, 13:11, 14:10</Text>
+        <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setModalVisible(true)}>
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Fast</Text>
+        </Pressable>
+        {fastLog.length === 0 ? (
+          <Text style={styles.cardText}>No fasts logged.</Text>
+        ) : (
+          fastLog.map((entry, idx) => (
+            <Pressable
+              key={entry.id}
+              onPress={() => handleEdit(idx)}
+              onLongPress={() => handleDelete(idx)}
+              style={{ paddingVertical: 6 }}
+              accessibilityLabel={`Edit or delete fast entry: ${new Date(entry.start).toLocaleString()} - ${new Date(entry.end).toLocaleString()}`}
+            >
+              <View style={{ marginBottom: 2 }}>
+                <Text style={styles.cardText}>
+                  Start: {new Date(entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                </Text>
+                <Text style={styles.cardText}>
+                  End: {new Date(entry.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                </Text>
+                {entry.note ? (
+                  <Text style={styles.cardText}>Note: {entry.note}</Text>
+                ) : null}
+              </View>
+            </Pressable>
+          ))
+        )}
       </View>
+      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Fast' : 'Add Fast'}</Text>
+                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
+                <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setPickerMode('start')}>
+                  <Text style={{ color: '#fff' }}>{fastStart.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                </Pressable>
+                <DateTimePickerModal
+                  isVisible={pickerMode === 'start'}
+                  mode="datetime"
+                  date={fastStart}
+                  onConfirm={date => { setFastStart(date); setPickerMode(null); }}
+                  onCancel={() => setPickerMode(null)}
+                  is24Hour={true}
+                />
+                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>End Time:</Text>
+                <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setPickerMode('end')}>
+                  <Text style={{ color: '#fff' }}>{fastEnd.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                </Pressable>
+                <DateTimePickerModal
+                  isVisible={pickerMode === 'end'}
+                  mode="datetime"
+                  date={fastEnd}
+                  onConfirm={date => { setFastEnd(date); setPickerMode(null); }}
+                  onCancel={() => setPickerMode(null)}
+                  is24Hour={true}
+                />
+                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                <View style={{ width: '100%', marginBottom: 16 }}>
+                  <TextInput
+                    style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
+                    numberOfLines={1}
+                    onChangeText={setFastNote}
+                    value={fastNote}
+                    placeholder="e.g. long fast, interrupted, etc."
+                    accessibilityLabel="Fast note input"
+                  />
+                </View>
+                <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save fast entry">
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                </Pressable>
+                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
+                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -515,27 +520,14 @@ function FastingScreenContent() {
 }
 
 function SymptomsScreen() {
-  const [symptomLog, setSymptomLog] = React.useState([]);
+  const { symptomLog, setSymptomLog } = useLogs();
   const [modalVisible, setModalVisible] = React.useState(false);
   const [editIndex, setEditIndex] = React.useState(null);
   const [symptomType, setSymptomType] = React.useState('tremor');
   const [severity, setSeverity] = React.useState('mild');
   const [symptomTime, setSymptomTime] = React.useState(new Date());
   const [symptomNote, setSymptomNote] = React.useState('');
-  const [showPicker, setShowPicker] = React.useState(false);
-
-  // Load symptom log from storage
-  React.useEffect(() => {
-    (async () => {
-      const stored = await AsyncStorage.getItem('symptomLog');
-      if (stored) setSymptomLog(JSON.parse(stored));
-    })();
-  }, []);
-
-  // Save symptom log to storage
-  React.useEffect(() => {
-    AsyncStorage.setItem('symptomLog', JSON.stringify(symptomLog));
-  }, [symptomLog]);
+  const [pickerMode, setPickerMode] = React.useState(false); // for time picker
 
   // Add or edit symptom entry
   const handleSave = () => {
@@ -544,10 +536,10 @@ function SymptomsScreen() {
       severity,
       time: symptomTime.toISOString(),
       note: symptomNote,
-      id: editIndex !== null ? symptomLog[editIndex].id : Date.now(),
+      id: (editIndex !== null && symptomLog[editIndex]) ? symptomLog[editIndex].id : Date.now(),
     };
     let updated;
-    if (editIndex !== null) {
+    if (editIndex !== null && symptomLog[editIndex]) {
       updated = [...symptomLog];
       updated[editIndex] = entry;
     } else {
@@ -625,25 +617,33 @@ function SymptomsScreen() {
               <View style={styles.modalContent}>
                 <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Symptom' : 'Add Symptom'}</Text>
                 <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 8 }}>
+                <View style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-evenly',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                  width: '100%',
+                  paddingHorizontal: 8
+                }}>
                   {SYMPTOM_TYPES.map(t => (
                     <Pressable
                       key={t.key}
                       style={[
                         {
-                          marginHorizontal: 6,
-                          borderRadius: 24,
-                          width: 48,
-                          height: 48,
+                          borderRadius: 18,
+                          width: 36,
+                          height: 36,
                           alignItems: 'center',
                           justifyContent: 'center',
-                        },
-                        symptomType === t.key && { backgroundColor: '#eaf6f6', borderWidth: 2, borderColor: '#6bb3b6' }
+                          backgroundColor: symptomType === t.key ? '#eaf6f6' : 'transparent',
+                          borderWidth: symptomType === t.key ? 2 : 0,
+                          borderColor: symptomType === t.key ? '#6bb3b6' : 'transparent'
+                        }
                       ]}
                       onPress={() => setSymptomType(t.key)}
                       accessibilityLabel={t.label}
                     >
-                      <Text style={{ fontSize: 28, textAlign: 'center' }}>{t.emoji}</Text>
+                      <Text style={{ fontSize: 20, textAlign: 'center' }}>{t.emoji}</Text>
                     </Pressable>
                   ))}
                 </View>
@@ -665,23 +665,19 @@ function SymptomsScreen() {
                 </View>
                 <Pressable
                   style={[styles.modalButton, { marginBottom: 12 }]}
-                  onPress={() => setShowPicker(true)}
+                  onPress={() => setPickerMode(true)}
                   accessibilityLabel="Edit time"
                 >
                   <Text style={{ color: '#fff' }}>Time: {symptomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                 </Pressable>
-                {showPicker && (
-                  <DateTimePicker
-                    value={symptomTime}
-                    mode="time"
-                    is24Hour={true}
-                    display="default"
-                    onChange={(e, date) => {
-                      setShowPicker(false);
-                      if (date) setSymptomTime(date);
-                    }}
-                  />
-                )}
+                <DateTimePickerModal
+                  isVisible={pickerMode}
+                  mode="time"
+                  date={symptomTime}
+                  onConfirm={date => { setSymptomTime(date); setPickerMode(false); }}
+                  onCancel={() => setPickerMode(false)}
+                  is24Hour={true}
+                />
                 <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
                 <View style={{ width: '100%', marginBottom: 16 }}>
                   <TextInput
@@ -711,23 +707,25 @@ function SymptomsScreen() {
 }
 
 function LogsScreen() {
-  const [foodLog, setFoodLog] = React.useState([]);
-  const [symptomLog, setSymptomLog] = React.useState([]);
   const [filterType, setFilterType] = React.useState('all');
   const [filterDate, setFilterDate] = React.useState('today');
 
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog } = useLogs();
+
+  // Migrate old foodLog entries to have a 'time' property if missing
   React.useEffect(() => {
-    (async () => {
-      const stored = await AsyncStorage.getItem('foodLog');
-      if (stored) setFoodLog(JSON.parse(stored));
-      const storedS = await AsyncStorage.getItem('symptomLog');
-      if (storedS) setSymptomLog(JSON.parse(storedS));
-    })();
-  }, []);
+    if (foodLog.length > 0 && foodLog.some(e => !e.time)) {
+      setFoodLog(foodLog.map(e => ({
+        ...e,
+        time: e.time || (e.id ? new Date(e.id).toISOString() : new Date().toISOString()),
+      })));
+    }
+  }, [foodLog, setFoodLog]);
 
   // Filtering
   const today = new Date().toISOString().slice(0, 10);
   const filterByDate = entry => {
+    if (!entry.time) return filterDate !== 'today'; // skip if missing time for 'today', include for 'all'
     if (filterDate === 'today') return entry.time.slice(0, 10) === today;
     return true;
   };
@@ -775,33 +773,37 @@ function LogsScreen() {
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Tab.Navigator
-        initialRouteName="Home"
-        screenOptions={({ route }) => ({
-          headerShown: false,
-          tabBarActiveTintColor: '#6bb3b6',
-          tabBarInactiveTintColor: '#888',
-          tabBarStyle: { height: 60, paddingBottom: 8 },
-          tabBarIcon: ({ color, size }) => {
-            if (route.name === 'Home') {
-              return <Ionicons name="home" size={size} color={color} />;
-            } else if (route.name === 'Fasting') {
-              return <MaterialCommunityIcons name="progress-clock" size={size} color={color} />;
-            } else if (route.name === 'Symptoms') {
-              return <MaterialCommunityIcons name="heart-pulse" size={size} color={color} />;
-            } else if (route.name === 'Logs') {
-              return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
-            }
-          },
-        })}
-      >
-        <Tab.Screen name="Home" component={HomeScreen} />
-        <Tab.Screen name="Fasting" component={FastingScreen} />
-        <Tab.Screen name="Symptoms" component={SymptomsScreen} />
-        <Tab.Screen name="Logs" component={LogsScreen} />
-      </Tab.Navigator>
-    </NavigationContainer>
+    <LogsProvider>
+      <FastingProvider>
+        <NavigationContainer>
+          <Tab.Navigator
+            initialRouteName="Home"
+            screenOptions={({ route }) => ({
+              headerShown: false,
+              tabBarActiveTintColor: '#6bb3b6',
+              tabBarInactiveTintColor: '#888',
+              tabBarStyle: { height: 60, paddingBottom: 8 },
+              tabBarIcon: ({ color, size }) => {
+                if (route.name === 'Home') {
+                  return <Ionicons name="home" size={size} color={color} />;
+                } else if (route.name === 'Fasting') {
+                  return <MaterialCommunityIcons name="progress-clock" size={size} color={color} />;
+                } else if (route.name === 'Symptoms') {
+                  return <MaterialCommunityIcons name="heart-pulse" size={size} color={color} />;
+                } else if (route.name === 'Logs') {
+                  return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
+                }
+              },
+            })}
+          >
+            <Tab.Screen name="Home" component={HomeScreen} />
+            <Tab.Screen name="Fasting" component={FastingScreen} />
+            <Tab.Screen name="Symptoms" component={SymptomsScreen} />
+            <Tab.Screen name="Logs" component={LogsScreen} />
+          </Tab.Navigator>
+        </NavigationContainer>
+      </FastingProvider>
+    </LogsProvider>
   );
 }
 
