@@ -1,8 +1,54 @@
+## TODO (Prioritized)
+
+### MVP
+- [ ] Meal and fasting logging (UI + local storage)
+- [ ] Symptom logging (PD-specific and general)
+- [ ] View today's logs and simple progress
+- [ ] Generate and email report to coach
+
+### Next
+- [ ] Reminders for logging/fasting
+- [ ] Data export (CSV/email)
+- [ ] Motivational notifications
+
+### Future
+- [ ] AI-powered recommendations
+- [ ] Cloud sync/user accounts
+- [ ] Voice input/accessibility
+
+---
+
+## Project Overview
+
+Genesis4PD is a mobile app to help people with Parkinson's manage health through diet, fasting, and symptom tracking, with a focus on autophagy. The app provides tools for logging, progress tracking, and (in the future) personalized recommendations and reporting.
+
+---
+
+## Features
+
+### MVP
+- Log meals and fasting windows
+- Log symptoms (motor and non-motor)
+- View logs and progress
+- Generate/email reports
+
+### Next
+- Reminders, data export, notifications
+
+### Future
+- AI recommendations, cloud sync, accessibility
+
+---
+
+## Background & References
+
+This app is inspired by scientific research and existing apps for Parkinson's and fasting. See below for detailed rationale and references.
+
 # autophagy-app
 
 This is the autophagy app for https://www.genesis4pd.com/pd-protocols.  Goals of the app are as follows:
 
-Measuring autophagy, particularly in the context of an app for your Genesis Health for Parkinson’s Disease business, is challenging because autophagy is a complex cellular process that cannot be directly measured in real-time with consumer-grade technology. However, you can incorporate proxy metrics and user-input data that are scientifically associated with autophagy, especially tailored for Parkinson’s patients. Below are the primary methods to estimate or track autophagy in an app, along with considerations for implementation and relevance to Parkinson’s disease.
+Measuring autophagy, particularly in the context of an app for your Genesis Health for Parkinson's Disease business, is challenging because autophagy is a complex cellular process that cannot be directly measured in real-time with consumer-grade technology. However, you can incorporate proxy metrics and user-input data that are scientifically associated with autophagy, especially tailored for Parkinson's patients. Below are the primary methods to estimate or track autophagy in an app, along with considerations for implementation and relevance to Parkinson's disease.
 1. Fasting-Based Tracking (Proxy for Autophagy Induction)
 How It Works: Autophagy is strongly induced by nutrient deprivation, particularly during prolonged fasting (e.g., intermittent fasting or extended fasting). Studies suggest autophagy ramps up significantly after 16–24 hours of fasting, depending on individual factors.
 App Implementation:
@@ -54,3 +100,37 @@ Images 1 through 4 are screenshots from applications that we want to take inspir
 - Speech changes
 - Writing changes
 - Nonmotor symptoms
+
+## Planned & Requested Features
+
+### Fasting & Tracking
+- Total accumulated fasting days per time period (weekly, monthly, yearly)
+- Each fast as a "campaign" (track, label, and review individual fasts)
+- Workout and movement reminder/tracker
+- Monthly reporting metric (summarize fasting, symptoms, etc., and email to user based on circadian inputs)
+
+### Symptom & Health Management
+- Medication tracking (log, remind, and review medication use)
+- Demedication tracking (track reduction or changes in medication)
+- Symptom/mood trends visualization (charts, graphs, correlations)
+- Facial expressions exercises (guided or suggested routines)
+
+### Lifestyle & Environment
+- Tips related to person's environment (e.g., "less furniture for more space at home," safety, accessibility, etc.)
+- Diet plan (personalized or preset plans, with reminders and logging)
+- Educational content (articles, videos, tips for PD, fasting, movement, etc.)
+
+### Data & Reporting
+- Export/share logs (CSV, PDF, email to self or provider)
+- Monthly/periodic reports (auto-generated, optionally emailed)
+
+### Reminders & Motivation
+- Motivational notifications (at milestones, achievements, etc.)
+- Customizable reminders (for all tracked activities)
+
+### Accessibility & Usability
+- Voice input for logging
+- Dynamic font size and color contrast settings
+
+### Account & Sync (Optional)
+- User accounts/cloud sync (backup, multi-device support)
