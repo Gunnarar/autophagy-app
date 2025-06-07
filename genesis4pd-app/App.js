@@ -131,7 +131,7 @@ function HomeScreen() {
   const handleSaveFood = () => {
     const entry = {
       type: foodType,
-      time: foodTime.toISOString(),
+      time: new Date().toISOString(),
       note: foodNote,
       id: Date.now(),
     };
@@ -139,7 +139,6 @@ function HomeScreen() {
     setFoodModalVisible(false);
     setFoodType('meal');
     setFoodNote('');
-    setFoodTime(new Date());
   };
 
   // Save symptom entry
@@ -260,22 +259,6 @@ function HomeScreen() {
                     <Text style={{ fontSize: 20 }}>🥪 Snack</Text>
                   </Pressable>
                 </View>
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
-                <Pressable
-                  style={[styles.modalButton, { marginBottom: 12 }]}
-                  onPress={() => setShowFoodPicker(true)}
-                  accessibilityLabel="Edit time"
-                >
-                  <Text style={{ color: '#fff' }}>Time: {foodTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                </Pressable>
-                <DateTimePickerModal
-                  isVisible={showFoodPicker}
-                  mode="time"
-                  date={foodTime}
-                  onConfirm={date => { setFoodTime(date); setShowFoodPicker(false); }}
-                  onCancel={() => setShowFoodPicker(false)}
-                  is24Hour={true}
-                />
                 <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
                 <View style={{ width: '100%', marginBottom: 16 }}>
                   <TextInput
@@ -764,7 +747,147 @@ function LogsScreen() {
   const [filterType, setFilterType] = React.useState('all');
   const [filterDate, setFilterDate] = React.useState('today');
 
-  const { foodLog, setFoodLog, symptomLog, setSymptomLog } = useLogs();
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog } = useLogs();
+
+  // Add state for modal: type (food, symptom, fast), mode (add/edit), entry data, and modal visibility
+  const [modalVisible, setModalVisible] = React.useState(false);
+  const [modalType, setModalType] = React.useState(null); // 'meal', 'snack', 'symptom', 'fast'
+  const [modalMode, setModalMode] = React.useState('add'); // 'add' or 'edit'
+  const [modalData, setModalData] = React.useState({});
+  const [pickerMode, setPickerMode] = React.useState(null); // for fast/symptom time pickers
+
+  // Helper to open modal for add
+  const openAddModal = (type) => {
+    if (type === 'food') {
+      setModalType('meal'); // default to 'meal' so the modal UI works
+      setModalMode('add');
+      setModalData({
+        type: 'meal',
+        time: new Date(),
+        note: '',
+      });
+    } else if (type === 'symptom') {
+      setModalType('symptom');
+      setModalMode('add');
+      setModalData({
+        type: 'tremor',
+        severity: 'mild',
+        time: new Date(),
+        note: '',
+      });
+    } else if (type === 'fast') {
+      setModalType('fast');
+      setModalMode('add');
+      setModalData({
+        start: new Date(),
+        end: new Date(),
+        note: '',
+      });
+    }
+    setModalVisible(true);
+  };
+  // Helper to open modal for edit
+  const openEditModal = (entry) => {
+    setModalType(entry.logType === 'food' ? entry.type : entry.logType);
+    setModalMode('edit');
+    setModalData({ ...entry });
+    setModalVisible(true);
+  };
+  // Save handler
+  const handleSave = () => {
+    if (modalType === 'meal' || modalType === 'snack') {
+      const entry = {
+        ...modalData,
+        time: modalData.time.toISOString(),
+        id: modalMode === 'edit' ? modalData.id : Date.now(),
+        logType: 'food',
+      };
+      let updated = [...foodLog];
+      if (modalMode === 'edit') {
+        const idx = foodLog.findIndex(e => e.id === entry.id);
+        updated[idx] = entry;
+      } else {
+        updated = [entry, ...foodLog];
+      }
+      setFoodLog(updated);
+    } else if (modalType === 'symptom') {
+      const entry = {
+        ...modalData,
+        time: modalData.time.toISOString(),
+        id: modalMode === 'edit' ? modalData.id : Date.now(),
+        logType: 'symptom',
+      };
+      let updated = [...symptomLog];
+      if (modalMode === 'edit') {
+        const idx = symptomLog.findIndex(e => e.id === entry.id);
+        updated[idx] = entry;
+      } else {
+        updated = [entry, ...symptomLog];
+      }
+      setSymptomLog(updated);
+    } else if (modalType === 'fast') {
+      const entry = {
+        ...modalData,
+        start: modalData.start.toISOString(),
+        end: modalData.end.toISOString(),
+        id: modalMode === 'edit' ? modalData.id : Date.now(),
+        logType: 'fast',
+      };
+      let updated = [...fastLog];
+      if (modalMode === 'edit') {
+        const idx = fastLog.findIndex(e => e.id === entry.id);
+        updated[idx] = entry;
+      } else {
+        updated = [entry, ...fastLog];
+      }
+      setFastLog(updated);
+    }
+    setModalVisible(false);
+    setModalData({});
+  };
+  // Delete handler
+  const handleDelete = () => {
+    if (modalType === 'meal' || modalType === 'snack') {
+      setFoodLog(foodLog.filter(e => e.id !== modalData.id));
+    } else if (modalType === 'symptom') {
+      setSymptomLog(symptomLog.filter(e => e.id !== modalData.id));
+    } else if (modalType === 'fast') {
+      setFastLog(fastLog.filter(e => e.id !== modalData.id));
+    }
+    setModalVisible(false);
+    setModalData({});
+  };
+  // Duplicate handler
+  const handleDuplicate = () => {
+    if (modalType === 'meal' || modalType === 'snack') {
+      const entry = {
+        ...modalData,
+        time: new Date().toISOString(),
+        id: Date.now(),
+        logType: 'food',
+      };
+      setFoodLog([entry, ...foodLog]);
+    } else if (modalType === 'symptom') {
+      const entry = {
+        ...modalData,
+        time: new Date().toISOString(),
+        id: Date.now(),
+        logType: 'symptom',
+      };
+      setSymptomLog([entry, ...symptomLog]);
+    } else if (modalType === 'fast') {
+      const entry = {
+        ...modalData,
+        start: new Date().toISOString(),
+        end: new Date().toISOString(),
+        id: Date.now(),
+        logType: 'fast',
+      };
+      setFastLog([entry, ...fastLog]);
+    }
+    setModalVisible(false);
+    setModalData({});
+  };
 
   // Migrate old foodLog entries to have a 'time' property if missing
   React.useEffect(() => {
@@ -793,16 +916,13 @@ function LogsScreen() {
     <View style={styles.screen}>
       <Text style={styles.title}>Logs</Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setFoodModalVisible(true)}>
-          <Text style={styles.quickActionText}>🍽️ Add Meal</Text>
+        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => openAddModal('food')}>
+          <Text style={styles.quickActionText}>🍽️ Add Food</Text>
         </Pressable>
-        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setSnackModalVisible(true)}>
-          <Text style={styles.quickActionText}>🥪 Add Snack</Text>
-        </Pressable>
-        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setSymptomModalVisible(true)}>
+        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => openAddModal('symptom')}>
           <Text style={styles.quickActionText}>🩺 Add Symptom</Text>
         </Pressable>
-        <Pressable style={styles.quickActionButton} onPress={() => setFastModalVisible(true)}>
+        <Pressable style={styles.quickActionButton} onPress={() => openAddModal('fast')}>
           <Text style={styles.quickActionText}>⏱️ Add Fast</Text>
         </Pressable>
       </View>
@@ -828,6 +948,149 @@ function LogsScreen() {
           </View>
         ))
       )}
+      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>
+                  {modalType === 'meal' || modalType === 'snack'
+                    ? (modalMode === 'edit' ? 'Edit Food Entry' : 'Add Food Entry')
+                    : modalType === 'symptom'
+                      ? (modalMode === 'edit' ? 'Edit Symptom' : 'Add Symptom')
+                      : modalType === 'fast'
+                        ? (modalMode === 'edit' ? 'Edit Fast' : 'Add Fast')
+                        : (modalMode === 'edit' ? 'Edit Entry' : 'Add Entry')
+                  }
+                </Text>
+                {(modalType === 'meal' || modalType === 'snack') && (
+                  <>
+                    <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Type:</Text>
+                    <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                      <Pressable style={[styles.foodTypeButton, modalType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setModalType('meal')} accessibilityLabel="Meal">
+                        <Text style={{ fontSize: 20 }}>🍽️ Meal</Text>
+                      </Pressable>
+                      <Pressable style={[styles.foodTypeButton, modalType === 'snack' && styles.foodTypeButtonActive]} onPress={() => setModalType('snack')} accessibilityLabel="Snack">
+                        <Text style={{ fontSize: 20 }}>🥪 Snack</Text>
+                      </Pressable>
+                    </View>
+                    <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
+                    <Pressable
+                      style={[styles.modalButton, { marginBottom: 12 }]}
+                      onPress={() => setPickerMode('foodTime')}
+                      accessibilityLabel="Edit date and time"
+                    >
+                      <Text style={{ color: '#fff' }}>
+                        {(modalData.time instanceof Date ? modalData.time : new Date(modalData.time)).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}
+                      </Text>
+                    </Pressable>
+                    <DateTimePickerModal
+                      isVisible={pickerMode === 'foodTime'}
+                      mode="datetime"
+                      date={modalData.time instanceof Date ? modalData.time : new Date(modalData.time)}
+                      onConfirm={date => { setModalData(prev => ({ ...prev, time: date })); setPickerMode(null); }}
+                      onCancel={() => setPickerMode(null)}
+                      is24Hour={true}
+                    />
+                  </>
+                )}
+                {modalType === 'symptom' ? (
+                  <>
+                    <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
+                    <View style={{
+                      flexDirection: 'row',
+                      justifyContent: 'space-evenly',
+                      alignItems: 'center',
+                      marginBottom: 8,
+                      width: '100%',
+                      paddingHorizontal: 8
+                    }}>
+                      {SYMPTOM_TYPES.map(t => (
+                        <Pressable
+                          key={t.key}
+                          style={[
+                            {
+                              borderRadius: 18,
+                              width: 36,
+                              height: 36,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              backgroundColor: modalType === t.key ? '#eaf6f6' : 'transparent',
+                              borderWidth: modalType === t.key ? 2 : 0,
+                              borderColor: modalType === t.key ? '#6bb3b6' : 'transparent'
+                            }
+                          ]}
+                          onPress={() => setModalType(t.key)}
+                          accessibilityLabel={t.label}
+                        >
+                          <Text style={{ fontSize: 20, textAlign: 'center' }}>{t.emoji}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </>
+                ) : null}
+                {modalType === 'fast' && (
+                  <>
+                    <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
+                    <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setPickerMode('start')}>
+                      <Text style={{ color: '#fff' }}>{(modalData.start instanceof Date ? modalData.start : new Date(modalData.start)).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+                    </Pressable>
+                    <DateTimePickerModal
+                      isVisible={pickerMode === 'start'}
+                      mode="datetime"
+                      date={modalData.start instanceof Date ? modalData.start : new Date(modalData.start)}
+                      onConfirm={date => { setModalData(prev => ({ ...prev, start: date })); setPickerMode(null); }}
+                      onCancel={() => setPickerMode(null)}
+                      is24Hour={true}
+                    />
+                    <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>End Time:</Text>
+                    <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setPickerMode('end')}>
+                      <Text style={{ color: '#fff' }}>{(modalData.end instanceof Date ? modalData.end : new Date(modalData.end)).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+                    </Pressable>
+                    <DateTimePickerModal
+                      isVisible={pickerMode === 'end'}
+                      mode="datetime"
+                      date={modalData.end instanceof Date ? modalData.end : new Date(modalData.end)}
+                      onConfirm={date => { setModalData(prev => ({ ...prev, end: date })); setPickerMode(null); }}
+                      onCancel={() => setPickerMode(null)}
+                      is24Hour={true}
+                    />
+                  </>
+                )}
+                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                <View style={{ width: '100%', marginBottom: 16 }}>
+                  <TextInput
+                    style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
+                    numberOfLines={1}
+                    onChangeText={text => setModalData(prev => ({ ...prev, note: text }))}
+                    value={modalData.note}
+                    placeholder="e.g. high carb, keto, protein shake"
+                    accessibilityLabel="Food note input"
+                  />
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+                  {modalMode === 'edit' && (
+                    <>
+                      <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={handleDelete} accessibilityLabel="Delete">
+                        <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
+                      </Pressable>
+                      <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={handleDuplicate} accessibilityLabel="Duplicate">
+                        <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Duplicate</Text>
+                      </Pressable>
+                    </>
+                  )}
+                  <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save">
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>{modalMode === 'edit' ? 'Update' : 'Add'}</Text>
+                  </Pressable>
+                </View>
+                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
+                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
