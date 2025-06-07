@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableOpacity, TouchableWithoutFeedback, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, TouchableOpacity, TouchableWithoutFeedback, TextInput, ScrollView } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -103,6 +103,8 @@ function HomeScreen() {
   const [foodModalVisible, setFoodModalVisible] = useState(false);
   const [foodType, setFoodType] = useState('meal');
   const [foodNote, setFoodNote] = useState('');
+  const [foodTime, setFoodTime] = useState(new Date());
+  const [showFoodPicker, setShowFoodPicker] = useState(false);
 
   // Symptom log state
   const { symptomLog, setSymptomLog } = useLogs();
@@ -115,10 +117,21 @@ function HomeScreen() {
   const progress = Math.min(fastElapsed / FAST_GOAL_SECONDS, 1);
   const remaining = Math.max(FAST_GOAL_SECONDS - fastElapsed, 0);
 
+  // Calculate today's date string
+  const today = new Date().toISOString().slice(0, 10);
+  const todaysMeals = foodLog.filter(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === today);
+  const todaysSnacks = foodLog.filter(e => e.type === 'snack' && e.time && e.time.slice(0, 10) === today);
+  const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
+
+  // Calculate ketone and autophagy status
+  const ketoneReached = fastElapsed >= 12 * 3600;
+  const autophagyReached = fastElapsed >= 16 * 3600;
+
   // Save food entry
   const handleSaveFood = () => {
     const entry = {
       type: foodType,
+      time: foodTime.toISOString(),
       note: foodNote,
       id: Date.now(),
     };
@@ -126,6 +139,7 @@ function HomeScreen() {
     setFoodModalVisible(false);
     setFoodType('meal');
     setFoodNote('');
+    setFoodTime(new Date());
   };
 
   // Save symptom entry
@@ -145,12 +159,12 @@ function HomeScreen() {
   };
 
   return (
-    <View style={styles.screen}>
+    <ScrollView style={{ flex: 1, backgroundColor: '#eaf6f6' }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
       <Text style={styles.title}>Dashboard</Text>
-      {/* Fasting Timer */}
+      {/* Fasting Timer + Milestones Card */}
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Fasting Timer</Text>
-        <View style={{ alignItems: 'center' }}>
+        <Text style={styles.cardTitle}>Fasting</Text>
+        <View style={{ alignItems: 'center', marginBottom: 12 }}>
           <Text style={styles.fastingTime}>{formatTimeHM(fastElapsed)}</Text>
           <Text style={styles.cardText}>Elapsed</Text>
           <View style={styles.progressBarBg}>
@@ -167,45 +181,69 @@ function HomeScreen() {
             </Pressable>
           )}
         </View>
+        {/* Milestones/stepper */}
+        <View style={styles.milestoneRow}>
+          {MILESTONES.map((h, i) => (
+            <View key={h} style={styles.milestoneCol}>
+              {MILESTONE_INFO[h].icon && ['pill','walk','emoticon-sad','fire','water'].includes(MILESTONE_INFO[h].icon) ? (
+                <MaterialCommunityIcons
+                  name={MILESTONE_INFO[h].icon}
+                  size={32}
+                  color={fastElapsed >= h * 3600 ? '#6bb3b6' : '#e0e0e0'}
+                  style={{ marginBottom: 4 }}
+                />
+              ) : (
+                <Text style={{ fontSize: 32, marginBottom: 4, color: fastElapsed >= h * 3600 ? '#6bb3b6' : '#e0e0e0' }}>
+                  {MILESTONE_INFO[h].emoji}
+                </Text>
+              )}
+              <Text style={[styles.milestoneLabel, { fontWeight: 'bold', color: fastElapsed >= h * 3600 ? '#2d4d4d' : '#aaa', fontSize: 16 }]}>{h}h</Text>
+            </View>
+          ))}
+        </View>
       </View>
-      {/* Quick Actions */}
+      {/* Quick Actions Row */}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
         <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setFoodModalVisible(true)}>
           <Text style={styles.quickActionText}>🍽️ Add Meal</Text>
         </Pressable>
-        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setFastModalVisible(true)}>
-          <Text style={styles.quickActionText}>⏱️ Add Fast</Text>
-        </Pressable>
-        <Pressable style={styles.quickActionButton} onPress={() => setSymptomModalVisible(true)}>
+        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setSymptomModalVisible(true)}>
           <Text style={styles.quickActionText}>🩺 Add Symptom</Text>
         </Pressable>
       </View>
-      {/* Today Summary */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Today's Summary</Text>
-        <Text style={styles.cardText}>Meals: {foodLog.filter(e => e.type === 'meal').length}</Text>
-        <Text style={styles.cardText}>Snacks: {foodLog.filter(e => e.type === 'snack').length}</Text>
-        <Text style={styles.cardText}>Symptoms: {symptomLog.length}</Text>
+      {/* Today's Overview Row */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, marginTop: 8 }}>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 24 }}>🍽️</Text>
+          <Text style={{ fontWeight: 'bold', color: '#2d4d4d' }}>{todaysMeals.length}</Text>
+          <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Meals</Text>
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 24 }}>🥪</Text>
+          <Text style={{ fontWeight: 'bold', color: '#2d4d4d' }}>{todaysSnacks.length}</Text>
+          <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Snacks</Text>
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 24 }}>🩺</Text>
+          <Text style={{ fontWeight: 'bold', color: '#2d4d4d' }}>{todaysSymptoms.length}</Text>
+          <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Symptoms</Text>
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 24 }}>{isFasting ? '⏱️' : '✅'}</Text>
+          <Text style={{ fontWeight: 'bold', color: '#2d4d4d' }}>{isFasting ? 'Fasting' : 'Done'}</Text>
+          <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Fasting</Text>
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 24, color: ketoneReached ? '#6bb3b6' : '#e0e0e0' }}>💧</Text>
+          <Text style={{ fontWeight: 'bold', color: ketoneReached ? '#2d4d4d' : '#aaa' }}>{ketoneReached ? 'Yes' : 'No'}</Text>
+          <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Ketone</Text>
+        </View>
+        <View style={{ alignItems: 'center' }}>
+          <Text style={{ fontSize: 24, color: autophagyReached ? '#6bb3b6' : '#e0e0e0' }}>🦠</Text>
+          <Text style={{ fontWeight: 'bold', color: autophagyReached ? '#2d4d4d' : '#aaa' }}>{autophagyReached ? 'Yes' : 'No'}</Text>
+          <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Autophagy</Text>
+        </View>
       </View>
-      {/* Fast Modal */}
-      <Modal visible={fastModalVisible} transparent animationType="fade" onRequestClose={() => setFastModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setFastModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Start Fasting</Text>
-                <Text style={styles.modalDesc}>Start a new fast now.</Text>
-                <Pressable style={styles.modalButton} onPress={startFast} accessibilityLabel="Start Fasting">
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Start</Text>
-                </Pressable>
-                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setFastModalVisible(false)} accessibilityLabel="Cancel">
-                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
       {/* Food Modal */}
       <Modal visible={foodModalVisible} transparent animationType="fade" onRequestClose={() => setFoodModalVisible(false)}>
         <TouchableWithoutFeedback onPress={() => setFoodModalVisible(false)}>
@@ -222,6 +260,22 @@ function HomeScreen() {
                     <Text style={{ fontSize: 20 }}>🥪 Snack</Text>
                   </Pressable>
                 </View>
+                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
+                <Pressable
+                  style={[styles.modalButton, { marginBottom: 12 }]}
+                  onPress={() => setShowFoodPicker(true)}
+                  accessibilityLabel="Edit time"
+                >
+                  <Text style={{ color: '#fff' }}>Time: {foodTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                </Pressable>
+                <DateTimePickerModal
+                  isVisible={showFoodPicker}
+                  mode="time"
+                  date={foodTime}
+                  onConfirm={date => { setFoodTime(date); setShowFoodPicker(false); }}
+                  onCancel={() => setShowFoodPicker(false)}
+                  is24Hour={true}
+                />
                 <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
                 <View style={{ width: '100%', marginBottom: 16 }}>
                   <TextInput
@@ -320,7 +374,7 @@ function HomeScreen() {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -738,12 +792,19 @@ function LogsScreen() {
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>Logs</Text>
-      <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-        <Pressable style={[styles.foodTypeButton, filterType === 'all' && styles.foodTypeButtonActive]} onPress={() => setFilterType('all')}><Text>All</Text></Pressable>
-        <Pressable style={[styles.foodTypeButton, filterType === 'food' && styles.foodTypeButtonActive]} onPress={() => setFilterType('food')}><Text>Food</Text></Pressable>
-        <Pressable style={[styles.foodTypeButton, filterType === 'symptom' && styles.foodTypeButtonActive]} onPress={() => setFilterType('symptom')}><Text>Symptom</Text></Pressable>
-        <Pressable style={[styles.foodTypeButton, filterDate === 'today' && styles.foodTypeButtonActive]} onPress={() => setFilterDate('today')}><Text>Today</Text></Pressable>
-        <Pressable style={[styles.foodTypeButton, filterDate !== 'today' && styles.foodTypeButtonActive]} onPress={() => setFilterDate('all')}><Text>All Dates</Text></Pressable>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setFoodModalVisible(true)}>
+          <Text style={styles.quickActionText}>🍽️ Add Meal</Text>
+        </Pressable>
+        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setSnackModalVisible(true)}>
+          <Text style={styles.quickActionText}>🥪 Add Snack</Text>
+        </Pressable>
+        <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setSymptomModalVisible(true)}>
+          <Text style={styles.quickActionText}>🩺 Add Symptom</Text>
+        </Pressable>
+        <Pressable style={styles.quickActionButton} onPress={() => setFastModalVisible(true)}>
+          <Text style={styles.quickActionText}>⏱️ Add Fast</Text>
+        </Pressable>
       </View>
       {logs.length === 0 ? (
         <Text style={styles.cardText}>No log entries.</Text>
@@ -771,6 +832,79 @@ function LogsScreen() {
   );
 }
 
+function ProfileScreen() {
+  const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
+  const [fastingSchedule, setFastingSchedule] = useState(null);
+  const SCHEDULES = [
+    { label: '12:12 (12h fast, 12h eating)', value: '12:12', color: '#6bb3b6' },
+    { label: '14:10 (14h fast, 10h eating)', value: '14:10', color: '#4d6d6d' },
+    { label: '16:8 (16h fast, 8h eating)', value: '16:8', color: '#2d4d4d' },
+    { label: '18:6 (18h fast, 6h eating)', value: '18:6', color: '#1a2323' },
+    { label: '20:4 (20h fast, 4h eating)', value: '20:4', color: '#000' },
+  ];
+  useEffect(() => {
+    (async () => {
+      const stored = await AsyncStorage.getItem('fastingSchedule');
+      if (stored) setFastingSchedule(stored);
+    })();
+  }, []);
+  useEffect(() => {
+    if (fastingSchedule) AsyncStorage.setItem('fastingSchedule', fastingSchedule);
+  }, [fastingSchedule]);
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: '#eaf6f6' }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <Text style={styles.title}>Profile</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Fasting Schedule</Text>
+        <Text style={styles.cardText}>
+          {fastingSchedule ? `Selected: ${SCHEDULES.find(s => s.value === fastingSchedule)?.label || fastingSchedule}` : 'No schedule selected'}
+        </Text>
+        <Pressable style={styles.modalButton} onPress={() => setScheduleModalVisible(true)} accessibilityLabel="Set fasting schedule">
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>{fastingSchedule ? 'Change' : 'Set'} Schedule</Text>
+        </Pressable>
+      </View>
+      <Modal visible={scheduleModalVisible} transparent animationType="fade" onRequestClose={() => setScheduleModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setScheduleModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Pick a Fasting Schedule</Text>
+                {SCHEDULES.map(s => (
+                  <Pressable
+                    key={s.value}
+                    style={[styles.modalButton, {
+                      marginBottom: 12,
+                      backgroundColor: fastingSchedule === s.value ? s.color : '#eaf6f6',
+                    }]}
+                    onPress={() => { setFastingSchedule(s.value); setScheduleModalVisible(false); }}
+                    accessibilityLabel={`Select ${s.label}`}
+                  >
+                    <Text style={{ color: fastingSchedule === s.value ? '#fff' : '#2d4d4d', fontWeight: 'bold', fontSize: 18 }}>{s.label}</Text>
+                  </Pressable>
+                ))}
+                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setScheduleModalVisible(false)} accessibilityLabel="Cancel">
+                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </ScrollView>
+  );
+}
+
+function InfoScreen() {
+  return (
+    <ScrollView style={{ flex: 1, backgroundColor: '#eaf6f6' }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <Text style={styles.title}>Info</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardText}>Personalized information and education will appear here based on your logs and schedule.</Text>
+      </View>
+    </ScrollView>
+  );
+}
+
 export default function App() {
   return (
     <LogsProvider>
@@ -786,20 +920,20 @@ export default function App() {
               tabBarIcon: ({ color, size }) => {
                 if (route.name === 'Home') {
                   return <Ionicons name="home" size={size} color={color} />;
-                } else if (route.name === 'Fasting') {
-                  return <MaterialCommunityIcons name="progress-clock" size={size} color={color} />;
-                } else if (route.name === 'Symptoms') {
-                  return <MaterialCommunityIcons name="heart-pulse" size={size} color={color} />;
                 } else if (route.name === 'Logs') {
                   return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
+                } else if (route.name === 'Profile') {
+                  return <Ionicons name="person" size={size} color={color} />;
+                } else if (route.name === 'Info') {
+                  return <MaterialCommunityIcons name="information" size={size} color={color} />;
                 }
               },
             })}
           >
             <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Fasting" component={FastingScreen} />
-            <Tab.Screen name="Symptoms" component={SymptomsScreen} />
             <Tab.Screen name="Logs" component={LogsScreen} />
+            <Tab.Screen name="Profile" component={ProfileScreen} />
+            <Tab.Screen name="Info" component={InfoScreen} />
           </Tab.Navigator>
         </NavigationContainer>
       </FastingProvider>
