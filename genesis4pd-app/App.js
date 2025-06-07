@@ -796,9 +796,10 @@ function LogsScreen() {
   // Save handler
   const handleSave = () => {
     if (modalType === 'meal' || modalType === 'snack') {
+      const time = modalData.time instanceof Date ? modalData.time : (modalData.time ? new Date(modalData.time) : new Date());
       const entry = {
         ...modalData,
-        time: modalData.time.toISOString(),
+        time: time.toISOString(),
         id: modalMode === 'edit' ? modalData.id : Date.now(),
         logType: 'food',
       };
@@ -811,9 +812,10 @@ function LogsScreen() {
       }
       setFoodLog(updated);
     } else if (modalType === 'symptom') {
+      const time = modalData.time instanceof Date ? modalData.time : (modalData.time ? new Date(modalData.time) : new Date());
       const entry = {
         ...modalData,
-        time: modalData.time.toISOString(),
+        time: time.toISOString(),
         id: modalMode === 'edit' ? modalData.id : Date.now(),
         logType: 'symptom',
       };
@@ -826,10 +828,12 @@ function LogsScreen() {
       }
       setSymptomLog(updated);
     } else if (modalType === 'fast') {
+      const start = modalData.start instanceof Date ? modalData.start : (modalData.start ? new Date(modalData.start) : new Date());
+      const end = modalData.end instanceof Date ? modalData.end : (modalData.end ? new Date(modalData.end) : new Date());
       const entry = {
         ...modalData,
-        start: modalData.start.toISOString(),
-        end: modalData.end.toISOString(),
+        start: start.toISOString(),
+        end: end.toISOString(),
         id: modalMode === 'edit' ? modalData.id : Date.now(),
         logType: 'fast',
       };
@@ -899,18 +903,28 @@ function LogsScreen() {
     }
   }, [foodLog, setFoodLog]);
 
-  // Filtering
-  const today = new Date().toISOString().slice(0, 10);
-  const filterByDate = entry => {
-    if (!entry.time) return filterDate !== 'today'; // skip if missing time for 'today', include for 'all'
-    if (filterDate === 'today') return entry.time.slice(0, 10) === today;
-    return true;
-  };
-  const logs = [
+  // Build a unified logs array that includes all log types
+  const allLogs = [
     ...foodLog.map(e => ({ ...e, logType: 'food' })),
     ...symptomLog.map(e => ({ ...e, logType: 'symptom' })),
-  ].filter(e => (filterType === 'all' || e.logType === filterType) && filterByDate(e));
-  logs.sort((a, b) => new Date(b.time) - new Date(a.time));
+    ...fastLog.map(e => ({ ...e, logType: 'fast' })),
+  ];
+
+  // Filtering: for logs with 'time', use that; for logs with 'start', use that
+  const today = new Date().toISOString().slice(0, 10);
+  const logs = allLogs.filter(e => {
+    if (filterType !== 'all' && e.logType !== filterType) return false;
+    const dateStr = e.time || e.start;
+    if (!dateStr) return false;
+    if (filterDate === 'today') return dateStr.slice(0, 10) === today;
+    return true;
+  });
+  // Sort by time/start descending
+  logs.sort((a, b) => {
+    const aDate = new Date(a.time || a.start);
+    const bDate = new Date(b.time || b.start);
+    return bDate - aDate;
+  });
 
   return (
     <View style={styles.screen}>
@@ -930,22 +944,35 @@ function LogsScreen() {
         <Text style={styles.cardText}>No log entries.</Text>
       ) : (
         logs.map(entry => (
-          <View key={entry.id} style={styles.card}>
-            <Text style={styles.cardText}>
-              {entry.logType === 'food'
-                ? `${entry.type === 'meal' ? '🍽️ Meal' : '🥪 Snack'} at ${new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}${entry.note ? ` — ${entry.note}` : ''}`
-                : <View style={{ alignItems: 'center' }}>
-                    <Text style={styles.symptomLogEmoji}>
-                      {(SYMPTOM_TYPES.find(t => t.key === entry.type) || { emoji: '' }).emoji}
-                    </Text>
-                    <Text style={styles.symptomLogTime}>{entry.severity} — {new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                    {entry.note ? (
-                      <Text style={styles.symptomLogNote}>{entry.note}</Text>
-                    ) : null}
-                  </View>
-              }
-            </Text>
-          </View>
+          <Pressable key={entry.id} style={styles.card} onPress={() => openEditModal(entry)} accessibilityLabel="Edit log entry">
+            {entry.logType === 'food' ? (
+              <Text style={styles.cardText}>
+                {entry.type === 'meal' ? '🍽️ Meal' : '🥪 Snack'} at {new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}{entry.note ? ` — ${entry.note}` : ''}
+              </Text>
+            ) : entry.logType === 'symptom' ? (
+              <View style={{ alignItems: 'center' }}>
+                <Text style={styles.symptomLogEmoji}>
+                  {(SYMPTOM_TYPES.find(t => t.key === entry.type) || { emoji: '' }).emoji}
+                </Text>
+                <Text style={styles.symptomLogTime}>{entry.severity} — {new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                {entry.note ? (
+                  <Text style={styles.symptomLogNote}>{entry.note}</Text>
+                ) : null}
+              </View>
+            ) : entry.logType === 'fast' ? (
+              <View>
+                <Text style={styles.cardText}>
+                  ⏱️ Fast: {new Date(entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })} - {new Date(entry.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                </Text>
+                {entry.note ? <Text style={styles.cardText}>Note: {entry.note}</Text> : null}
+              </View>
+            ) : (
+              // Fallback for future/unknown log types
+              <Text style={styles.cardText}>
+                📝 Log: {entry.id} {entry.note ? `— ${entry.note}` : ''}
+              </Text>
+            )}
+          </Pressable>
         ))
       )}
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
