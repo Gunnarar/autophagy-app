@@ -36,14 +36,15 @@ export function FastingProvider({ children }) {
   }, [isFasting, fastStart]);
 
   // Start/stop fasting
-  const startFast = useCallback(async () => {
-    const now = Date.now();
-    await AsyncStorage.setItem('fastingStart', String(now));
-    setFastStart(now);
+  const startFast = useCallback(async (customStartTime) => {
+    const start = customStartTime ? customStartTime.getTime() : Date.now();
+    await AsyncStorage.setItem('fastingStart', String(start));
+    setFastStart(start);
     setIsFasting(true);
   }, []);
 
-  const stopFast = useCallback(async () => {
+  const stopFast = useCallback(async (customStopTime) => {
+    // Optionally, you could log the fast duration here using customStopTime and fastStart
     await AsyncStorage.removeItem('fastingStart');
     setFastStart(null);
     setIsFasting(false);

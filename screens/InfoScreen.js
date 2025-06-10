@@ -1,14 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function InfoScreen() {
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#eaf6f6' }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-      <Text style={styles.title}>Info</Text>
-      <View style={styles.card}>
-        <Text style={styles.cardText}>Personalized information and education will appear here based on your logs and schedule.</Text>
-      </View>
-    </ScrollView>
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={['#101c23', '#182c34']}
+        style={StyleSheet.absoluteFill}
+      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        <Text style={styles.title}>Info</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardText}>Personalized information and education will appear here based on your logs and schedule.</Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 

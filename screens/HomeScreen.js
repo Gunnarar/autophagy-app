@@ -1,15 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, ScrollView, Animated, Image } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useFasting } from '../contexts/FastingContext';
 import { useLogs } from '../contexts/LogsContext';
 import { formatTimeHM, MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 export default function HomeScreen() {
-  const { isFasting, fastElapsed, startFast, stopFast, FAST_GOAL_SECONDS } = useFasting();
-  const [fastModalVisible, setFastModalVisible] = useState(false);
-  const { foodLog, setFoodLog, symptomLog, setSymptomLog } = useLogs();
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog } = useLogs();
   const [foodModalVisible, setFoodModalVisible] = useState(false);
   const [foodType, setFoodType] = useState('meal');
   const [foodNote, setFoodNote] = useState('');
@@ -18,6 +16,13 @@ export default function HomeScreen() {
   const [severity, setSeverity] = useState('mild');
   const [symptomNote, setSymptomNote] = useState('');
   const scale = useRef(new Animated.Value(1)).current;
+  const [fastStopModalVisible, setFastStopModalVisible] = useState(false);
+  const [fastStopTime, setFastStopTime] = useState(new Date());
+  const [showFastStopPicker, setShowFastStopPicker] = useState(false);
+  const [fastStopNote, setFastStopNote] = useState('');
+  const [addModalVisible, setAddModalVisible] = useState(false);
+  const [addTime, setAddTime] = useState(new Date());
+  const [showAddTimePicker, setShowAddTimePicker] = useState(false);
   React.useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -27,9 +32,9 @@ export default function HomeScreen() {
     ).start();
   }, [scale]);
 
-  // Fasting timer display
-  const progress = Math.min(fastElapsed / FAST_GOAL_SECONDS, 1);
-  const remaining = Math.max(FAST_GOAL_SECONDS - fastElapsed, 0);
+  // Calculate fastingStart as the time of the last meal/snack in foodLog (or app start if none), and fastingElapsed as now - fastingStart.
+  const fastingStart = foodLog.length > 0 ? new Date(foodLog[0].time) : new Date();
+  const fastingElapsed = Math.floor((Date.now() - fastingStart) / 1000);
 
   // Calculate today's date string
   const today = new Date().toISOString().slice(0, 10);
@@ -38,8 +43,8 @@ export default function HomeScreen() {
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
 
   // Calculate ketone and autophagy status
-  const ketoneReached = fastElapsed >= 12 * 3600;
-  const autophagyReached = fastElapsed >= 16 * 3600;
+  const ketoneReached = fastingElapsed >= 12 * 3600;
+  const autophagyReached = fastingElapsed >= 16 * 3600;
 
   // Save food entry
   const handleSaveFood = () => {
@@ -71,6 +76,69 @@ export default function HomeScreen() {
     setSymptomNote('');
   };
 
+  // Save food entry with time
+  const handleSaveFoodWithTime = () => {
+    const entry = {
+      type: foodType,
+      time: addTime.toISOString(),
+      note: foodNote,
+      id: Date.now(),
+    };
+    setFoodLog([entry, ...foodLog]);
+    setFoodModalVisible(false);
+    setFoodType('meal');
+    setFoodNote('');
+    setAddTime(new Date());
+  };
+
+  // Save symptom entry with time
+  const handleSaveSymptomWithTime = () => {
+    const entry = {
+      type: symptomType,
+      severity,
+      time: addTime.toISOString(),
+      note: symptomNote,
+      id: Date.now(),
+    };
+    setSymptomLog([entry, ...symptomLog]);
+    setSymptomModalVisible(false);
+    setSymptomType('tremor');
+    setSeverity('mild');
+    setSymptomNote('');
+    setAddTime(new Date());
+  };
+
+  // Save fast entry
+  const handleSaveFast = () => {
+    setFastLog([
+      {
+        start: new Date(fastingStart).toISOString(),
+        end: new Date().toISOString(),
+        note: fastStopNote,
+        id: Date.now(),
+      },
+      ...fastLog,
+    ]);
+    setFastStopModalVisible(false);
+    setFastStopNote('');
+  };
+
+  // Save fast entry with time
+  const handleSaveFastWithTime = () => {
+    setFastLog([
+      {
+        start: addTime.toISOString(),
+        end: new Date().toISOString(),
+        note: fastStopNote,
+        id: Date.now(),
+      },
+      ...fastLog,
+    ]);
+    setFastStopModalVisible(false);
+    setFastStopNote('');
+    setAddTime(new Date());
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
@@ -90,21 +158,12 @@ export default function HomeScreen() {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Fasting</Text>
           <View style={{ alignItems: 'center', marginBottom: 12 }}>
-            <Text style={styles.fastingTime}>{formatTimeHM(fastElapsed)}</Text>
+            <Text style={styles.fastingTime}>{formatTimeHM(fastingElapsed)}</Text>
             <Text style={styles.cardText}>Elapsed</Text>
             <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
+              <View style={[styles.progressBarFill, { width: `${fastingElapsed / (16 * 3600) * 100}%` }]} />
             </View>
-            <Text style={styles.cardText}>{formatTimeHM(remaining)} remaining</Text>
-            {isFasting ? (
-              <Pressable style={[styles.modalButton, { marginTop: 16 }]} onPress={stopFast}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Stop Fasting</Text>
-              </Pressable>
-            ) : (
-              <Pressable style={[styles.modalButton, { marginTop: 16 }]} onPress={() => setFastModalVisible(true)}>
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Start Fasting</Text>
-              </Pressable>
-            )}
+            <Text style={styles.cardText}>{formatTimeHM(16 * 3600 - fastingElapsed)} remaining</Text>
           </View>
           {/* Milestones/stepper */}
           <View style={styles.milestoneRow}>
@@ -114,27 +173,18 @@ export default function HomeScreen() {
                   <MaterialCommunityIcons
                     name={MILESTONE_INFO[h].icon}
                     size={32}
-                    color={fastElapsed >= h * 3600 ? '#6bb3b6' : '#e0e0e0'}
+                    color={fastingElapsed >= h * 3600 ? '#6bb3b6' : '#e0e0e0'}
                     style={{ marginBottom: 4 }}
                   />
                 ) : (
-                  <Text style={{ fontSize: 32, marginBottom: 4, color: fastElapsed >= h * 3600 ? '#6bb3b6' : '#e0e0e0' }}>
+                  <Text style={{ fontSize: 32, marginBottom: 4, color: fastingElapsed >= h * 3600 ? '#6bb3b6' : '#e0e0e0' }}>
                     {MILESTONE_INFO[h].emoji}
                   </Text>
                 )}
-                <Text style={[styles.milestoneLabel, { fontWeight: 'bold', color: fastElapsed >= h * 3600 ? '#2d4d4d' : '#aaa', fontSize: 16 }]}>{h}h</Text>
+                <Text style={[styles.milestoneLabel, { fontWeight: 'bold', color: fastingElapsed >= h * 3600 ? '#2d4d4d' : '#aaa', fontSize: 16 }]}>{h}h</Text>
               </View>
             ))}
           </View>
-        </View>
-        {/* Quick Actions Row */}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
-          <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setFoodModalVisible(true)}>
-            <Text style={styles.quickActionText}>🍽️ Add Meal</Text>
-          </Pressable>
-          <Pressable style={[styles.quickActionButton, { marginRight: 8 }]} onPress={() => setSymptomModalVisible(true)}>
-            <Text style={styles.quickActionText}>🩺 Add Symptom</Text>
-          </Pressable>
         </View>
         {/* Today's Overview Row */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16, marginTop: 8 }}>
@@ -152,11 +202,6 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 24 }}>🩺</Text>
             <Text style={{ fontWeight: 'bold', color: '#2d4d4d' }}>{todaysSymptoms.length}</Text>
             <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Symptoms</Text>
-          </View>
-          <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: 24 }}>{isFasting ? '⏱️' : '✅'}</Text>
-            <Text style={{ fontWeight: 'bold', color: '#2d4d4d' }}>{isFasting ? 'Fasting' : 'Done'}</Text>
-            <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Fasting</Text>
           </View>
           <View style={{ alignItems: 'center' }}>
             <Text style={{ fontSize: 24, color: ketoneReached ? '#6bb3b6' : '#e0e0e0' }}>💧</Text>
@@ -196,7 +241,23 @@ export default function HomeScreen() {
                       accessibilityLabel="Food note input"
                     />
                   </View>
-                  <Pressable style={styles.modalButton} onPress={handleSaveFood} accessibilityLabel="Save meal entry">
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
+                  <Pressable
+                    style={[styles.modalButton, { marginBottom: 12 }]}
+                    onPress={() => setShowAddTimePicker(true)}
+                    accessibilityLabel="Edit date and time"
+                  >
+                    <Text style={{ color: '#fff' }}>{addTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={showAddTimePicker}
+                    mode="datetime"
+                    date={addTime}
+                    onConfirm={date => { setAddTime(date); setShowAddTimePicker(false); }}
+                    onCancel={() => setShowAddTimePicker(false)}
+                    is24Hour={true}
+                  />
+                  <Pressable style={styles.modalButton} onPress={handleSaveFoodWithTime} accessibilityLabel="Save meal entry">
                     <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
                   </Pressable>
                   <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setFoodModalVisible(false)} accessibilityLabel="Cancel">
@@ -272,7 +333,23 @@ export default function HomeScreen() {
                       accessibilityLabel="Symptom note input"
                     />
                   </View>
-                  <Pressable style={styles.modalButton} onPress={handleSaveSymptom} accessibilityLabel="Save symptom entry">
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
+                  <Pressable
+                    style={[styles.modalButton, { marginBottom: 12 }]}
+                    onPress={() => setShowAddTimePicker(true)}
+                    accessibilityLabel="Edit date and time"
+                  >
+                    <Text style={{ color: '#fff' }}>{addTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={showAddTimePicker}
+                    mode="datetime"
+                    date={addTime}
+                    onConfirm={date => { setAddTime(date); setShowAddTimePicker(false); }}
+                    onCancel={() => setShowAddTimePicker(false)}
+                    is24Hour={true}
+                  />
+                  <Pressable style={styles.modalButton} onPress={handleSaveSymptomWithTime} accessibilityLabel="Save symptom entry">
                     <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
                   </Pressable>
                   <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setSymptomModalVisible(false)} accessibilityLabel="Cancel">
@@ -283,7 +360,105 @@ export default function HomeScreen() {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+        {/* Fasting Stop Modal */}
+        <Modal visible={fastStopModalVisible} transparent animationType="fade" onRequestClose={() => setFastStopModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => setFastStopModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Stop Fasting</Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
+                  <Pressable
+                    style={[styles.modalButton, { marginBottom: 12 }]}
+                    onPress={() => setShowAddTimePicker(true)}
+                    accessibilityLabel="Edit start time"
+                  >
+                    <Text style={{ color: '#fff' }}>{addTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={showAddTimePicker}
+                    mode="datetime"
+                    date={addTime}
+                    onConfirm={date => { setAddTime(date); setShowAddTimePicker(false); }}
+                    onCancel={() => setShowAddTimePicker(false)}
+                    is24Hour={true}
+                  />
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                  <View style={{ width: '100%', marginBottom: 16 }}>
+                    <TextInput
+                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
+                      numberOfLines={1}
+                      onChangeText={setFastStopNote}
+                      value={fastStopNote}
+                      placeholder="e.g. interrupted, completed, etc."
+                      accessibilityLabel="Fast note input"
+                    />
+                  </View>
+                  <Pressable style={styles.modalButton} onPress={handleSaveFastWithTime} accessibilityLabel="Stop fasting">
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Stop</Text>
+                  </Pressable>
+                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setFastStopModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
       </ScrollView>
+      {/* Floating + button */}
+      <Pressable
+        style={{
+          position: 'absolute',
+          right: 24,
+          bottom: 36,
+          backgroundColor: '#6bb3b6',
+          borderRadius: 32,
+          width: 64,
+          height: 64,
+          alignItems: 'center',
+          justifyContent: 'center',
+          shadowColor: '#000',
+          shadowOpacity: 0.2,
+          shadowRadius: 8,
+          elevation: 6,
+        }}
+        onPress={() => setAddModalVisible(true)}
+        accessibilityLabel="Add log entry"
+      >
+        <Ionicons name="add" size={36} color="#fff" />
+      </Pressable>
+      {/* Bottom action sheet/modal for add options */}
+      <Modal visible={addModalVisible} transparent animationType="slide" onRequestClose={() => setAddModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setAddModalVisible(false)}>
+          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 }}>
+                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2d4d4d', marginBottom: 16, textAlign: 'center' }}>Add Entry</Text>
+                {[
+                  { key: 'meal', label: 'Meal', icon: <MaterialCommunityIcons name="food" size={28} color="#6bb3b6" />, onPress: () => { setFoodType('meal'); setFoodModalVisible(true); setAddModalVisible(false); } },
+                  { key: 'snack', label: 'Snack', icon: <MaterialCommunityIcons name="food-apple" size={28} color="#6bb3b6" />, onPress: () => { setFoodType('snack'); setFoodModalVisible(true); setAddModalVisible(false); } },
+                  { key: 'symptom', label: 'Symptom', icon: <MaterialCommunityIcons name="stethoscope" size={28} color="#6bb3b6" />, onPress: () => { setSymptomModalVisible(true); setAddModalVisible(false); } },
+                  { key: 'fast', label: 'Fast', icon: <MaterialCommunityIcons name="timer-sand" size={28} color="#6bb3b6" />, onPress: () => { setFastStopModalVisible(true); setAddModalVisible(false); } },
+                ].map(opt => (
+                  <Pressable
+                    key={opt.key}
+                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}
+                    onPress={opt.onPress}
+                    accessibilityLabel={`Add ${opt.label}`}
+                  >
+                    {opt.icon}
+                    <Text style={{ fontSize: 18, color: '#2d4d4d', marginLeft: 16 }}>{opt.label}</Text>
+                  </Pressable>
+                ))}
+                <Pressable style={{ marginTop: 12, alignItems: 'center' }} onPress={() => setAddModalVisible(false)} accessibilityLabel="Cancel add entry">
+                  <Text style={{ color: '#6bb3b6', fontWeight: 'bold', fontSize: 16 }}>Cancel</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }

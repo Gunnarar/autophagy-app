@@ -2,7 +2,7 @@
 
 This is the autophagy app for https://www.genesis4pd.com/pd-protocols.  Goals of the app are as follows:
 
-Measuring autophagy, particularly in the context of an app for your Genesis Health for Parkinson’s Disease business, is challenging because autophagy is a complex cellular process that cannot be directly measured in real-time with consumer-grade technology. However, you can incorporate proxy metrics and user-input data that are scientifically associated with autophagy, especially tailored for Parkinson’s patients. Below are the primary methods to estimate or track autophagy in an app, along with considerations for implementation and relevance to Parkinson’s disease.
+Measuring autophagy, particularly in the context of an app for your Genesis Health for Parkinson's Disease business, is challenging because autophagy is a complex cellular process that cannot be directly measured in real-time with consumer-grade technology. However, you can incorporate proxy metrics and user-input data that are scientifically associated with autophagy, especially tailored for Parkinson's patients. Below are the primary methods to estimate or track autophagy in an app, along with considerations for implementation and relevance to Parkinson's disease.
 1. Fasting-Based Tracking (Proxy for Autophagy Induction)
 How It Works: Autophagy is strongly induced by nutrient deprivation, particularly during prolonged fasting (e.g., intermittent fasting or extended fasting). Studies suggest autophagy ramps up significantly after 16–24 hours of fasting, depending on individual factors.
 App Implementation:
@@ -54,3 +54,55 @@ Images 1 through 4 are screenshots from applications that we want to take inspir
 - Speech changes
 - Writing changes
 - Nonmotor symptoms
+
+## Prioritized Roadmap
+
+### Top Priority (Core Functionality & Accessibility)
+- **Fasting-Based Tracking**
+  - Fasting timer (start/stop, log periods, see history)
+  - Fasting progress metrics (autophagy "windows")
+  - Ongoing fast clearly shown on Home
+  - **Accessibility:** Large fonts, high contrast, big touch targets, screen reader support
+- **Dietary/Food Logging**
+  - Log meals/snacks with time, notes, and (optionally) macronutrients
+  - Simple, fast entry (floating + button, time picker)
+  - **Core symptoms logging** (tremor, bradykinesia, rigidity, etc.)
+- **Symptom Logging**
+  - Log symptoms with type, severity, time, and notes
+  - Filter and review symptom history
+- **Logs & Filtering**
+  - Unified log view with pill-style filters (All, Food, Symptoms, Fasting)
+  - Highlight filtered results, but keep all visible for context
+- **Feedback & Guidance**
+  - Friendly empty states ("No logs yet, tap + to add your first!")
+  - Success feedback (toast/banner on add/edit/delete)
+  - Error handling (user-friendly messages)
+
+### High Value (User Engagement & Medical Relevance)
+- **Reminders & Notifications**
+  - Custom reminders for fasting, meals, symptoms, or medication
+- **Data Visualization**
+  - Simple charts/timelines for fasting, symptoms, and food patterns
+  - Streaks, milestones, or "longest fast" badges
+- **Personalization**
+  - Customizable quick actions (if reintroduced)
+  - Large text/dark mode toggle in Profile
+- **Medical Safety**
+  - Medication logging (optional, with warnings for fasting/med conflicts)
+  - Export logs as CSV/PDF for healthcare providers
+
+### Advanced/Optional (For Future)
+- **Ketone Tracking**
+  - Manual input or device integration for ketone levels
+  - Feedback on autophagy likelihood
+- **Biomarker Tracking**
+  - Manual input of lab results (for advanced users)
+  - Educational content about biomarkers
+- **Offline Support & Sync**
+  - Local-first data, sync when online
+- **Theming & Delight**
+  - Subtle animations, Genesis4PD color palette, dark/light mode
+
+### Inspiration & Design
+- Take UI/UX inspiration from referenced apps and screenshots
+- Use Genesis4PD color palette for branding and comfort

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, ScrollView } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function SymptomsScreen() {
   const { symptomLog, setSymptomLog } = useLogs();
@@ -62,131 +63,137 @@ export default function SymptomsScreen() {
   const todaysEntries = symptomLog.filter(e => e.time.slice(0, 10) === today);
 
   return (
-    <View style={styles.screen}>
-      <Text style={styles.title}>Symptoms</Text>
-      <View style={styles.card}>
-        <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setModalVisible(true)}>
-          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Symptom</Text>
-        </Pressable>
-        {todaysEntries.length === 0 ? (
-          <Text style={styles.cardText}>No symptoms logged today.</Text>
-        ) : (
-          todaysEntries.map((entry, idx) => {
-            const typeObj = SYMPTOM_TYPES.find(t => t.key === entry.type);
-            return (
-              <Pressable
-                key={entry.id}
-                onPress={() => handleEdit(symptomLog.findIndex(e => e.id === entry.id))}
-                onLongPress={() => handleDelete(symptomLog.findIndex(e => e.id === entry.id))}
-                style={{ paddingVertical: 6 }}
-                accessibilityLabel={`Edit or delete symptom entry: ${typeObj ? typeObj.label : entry.type} at ${new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-              >
-                <View style={{ marginBottom: 2, alignItems: 'center' }}>
-                  <Text style={styles.symptomLogEmoji}>
-                    {typeObj ? typeObj.emoji : ''}
-                  </Text>
-                  <Text style={styles.symptomLogTime}>{entry.severity} — {new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                  {entry.note ? (
-                    <Text style={styles.symptomLogNote}>{entry.note}</Text>
-                  ) : null}
-                </View>
-              </Pressable>
-            );
-          })
-        )}
-      </View>
-      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Symptom' : 'Add Symptom'}</Text>
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
-                <View style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-evenly',
-                  alignItems: 'center',
-                  marginBottom: 8,
-                  width: '100%',
-                  paddingHorizontal: 8
-                }}>
-                  {SYMPTOM_TYPES.map(t => (
-                    <Pressable
-                      key={t.key}
-                      style={[
-                        {
-                          borderRadius: 18,
-                          width: 36,
-                          height: 36,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          backgroundColor: symptomType === t.key ? '#eaf6f6' : 'transparent',
-                          borderWidth: symptomType === t.key ? 2 : 0,
-                          borderColor: symptomType === t.key ? '#6bb3b6' : 'transparent'
-                        }
-                      ]}
-                      onPress={() => setSymptomType(t.key)}
-                      accessibilityLabel={t.label}
-                    >
-                      <Text style={{ fontSize: 20, textAlign: 'center' }}>{t.emoji}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <Text style={{ textAlign: 'center', fontSize: 16, color: '#2d4d4d', marginBottom: 12 }}>
-                  {SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}
-                </Text>
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Severity:</Text>
-                <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-                  {SEVERITIES.map(s => (
-                    <Pressable
-                      key={s.key}
-                      style={[styles.foodTypeButton, severity === s.key && styles.foodTypeButtonActive]}
-                      onPress={() => setSeverity(s.key)}
-                      accessibilityLabel={s.label}
-                    >
-                      <Text style={{ fontSize: 16 }}>{s.label}</Text>
-                    </Pressable>
-                  ))}
-                </View>
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={['#101c23', '#182c34']}
+        style={StyleSheet.absoluteFill}
+      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        <Text style={styles.title}>Symptoms</Text>
+        <View style={styles.card}>
+          <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setModalVisible(true)}>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Symptom</Text>
+          </Pressable>
+          {todaysEntries.length === 0 ? (
+            <Text style={styles.cardText}>No symptoms logged today.</Text>
+          ) : (
+            todaysEntries.map((entry, idx) => {
+              const typeObj = SYMPTOM_TYPES.find(t => t.key === entry.type);
+              return (
                 <Pressable
-                  style={[styles.modalButton, { marginBottom: 12 }]}
-                  onPress={() => setPickerMode(true)}
-                  accessibilityLabel="Edit time"
+                  key={entry.id}
+                  onPress={() => handleEdit(symptomLog.findIndex(e => e.id === entry.id))}
+                  onLongPress={() => handleDelete(symptomLog.findIndex(e => e.id === entry.id))}
+                  style={{ paddingVertical: 6 }}
+                  accessibilityLabel={`Edit or delete symptom entry: ${typeObj ? typeObj.label : entry.type} at ${new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                 >
-                  <Text style={{ color: '#fff' }}>Time: {symptomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                  <View style={{ marginBottom: 2, alignItems: 'center' }}>
+                    <Text style={styles.symptomLogEmoji}>
+                      {typeObj ? typeObj.emoji : ''}
+                    </Text>
+                    <Text style={styles.symptomLogTime}>{entry.severity} — {new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    {entry.note ? (
+                      <Text style={styles.symptomLogNote}>{entry.note}</Text>
+                    ) : null}
+                  </View>
                 </Pressable>
-                <DateTimePickerModal
-                  isVisible={pickerMode}
-                  mode="time"
-                  date={symptomTime}
-                  onConfirm={date => { setSymptomTime(date); setPickerMode(false); }}
-                  onCancel={() => setPickerMode(false)}
-                  is24Hour={true}
-                />
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                <View style={{ width: '100%', marginBottom: 16 }}>
-                  <TextInput
-                    style={{
-                      borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40
-                    }}
-                    numberOfLines={1}
-                    onChangeText={setSymptomNote}
-                    value={symptomNote}
-                    placeholder="e.g. after exercise, before meds"
-                    accessibilityLabel="Symptom note input"
+              );
+            })
+          )}
+        </View>
+        <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Symptom' : 'Add Symptom'}</Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
+                  <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-evenly',
+                    alignItems: 'center',
+                    marginBottom: 8,
+                    width: '100%',
+                    paddingHorizontal: 8
+                  }}>
+                    {SYMPTOM_TYPES.map(t => (
+                      <Pressable
+                        key={t.key}
+                        style={[
+                          {
+                            borderRadius: 18,
+                            width: 36,
+                            height: 36,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            backgroundColor: symptomType === t.key ? '#eaf6f6' : 'transparent',
+                            borderWidth: symptomType === t.key ? 2 : 0,
+                            borderColor: symptomType === t.key ? '#6bb3b6' : 'transparent'
+                          }
+                        ]}
+                        onPress={() => setSymptomType(t.key)}
+                        accessibilityLabel={t.label}
+                      >
+                        <Text style={{ fontSize: 20, textAlign: 'center' }}>{t.emoji}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <Text style={{ textAlign: 'center', fontSize: 16, color: '#2d4d4d', marginBottom: 12 }}>
+                    {SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}
+                  </Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Severity:</Text>
+                  <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+                    {SEVERITIES.map(s => (
+                      <Pressable
+                        key={s.key}
+                        style={[styles.foodTypeButton, severity === s.key && styles.foodTypeButtonActive]}
+                        onPress={() => setSeverity(s.key)}
+                        accessibilityLabel={s.label}
+                      >
+                        <Text style={{ fontSize: 16 }}>{s.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <Pressable
+                    style={[styles.modalButton, { marginBottom: 12 }]}
+                    onPress={() => setPickerMode(true)}
+                    accessibilityLabel="Edit time"
+                  >
+                    <Text style={{ color: '#fff' }}>Time: {symptomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={pickerMode}
+                    mode="time"
+                    date={symptomTime}
+                    onConfirm={date => { setSymptomTime(date); setPickerMode(false); }}
+                    onCancel={() => setPickerMode(false)}
+                    is24Hour={true}
                   />
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                  <View style={{ width: '100%', marginBottom: 16 }}>
+                    <TextInput
+                      style={{
+                        borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40
+                      }}
+                      numberOfLines={1}
+                      onChangeText={setSymptomNote}
+                      value={symptomNote}
+                      placeholder="e.g. after exercise, before meds"
+                      accessibilityLabel="Symptom note input"
+                    />
+                  </View>
+                  <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save symptom entry">
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                  </Pressable>
+                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                  </Pressable>
                 </View>
-                <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save symptom entry">
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                </Pressable>
-                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
-                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </ScrollView>
     </View>
   );
 }

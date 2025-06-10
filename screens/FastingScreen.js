@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, ScrollView } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function FastingScreen() {
   const { fastLog, setFastLog } = useLogs();
@@ -53,90 +54,96 @@ export default function FastingScreen() {
   };
 
   return (
-    <View style={styles.screen}>
-      <Text style={styles.title}>Fasting Log</Text>
-      <View style={styles.card}>
-        <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setModalVisible(true)}>
-          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Fast</Text>
-        </Pressable>
-        {fastLog.length === 0 ? (
-          <Text style={styles.cardText}>No fasts logged.</Text>
-        ) : (
-          fastLog.map((entry, idx) => (
-            <Pressable
-              key={entry.id}
-              onPress={() => handleEdit(idx)}
-              onLongPress={() => handleDelete(idx)}
-              style={{ paddingVertical: 6 }}
-              accessibilityLabel={`Edit or delete fast entry: ${new Date(entry.start).toLocaleString()} - ${new Date(entry.end).toLocaleString()}`}
-            >
-              <View style={{ marginBottom: 2 }}>
-                <Text style={styles.cardText}>
-                  Start: {new Date(entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
-                </Text>
-                <Text style={styles.cardText}>
-                  End: {new Date(entry.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
-                </Text>
-                {entry.note ? (
-                  <Text style={styles.cardText}>Note: {entry.note}</Text>
-                ) : null}
-              </View>
-            </Pressable>
-          ))
-        )}
-      </View>
-      <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Fast' : 'Add Fast'}</Text>
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
-                <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setPickerMode('start')}>
-                  <Text style={{ color: '#fff' }}>{fastStart.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                </Pressable>
-                <DateTimePickerModal
-                  isVisible={pickerMode === 'start'}
-                  mode="datetime"
-                  date={fastStart}
-                  onConfirm={date => { setFastStart(date); setPickerMode(null); }}
-                  onCancel={() => setPickerMode(null)}
-                  is24Hour={true}
-                />
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>End Time:</Text>
-                <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setPickerMode('end')}>
-                  <Text style={{ color: '#fff' }}>{fastEnd.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                </Pressable>
-                <DateTimePickerModal
-                  isVisible={pickerMode === 'end'}
-                  mode="datetime"
-                  date={fastEnd}
-                  onConfirm={date => { setFastEnd(date); setPickerMode(null); }}
-                  onCancel={() => setPickerMode(null)}
-                  is24Hour={true}
-                />
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                <View style={{ width: '100%', marginBottom: 16 }}>
-                  <TextInput
-                    style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
-                    numberOfLines={1}
-                    onChangeText={setFastNote}
-                    value={fastNote}
-                    placeholder="e.g. long fast, interrupted, etc."
-                    accessibilityLabel="Fast note input"
-                  />
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={['#101c23', '#182c34']}
+        style={StyleSheet.absoluteFill}
+      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        <Text style={styles.title}>Fasting Log</Text>
+        <View style={styles.card}>
+          <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setModalVisible(true)}>
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Fast</Text>
+          </Pressable>
+          {fastLog.length === 0 ? (
+            <Text style={styles.cardText}>No fasts logged.</Text>
+          ) : (
+            fastLog.map((entry, idx) => (
+              <Pressable
+                key={entry.id}
+                onPress={() => handleEdit(idx)}
+                onLongPress={() => handleDelete(idx)}
+                style={{ paddingVertical: 6 }}
+                accessibilityLabel={`Edit or delete fast entry: ${new Date(entry.start).toLocaleString()} - ${new Date(entry.end).toLocaleString()}`}
+              >
+                <View style={{ marginBottom: 2 }}>
+                  <Text style={styles.cardText}>
+                    Start: {new Date(entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                  </Text>
+                  <Text style={styles.cardText}>
+                    End: {new Date(entry.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                  </Text>
+                  {entry.note ? (
+                    <Text style={styles.cardText}>Note: {entry.note}</Text>
+                  ) : null}
                 </View>
-                <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save fast entry">
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                </Pressable>
-                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
-                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+              </Pressable>
+            ))
+          )}
+        </View>
+        <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Fast' : 'Add Fast'}</Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
+                  <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setPickerMode('start')}>
+                    <Text style={{ color: '#fff' }}>{fastStart.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={pickerMode === 'start'}
+                    mode="datetime"
+                    date={fastStart}
+                    onConfirm={date => { setFastStart(date); setPickerMode(null); }}
+                    onCancel={() => setPickerMode(null)}
+                    is24Hour={true}
+                  />
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>End Time:</Text>
+                  <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setPickerMode('end')}>
+                    <Text style={{ color: '#fff' }}>{fastEnd.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={pickerMode === 'end'}
+                    mode="datetime"
+                    date={fastEnd}
+                    onConfirm={date => { setFastEnd(date); setPickerMode(null); }}
+                    onCancel={() => setPickerMode(null)}
+                    is24Hour={true}
+                  />
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                  <View style={{ width: '100%', marginBottom: 16 }}>
+                    <TextInput
+                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
+                      numberOfLines={1}
+                      onChangeText={setFastNote}
+                      value={fastNote}
+                      placeholder="e.g. long fast, interrupted, etc."
+                      accessibilityLabel="Fast note input"
+                    />
+                  </View>
+                  <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save fast entry">
+                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                  </Pressable>
+                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </ScrollView>
     </View>
   );
 }

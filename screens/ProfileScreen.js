@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, ScrollView } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProfileScreen() {
   const [scheduleModalVisible, setScheduleModalVisible] = useState(false);
@@ -22,45 +23,51 @@ export default function ProfileScreen() {
     if (fastingSchedule) AsyncStorage.setItem('fastingSchedule', fastingSchedule);
   }, [fastingSchedule]);
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: '#eaf6f6' }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-      <Text style={styles.title}>Profile</Text>
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>Fasting Schedule</Text>
-        <Text style={styles.cardText}>
-          {fastingSchedule ? `Selected: ${SCHEDULES.find(s => s.value === fastingSchedule)?.label || fastingSchedule}` : 'No schedule selected'}
-        </Text>
-        <Pressable style={styles.modalButton} onPress={() => setScheduleModalVisible(true)} accessibilityLabel="Set fasting schedule">
-          <Text style={{ color: '#fff', fontWeight: 'bold' }}>{fastingSchedule ? 'Change' : 'Set'} Schedule</Text>
-        </Pressable>
-      </View>
-      <Modal visible={scheduleModalVisible} transparent animationType="fade" onRequestClose={() => setScheduleModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setScheduleModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Pick a Fasting Schedule</Text>
-                {SCHEDULES.map(s => (
-                  <Pressable
-                    key={s.value}
-                    style={[styles.modalButton, {
-                      marginBottom: 12,
-                      backgroundColor: fastingSchedule === s.value ? s.color : '#eaf6f6',
-                    }]}
-                    onPress={() => { setFastingSchedule(s.value); setScheduleModalVisible(false); }}
-                    accessibilityLabel={`Select ${s.label}`}
-                  >
-                    <Text style={{ color: fastingSchedule === s.value ? '#fff' : '#2d4d4d', fontWeight: 'bold', fontSize: 18 }}>{s.label}</Text>
+    <View style={{ flex: 1 }}>
+      <LinearGradient
+        colors={['#101c23', '#182c34']}
+        style={StyleSheet.absoluteFill}
+      />
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+        <Text style={styles.title}>Profile</Text>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Fasting Schedule</Text>
+          <Text style={styles.cardText}>
+            {fastingSchedule ? `Selected: ${SCHEDULES.find(s => s.value === fastingSchedule)?.label || fastingSchedule}` : 'No schedule selected'}
+          </Text>
+          <Pressable style={styles.modalButton} onPress={() => setScheduleModalVisible(true)} accessibilityLabel="Set fasting schedule">
+            <Text style={{ color: '#fff', fontWeight: 'bold' }}>{fastingSchedule ? 'Change' : 'Set'} Schedule</Text>
+          </Pressable>
+        </View>
+        <Modal visible={scheduleModalVisible} transparent animationType="fade" onRequestClose={() => setScheduleModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => setScheduleModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Pick a Fasting Schedule</Text>
+                  {SCHEDULES.map(s => (
+                    <Pressable
+                      key={s.value}
+                      style={[styles.modalButton, {
+                        marginBottom: 12,
+                        backgroundColor: fastingSchedule === s.value ? s.color : '#eaf6f6',
+                      }]}
+                      onPress={() => { setFastingSchedule(s.value); setScheduleModalVisible(false); }}
+                      accessibilityLabel={`Select ${s.label}`}
+                    >
+                      <Text style={{ color: fastingSchedule === s.value ? '#fff' : '#2d4d4d', fontWeight: 'bold', fontSize: 18 }}>{s.label}</Text>
+                    </Pressable>
+                  ))}
+                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setScheduleModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
                   </Pressable>
-                ))}
-                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setScheduleModalVisible(false)} accessibilityLabel="Cancel">
-                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-    </ScrollView>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </ScrollView>
+    </View>
   );
 }
 
