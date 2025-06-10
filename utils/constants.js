@@ -78,4 +78,27 @@ export const SEVERITIES = [
   { key: 'mild', label: 'Mild' },
   { key: 'moderate', label: 'Moderate' },
   { key: 'severe', label: 'Severe' },
+];
+
+export const AUTOPHAGY_LEVELS = [
+  {
+    name: 'Beginner',
+    challenges: [24, 48, 72], // hours
+  },
+  {
+    name: 'Apprentice',
+    challenges: [96, 120, 144, 168],
+  },
+  {
+    name: 'Professional',
+    challenges: [192, 216, 240, 264],
+  },
+  {
+    name: 'DeepSeek',
+    challenges: [288, 312, 336, 360],
+  },
+  {
+    name: 'Master',
+    challenges: [384], // 384+ hours
+  },
 ]; 

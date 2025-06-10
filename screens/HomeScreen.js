@@ -3,11 +3,14 @@ import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, Tex
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLogs } from '../contexts/LogsContext';
-import { formatTimeHM, MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
+import { formatTimeHM, MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES, AUTOPHAGY_LEVELS } from '../utils/constants';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { useNavigation } from '@react-navigation/native';
 
 export default function HomeScreen() {
-  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog } = useLogs();
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useAutophagyStatus } = useLogs();
+  const navigation = useNavigation();
+  const { currentLevel, nextChallenge, completed } = useAutophagyStatus();
   const [foodModalVisible, setFoodModalVisible] = useState(false);
   const [foodType, setFoodType] = useState('meal');
   const [foodNote, setFoodNote] = useState('');
@@ -45,6 +48,21 @@ export default function HomeScreen() {
   // Calculate ketone and autophagy status
   const ketoneReached = fastingElapsed >= 12 * 3600;
   const autophagyReached = fastingElapsed >= 16 * 3600;
+
+  // Determine if badge should be shown (after first challenge)
+  const badgeVisible = Object.values(completed).some(arr => arr.length > 0);
+  // Find progress toward next challenge
+  let progress = 0;
+  if (nextChallenge) {
+    // Find the longest fast in fastLog
+    const maxFast = fastLog.reduce((max, entry) => {
+      const start = new Date(entry.start);
+      const end = new Date(entry.end);
+      const durationHrs = (end - start) / 3600000;
+      return Math.max(max, durationHrs);
+    }, 0);
+    progress = Math.min(1, maxFast / nextChallenge);
+  }
 
   // Save food entry
   const handleSaveFood = () => {
@@ -154,6 +172,39 @@ export default function HomeScreen() {
           />
         </View>
         <Text style={styles.title}>Dashboard</Text>
+        {/* Autophagy Badge */}
+        {badgeVisible && (
+          <Pressable
+            style={{ alignSelf: 'center', marginBottom: 16, alignItems: 'center' }}
+            onPress={() => navigation.navigate('Profile')}
+            accessibilityLabel="View autophagy level details"
+          >
+            <View style={{
+              backgroundColor: '#6bb3b6',
+              borderRadius: 48,
+              padding: 16,
+              alignItems: 'center',
+              shadowColor: '#000',
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              elevation: 4,
+              minWidth: 120,
+            }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>{currentLevel} Autophagy</Text>
+              {nextChallenge && (
+                <View style={{ width: 80, height: 8, backgroundColor: '#eaf6f6', borderRadius: 4, marginTop: 8, marginBottom: 4 }}>
+                  <View style={{ width: `${progress * 80}px`, height: 8, backgroundColor: '#89ce00', borderRadius: 4 }} />
+                </View>
+              )}
+              {nextChallenge && (
+                <Text style={{ color: '#fff', fontSize: 12 }}>Next: {nextChallenge}h fast</Text>
+              )}
+              {!nextChallenge && (
+                <Text style={{ color: '#fff', fontSize: 12 }}>All challenges complete!</Text>
+              )}
+            </View>
+          </Pressable>
+        )}
         {/* Fasting Timer + Milestones Card */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Fasting</Text>
