@@ -15,12 +15,19 @@ export default function ProfileScreen() {
   const [reminderType, setReminderType] = useState('fasting');
   const [reminderTime, setReminderTime] = useState('');
   const [reminderMessage, setReminderMessage] = useState('');
+  const [dietPreference, setDietPreference] = useState('Standard');
   const SCHEDULES = [
     { label: '12:12 (12h fast, 12h eating)', value: '12:12', color: '#6bb3b6' },
     { label: '14:10 (14h fast, 10h eating)', value: '14:10', color: '#4d6d6d' },
     { label: '16:8 (16h fast, 8h eating)', value: '16:8', color: '#2d4d4d' },
     { label: '18:6 (18h fast, 6h eating)', value: '18:6', color: '#1a2323' },
     { label: '20:4 (20h fast, 4h eating)', value: '20:4', color: '#000' },
+  ];
+  const DIETS = [
+    { label: 'Standard', value: 'Standard' },
+    { label: 'Low-Carb', value: 'Low-Carb' },
+    { label: 'Keto', value: 'Keto' },
+    { label: 'Carnivore', value: 'Carnivore' },
   ];
   useEffect(() => {
     (async () => {
@@ -34,6 +41,8 @@ export default function ProfileScreen() {
       if (kt) setKetoneTracking(kt === 'true');
       const storedReminders = await AsyncStorage.getItem('reminders');
       if (storedReminders) setReminders(JSON.parse(storedReminders));
+      const storedDiet = await AsyncStorage.getItem('dietPreference');
+      if (storedDiet) setDietPreference(storedDiet);
     })();
   }, []);
   useEffect(() => {
@@ -43,6 +52,7 @@ export default function ProfileScreen() {
     AsyncStorage.setItem('ketoneTracking', String(ketoneTracking));
   }, [fastingSchedule, darkMode, largeText, ketoneTracking]);
   useEffect(() => { AsyncStorage.setItem('reminders', JSON.stringify(reminders)); }, [reminders]);
+  useEffect(() => { AsyncStorage.setItem('dietPreference', dietPreference); }, [dietPreference]);
 
   // Placeholder for scheduling notifications
   const scheduleReminder = async (type, time, message) => {
@@ -91,6 +101,22 @@ export default function ProfileScreen() {
           <Pressable style={styles.modalButton} onPress={() => setReminderModalVisible(true)} accessibilityLabel="Add reminder">
             <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Reminder</Text>
           </Pressable>
+        </View>
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Dietary Preference</Text>
+          <Text style={styles.cardText}>Current: {dietPreference}</Text>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
+            {DIETS.map(d => (
+              <Pressable
+                key={d.value}
+                style={[styles.modalButton, { backgroundColor: dietPreference === d.value ? '#6bb3b6' : '#eaf6f6', marginRight: 8, marginBottom: 8 }]}
+                onPress={() => setDietPreference(d.value)}
+                accessibilityLabel={`Select ${d.label} diet`}
+              >
+                <Text style={{ color: dietPreference === d.value ? '#fff' : '#2d4d4d', fontWeight: 'bold' }}>{d.label}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Personalization</Text>

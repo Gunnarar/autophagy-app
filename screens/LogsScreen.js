@@ -24,6 +24,13 @@ export default function LogsScreen() {
   const [editSymptomType, setEditSymptomType] = useState('tremor');
   const [editSeverity, setEditSeverity] = useState('mild');
   const [showEditTimePicker, setShowEditTimePicker] = useState(false);
+  const [editFastModalVisible, setEditFastModalVisible] = useState(false);
+  const [editFast, setEditFast] = useState(null);
+  const [editFastStart, setEditFastStart] = useState(new Date());
+  const [editFastEnd, setEditFastEnd] = useState(new Date());
+  const [editFastNote, setEditFastNote] = useState('');
+  const [showEditFastStartPicker, setShowEditFastStartPicker] = useState(false);
+  const [showEditFastEndPicker, setShowEditFastEndPicker] = useState(false);
 
   // Helper to open modal for add
   const openAddModal = (type) => {
@@ -209,6 +216,7 @@ export default function LogsScreen() {
             if (filterType === 'symptom' && period.symptoms && period.symptoms.length > 0) highlight = true;
             if (filterType === 'fasting' && idx === 0) highlight = true; // latest/ongoing fast
             // For 'all', no highlight
+            const isOngoing = !period.endFood;
             return (
               <View
                 key={idx}
@@ -217,12 +225,36 @@ export default function LogsScreen() {
                   { borderLeftWidth: 6, borderLeftColor: highlight ? '#e67e22' : '#6bb3b6', marginBottom: 24, backgroundColor: highlight ? '#fffbe9' : '#fff' }
                 ]}
               >
-                <Text style={styles.cardTitle}>
-                  {period.endFood
-                    ? `Fasting: ${period.start ? new Date(period.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : 'App Start'} - ${new Date(period.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })} ended with: ${period.endFood.type === 'meal' ? 'Meal' : 'Snack'}${period.endFood.note ? ' — ' + period.endFood.note : ''}`
-                    : `Ongoing fast, started at ${period.start ? new Date(period.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : 'App Start'}`
-                  }
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text style={styles.cardTitle}>
+                    {period.endFood
+                      ? `Fasting: ${period.start ? new Date(period.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : 'App Start'} - ${new Date(period.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })} ended with: `
+                      : `Ongoing fast, started at ${period.start ? new Date(period.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : 'App Start'}`
+                    }
+                    {period.endFood && (
+                      <Pressable onPress={() => {
+                        setModalType(period.endFood.type);
+                        setModalMode('edit');
+                        setModalData({ ...period.endFood });
+                        setModalVisible(true);
+                      }} accessibilityLabel="Edit food entry">
+                        <Text style={{ textDecorationLine: 'underline', color: '#6bb3b6', fontWeight: 'bold' }}>{period.endFood.type === 'meal' ? 'Meal' : 'Snack'}{period.endFood.note ? ' — ' + period.endFood.note : ''}</Text>
+                      </Pressable>
+                    )}
+                  </Text>
+                  {/* Edit fast button (not for ongoing fast) */}
+                  {!isOngoing && (
+                    <Pressable onPress={() => {
+                      setEditFast(period);
+                      setEditFastStart(period.start ? new Date(period.start) : new Date());
+                      setEditFastEnd(period.end ? new Date(period.end) : new Date());
+                      setEditFastNote(period.endFood && period.endFood.note ? period.endFood.note : '');
+                      setEditFastModalVisible(true);
+                    }} accessibilityLabel="Edit fast entry" style={{ marginLeft: 8 }}>
+                      <Ionicons name="pencil" size={20} color="#6bb3b6" />
+                    </Pressable>
+                  )}
+                </View>
                 <Text style={styles.cardText}>Duration: {formatTimeHM(Math.floor((period.end - (period.start || period.end)) / 1000))}</Text>
                 {period.symptoms.length > 0 ? (
                   <View style={{ marginTop: 8 }}>
@@ -493,6 +525,82 @@ export default function LogsScreen() {
                     </Pressable>
                   </View>
                   <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setEditModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                  </Pressable>
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        <Modal visible={editFastModalVisible} transparent animationType="fade" onRequestClose={() => setEditFastModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => setEditFastModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Edit Fast</Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
+                  <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setShowEditFastStartPicker(true)}>
+                    <Text style={{ color: '#fff' }}>{editFastStart.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={showEditFastStartPicker}
+                    mode="datetime"
+                    date={editFastStart}
+                    onConfirm={date => { setEditFastStart(date); setShowEditFastStartPicker(false); }}
+                    onCancel={() => setShowEditFastStartPicker(false)}
+                    is24Hour={true}
+                  />
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>End Time:</Text>
+                  <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setShowEditFastEndPicker(true)}>
+                    <Text style={{ color: '#fff' }}>{editFastEnd.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={showEditFastEndPicker}
+                    mode="datetime"
+                    date={editFastEnd}
+                    onConfirm={date => { setEditFastEnd(date); setShowEditFastEndPicker(false); }}
+                    onCancel={() => setShowEditFastEndPicker(false)}
+                    is24Hour={true}
+                  />
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                  <View style={{ width: '100%', marginBottom: 16 }}>
+                    <TextInput
+                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
+                      numberOfLines={1}
+                      onChangeText={setEditFastNote}
+                      value={editFastNote}
+                      placeholder="e.g. completed, interrupted, etc."
+                      accessibilityLabel="Fast note input"
+                    />
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+                    <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => {
+                      // Delete fast
+                      if (editFast && editFast.endFood) {
+                        // Remove fast by matching end time
+                        setFoodLog(foodLog.filter(e => e.id !== editFast.endFood.id));
+                      }
+                      setEditFastModalVisible(false);
+                    }} accessibilityLabel="Delete fast">
+                      <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
+                    </Pressable>
+                    <Pressable style={styles.modalButton} onPress={() => {
+                      // Save changes
+                      if (editFast && editFast.endFood) {
+                        // Update food entry
+                        setFoodLog(foodLog.map(e => e.id === editFast.endFood.id ? {
+                          ...e,
+                          time: editFastEnd.toISOString(),
+                          note: editFastNote,
+                        } : e));
+                      }
+                      // No explicit fastLog, so just update foodLog
+                      setEditFastModalVisible(false);
+                    }} accessibilityLabel="Save fast">
+                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                    </Pressable>
+                  </View>
+                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setEditFastModalVisible(false)} accessibilityLabel="Cancel">
                     <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
                   </Pressable>
                 </View>

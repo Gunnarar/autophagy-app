@@ -16,42 +16,45 @@ import LogsScreen from './screens/LogsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import InfoScreen from './screens/InfoScreen';
 import { formatTimeHMS, formatTimeHM, FAST_GOAL_SECONDS, MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES } from './utils/constants';
+import { ModalActionProvider } from './contexts/ModalActionContext';
 
 const Tab = createBottomTabNavigator();
 
 export default function App() {
   return (
-    <LogsProvider>
-      <FastingProvider>
-        <NavigationContainer>
-          <Tab.Navigator
-            initialRouteName="Home"
-            screenOptions={({ route }) => ({
-              headerShown: false,
-              tabBarActiveTintColor: '#6bb3b6',
-              tabBarInactiveTintColor: '#888',
-              tabBarStyle: { height: 60, paddingBottom: 8 },
-              tabBarIcon: ({ color, size }) => {
-                if (route.name === 'Home') {
-                  return <Ionicons name="home" size={size} color={color} />;
-                } else if (route.name === 'Logs') {
-                  return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
-                } else if (route.name === 'Profile') {
-                  return <Ionicons name="person" size={size} color={color} />;
-                } else if (route.name === 'Info') {
-                  return <MaterialCommunityIcons name="information" size={size} color={color} />;
-                }
-              },
-            })}
-          >
-            <Tab.Screen name="Home" component={HomeScreen} />
-            <Tab.Screen name="Logs" component={LogsScreen} />
-            <Tab.Screen name="Profile" component={ProfileScreen} />
-            <Tab.Screen name="Info" component={InfoScreen} />
-          </Tab.Navigator>
-        </NavigationContainer>
-      </FastingProvider>
-    </LogsProvider>
+    <ModalActionProvider>
+      <LogsProvider>
+        <FastingProvider>
+          <NavigationContainer>
+            <Tab.Navigator
+              initialRouteName="Home"
+              screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarActiveTintColor: '#6bb3b6',
+                tabBarInactiveTintColor: '#888',
+                tabBarStyle: { height: 60, paddingBottom: 8 },
+                tabBarIcon: ({ color, size }) => {
+                  if (route.name === 'Home') {
+                    return <Ionicons name="home" size={size} color={color} />;
+                  } else if (route.name === 'Logs') {
+                    return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
+                  } else if (route.name === 'Profile') {
+                    return <Ionicons name="person" size={size} color={color} />;
+                  } else if (route.name === 'Info') {
+                    return <MaterialCommunityIcons name="information" size={size} color={color} />;
+                  }
+                },
+              })}
+            >
+              <Tab.Screen name="Home" component={HomeScreen} />
+              <Tab.Screen name="Logs" component={LogsScreen} />
+              <Tab.Screen name="Profile" component={ProfileScreen} />
+              <Tab.Screen name="Info" component={InfoScreen} />
+            </Tab.Navigator>
+          </NavigationContainer>
+        </FastingProvider>
+      </LogsProvider>
+    </ModalActionProvider>
   );
 }
 

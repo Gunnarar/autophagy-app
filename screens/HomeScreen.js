@@ -6,6 +6,9 @@ import { useLogs } from '../contexts/LogsContext';
 import { formatTimeHM, MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES, AUTOPHAGY_LEVELS } from '../utils/constants';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useNavigation } from '@react-navigation/native';
+import StatusPill from '../components/StatusPill';
+import { useModalAction } from '../contexts/ModalActionContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function HomeScreen() {
   const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useAutophagyStatus } = useLogs();
@@ -26,6 +29,15 @@ export default function HomeScreen() {
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [addTime, setAddTime] = useState(new Date());
   const [showAddTimePicker, setShowAddTimePicker] = useState(false);
+  const { setModalActionHandler } = useModalAction();
+  const [fastingGoalHours, setFastingGoalHours] = useState(16);
+  const [lastMealTime, setLastMealTime] = useState(null);
+  const [fastingStreak, setFastingStreak] = useState(0);
+  const [statusOverride, setStatusOverride] = useState(null);
+  const [fastingPlan, setFastingPlan] = useState({ hours: 16, label: '16:8' });
+  const [dietPreference, setDietPreference] = useState('Standard');
+  const [mealDietType, setMealDietType] = useState(dietPreference);
+
   React.useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -34,6 +46,65 @@ export default function HomeScreen() {
       ])
     ).start();
   }, [scale]);
+
+  React.useEffect(() => {
+    // Register modal action handler
+    const handler = (action) => {
+      if (action === 'logMeal') {
+        setFoodType('meal');
+        setFoodModalVisible(true);
+      } else if (action === 'logSymptom') {
+        setSymptomModalVisible(true);
+      } else if (action === 'logFast') {
+        setFastStopModalVisible(true);
+      }
+    };
+    setModalActionHandler(handler);
+    return () => setModalActionHandler(null);
+  }, [setModalActionHandler]);
+
+  // Load fasting schedule and calculate fasting goal
+  React.useEffect(() => {
+    (async () => {
+      const stored = await AsyncStorage.getItem('fastingSchedule');
+      let hours = 16, label = '16:8';
+      if (stored && stored.match(/^(\d+):(\d+)/)) {
+        hours = parseInt(stored.split(':')[0], 10);
+        label = stored;
+      }
+      setFastingPlan({ hours, label });
+      setFastingGoalHours(hours);
+    })();
+  }, []);
+
+  // Track last meal time
+  React.useEffect(() => {
+    if (foodLog.length > 0) {
+      setLastMealTime(new Date(foodLog[0].time));
+    } else {
+      setLastMealTime(null);
+    }
+  }, [foodLog]);
+
+  // Calculate fasting streak (days in last 7 with fast >= goal)
+  React.useEffect(() => {
+    let streak = 0;
+    let d = new Date();
+    for (let i = 0; i < 7; i++) {
+      const dayStr = d.toISOString().slice(0, 10);
+      const fasts = fastLog.filter(entry => {
+        const start = new Date(entry.start);
+        const end = new Date(entry.end);
+        const duration = (end - start) / 3600000;
+        return duration >= fastingGoalHours && end.toISOString().slice(0, 10) === dayStr;
+      });
+      if (fasts.length > 0) {
+        streak++;
+      }
+      d.setDate(d.getDate() - 1);
+    }
+    setFastingStreak(streak);
+  }, [fastLog, fastingGoalHours]);
 
   // Calculate fastingStart as the time of the last meal/snack in foodLog (or app start if none), and fastingElapsed as now - fastingStart.
   const fastingStart = foodLog.length > 0 ? new Date(foodLog[0].time) : new Date();
@@ -44,10 +115,50 @@ export default function HomeScreen() {
   const todaysMeals = foodLog.filter(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === today);
   const todaysSnacks = foodLog.filter(e => e.type === 'snack' && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
+  const allKetoOrCarnivore = todaysMeals.length > 0 && todaysMeals.every(e => e.dietType === 'Keto' || e.dietType === 'Carnivore');
 
-  // Calculate ketone and autophagy status
-  const ketoneReached = fastingElapsed >= 12 * 3600;
-  const autophagyReached = fastingElapsed >= 16 * 3600;
+  // Calculate adaptive thresholds
+  const fastingGoal = fastingPlan.hours;
+  const dietRelax = (dietPreference === 'Keto' || dietPreference === 'Carnivore' || allKetoOrCarnivore) ? 4 : 0;
+  const autophagyThreshold = Math.max(16, fastingGoal - dietRelax);
+  const ketoneThreshold = Math.max(12, fastingGoal - 4 - dietRelax);
+
+  // Calculate fasting status pill logic (adaptive)
+  let fastingStatus = 'bad';
+  if (fastingElapsed >= fastingGoal * 3600) {
+    fastingStatus = 'good';
+  } else if (lastMealTime) {
+    const sinceMeal = (Date.now() - lastMealTime.getTime()) / 3600000;
+    if (fastingStreak >= 3 && sinceMeal < 6) {
+      fastingStatus = 'warning';
+    } else if (sinceMeal < 1) {
+      fastingStatus = 'warning';
+    } else {
+      fastingStatus = 'bad';
+    }
+  } else {
+    fastingStatus = 'warning';
+  }
+
+  // Ketones pill logic (adaptive)
+  let ketoneStatus = 'bad';
+  if (fastingElapsed >= ketoneThreshold * 3600) {
+    ketoneStatus = 'good';
+  } else if (fastingElapsed >= (ketoneThreshold - 4) * 3600) {
+    ketoneStatus = 'warning';
+  } else {
+    ketoneStatus = 'bad';
+  }
+
+  // Autophagy pill logic (adaptive)
+  let autophagyStatus = 'bad';
+  if (fastingElapsed >= autophagyThreshold * 3600) {
+    autophagyStatus = 'good';
+  } else if (fastingElapsed >= (autophagyThreshold - 4) * 3600) {
+    autophagyStatus = 'warning';
+  } else {
+    autophagyStatus = 'bad';
+  }
 
   // Determine if badge should be shown (after first challenge)
   const badgeVisible = Object.values(completed).some(arr => arr.length > 0);
@@ -62,6 +173,23 @@ export default function HomeScreen() {
       return Math.max(max, durationHrs);
     }, 0);
     progress = Math.min(1, maxFast / nextChallenge);
+  }
+
+  // Determine overall status for background color
+  const pillStatuses = [
+    fastingStatus === 'good' ? 'good' : fastingStatus === 'warning' ? 'warning' : 'bad',
+    todaysMeals.length > 0 ? 'good' : 'warning',
+    ketoneStatus === 'good' ? 'good' : ketoneStatus === 'warning' ? 'warning' : 'bad',
+    autophagyStatus === 'good' ? 'good' : autophagyStatus === 'warning' ? 'warning' : 'bad',
+    todaysSymptoms.length === 0 ? 'good' : 'warning',
+  ];
+  let bgColors;
+  if (pillStatuses.includes('bad')) {
+    bgColors = ['#ffeaea', '#ffd6d6']; // subtle red
+  } else if (pillStatuses.includes('warning')) {
+    bgColors = ['#fffbe5', '#fff3c4']; // subtle yellow
+  } else {
+    bgColors = ['#eaf6f6', '#b3c7f7']; // default blue/green
   }
 
   // Save food entry
@@ -101,6 +229,7 @@ export default function HomeScreen() {
       time: addTime.toISOString(),
       note: foodNote,
       id: Date.now(),
+      dietType: mealDietType,
     };
     setFoodLog([entry, ...foodLog]);
     setFoodModalVisible(false);
@@ -157,21 +286,208 @@ export default function HomeScreen() {
     setAddTime(new Date());
   };
 
+  React.useEffect(() => {
+    (async () => {
+      const storedDiet = await AsyncStorage.getItem('dietPreference');
+      if (storedDiet) setDietPreference(storedDiet);
+    })();
+  }, []);
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
-        colors={['#101c23', '#182c34']}
+        colors={bgColors}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <View style={{ alignItems: 'center', marginTop: 24, marginBottom: 8 }}>
-          <Animated.Image
-            source={require('../assets/cell1.png')}
-            style={{ width: 220, height: 220, transform: [{ scale }] }}
-            resizeMode="contain"
-          />
-        </View>
         <Text style={styles.title}>Dashboard</Text>
+        {/* Status Pills Row */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
+          <StatusPill
+            label="Fasting"
+            icon="timer-sand"
+            value={Math.min(1, fastingElapsed / (fastingGoal * 3600))}
+            status={fastingStatus}
+            info={
+              fastingStatus === 'good'
+                ? `You are in your fasting window! (${fastingGoal}h goal, ${fastingPlan.label} plan)`
+                : fastingStatus === 'warning'
+                  ? fastingStreak >= 3
+                    ? `You have a strong fasting streak. Stay on track! (${fastingGoal}h goal)`
+                    : `You recently ate. Try to reach your fasting goal.`
+                  : (() => {
+                      // If currently fasting but under plan, show time until meal window
+                      if (fastingElapsed < fastingGoal * 3600) {
+                        const hoursLeft = Math.max(1, Math.ceil((fastingGoal * 3600 - fastingElapsed) / 3600));
+                        return `${hoursLeft} hour${hoursLeft > 1 ? 's' : ''} until your meal window opens.`;
+                      }
+                      // Only show 'off plan' if user missed fasting goal for >1 day
+                      const lastFastEnd = fastLog.length > 0 ? new Date(fastLog[0].end) : null;
+                      if (lastFastEnd && (Date.now() - lastFastEnd.getTime()) > 24 * 3600 * 1000) {
+                        return `You are off your fasting plan. Try to start a new fast. (${fastingGoal}h goal)`;
+                      }
+                      return `Try to reach your fasting goal of ${fastingGoal}h.`;
+                    })()
+            }
+          />
+          <StatusPill
+            label="Healthy Eating"
+            icon="food-apple"
+            value={todaysMeals.length > 0 ? 1 : 0}
+            status={todaysMeals.length > 0 ? 'good' : 'warning'}
+            info={
+              todaysMeals.length > 0
+                ? 'You have logged a meal today. Keep up healthy eating habits!'
+                : 'No meal logged today. Remember to log your meals for better tracking.'
+            }
+          />
+          <StatusPill
+            label="Ketones"
+            icon="water"
+            value={ketoneStatus === 'good' ? 1 : Math.min(1, fastingElapsed / (ketoneThreshold * 3600))}
+            status={ketoneStatus}
+            info={
+              ketoneStatus === 'good'
+                ? (dietRelax ? 'Your diet supports nutritional ketosis—even with shorter fasts.' : 'Ketosis likely started. This is a good sign for metabolic health.')
+                : ketoneStatus === 'warning'
+                  ? (dietRelax ? `Your diet is helping build ketones. Fast a bit longer for best results.` : `Ketones are building up. Try to fast at least ${ketoneThreshold}h for best results.`)
+                  : (dietRelax ? 'Your diet supports ketosis. Consider extending your fast or reducing carbs.' : 'Ketones not yet detected. Extend your fast or reduce carbs.')
+            }
+          />
+          <StatusPill
+            label="Autophagy"
+            icon="bacteria"
+            value={autophagyStatus === 'good' ? 1 : Math.min(1, fastingElapsed / (autophagyThreshold * 3600))}
+            status={autophagyStatus}
+            info={
+              autophagyStatus === 'good'
+                ? (dietRelax ? 'Your diet helps maintain autophagy between fasts.' : 'Autophagy is likely active. This supports cellular healing.')
+                : autophagyStatus === 'warning'
+                  ? (dietRelax ? `Your diet is supporting autophagy. Fast ${autophagyThreshold - Math.floor(fastingElapsed / 3600)}h more for best effect.` : `Autophagy window is near. Fast ${autophagyThreshold - Math.floor(fastingElapsed / 3600)}h more for best effect.`)
+                  : (dietRelax ? 'Your diet supports autophagy. Aim for a longer fast for maximum benefit.' : `Autophagy not yet active. Aim for ${autophagyThreshold}h fasting.`)
+            }
+          />
+          <StatusPill
+            label="Symptoms"
+            icon="stethoscope"
+            value={todaysSymptoms.length === 0 ? 1 : 0.5}
+            status={todaysSymptoms.length === 0 ? 'good' : 'warning'}
+            info={
+              todaysSymptoms.length === 0
+                ? 'No symptoms logged today. Great!'
+                : `You have logged ${todaysSymptoms.length} symptom(s) today. Monitor and log changes.`
+            }
+          />
+        </ScrollView>
+        {/* Streaks, Milestones, Achievements, Warnings */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
+          {/* Fasting Streak */}
+          {(() => {
+            // Calculate fasting streak: consecutive days with a fast >= 16h
+            let streak = 0;
+            let lastDate = null;
+            const fastsByDay = fastLog.reduce((acc, entry) => {
+              const start = new Date(entry.start);
+              const end = new Date(entry.end);
+              const duration = (end - start) / 1000;
+              if (duration >= 16 * 3600) {
+                const day = end.toISOString().slice(0, 10);
+                acc[day] = true;
+              }
+              return acc;
+            }, {});
+            let d = new Date();
+            for (let i = 0; i < 30; i++) {
+              const dayStr = d.toISOString().slice(0, 10);
+              if (fastsByDay[dayStr]) {
+                streak++;
+                d.setDate(d.getDate() - 1);
+              } else {
+                break;
+              }
+            }
+            return (
+              <View style={{ alignItems: 'center', marginRight: 18 }}>
+                <MaterialCommunityIcons name="fire" size={32} color={streak >= 3 ? '#89ce00' : '#f7b731'} />
+                <Text style={{ fontWeight: 'bold', color: streak >= 3 ? '#2d4d4d' : '#b3c7f7', fontSize: 16 }}>{streak}d Fasting Streak</Text>
+              </View>
+            );
+          })()}
+          {/* Longest Fast */}
+          {(() => {
+            const longest = fastLog.reduce((max, entry) => {
+              const start = new Date(entry.start);
+              const end = new Date(entry.end);
+              const duration = (end - start) / 3600000;
+              return Math.max(max, duration);
+            }, 0);
+            return (
+              <View style={{ alignItems: 'center', marginRight: 18 }}>
+                <MaterialCommunityIcons name="timer-sand" size={32} color={longest >= 24 ? '#89ce00' : '#6bb3b6'} />
+                <Text style={{ fontWeight: 'bold', color: longest >= 24 ? '#2d4d4d' : '#b3c7f7', fontSize: 16 }}>{Math.round(longest)}h Longest Fast</Text>
+              </View>
+            );
+          })()}
+          {/* Meals Logged Streak */}
+          {(() => {
+            // Meals streak: consecutive days with at least 1 meal
+            let streak = 0;
+            let d = new Date();
+            for (let i = 0; i < 30; i++) {
+              const dayStr = d.toISOString().slice(0, 10);
+              if (foodLog.some(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === dayStr)) {
+                streak++;
+                d.setDate(d.getDate() - 1);
+              } else {
+                break;
+              }
+            }
+            return (
+              <View style={{ alignItems: 'center', marginRight: 18 }}>
+                <MaterialCommunityIcons name="food" size={32} color={streak >= 3 ? '#89ce00' : '#f7b731'} />
+                <Text style={{ fontWeight: 'bold', color: streak >= 3 ? '#2d4d4d' : '#b3c7f7', fontSize: 16 }}>{streak}d Meal Streak</Text>
+              </View>
+            );
+          })()}
+          {/* Warning: No meal logged in 24h */}
+          {(() => {
+            const lastMeal = foodLog.find(e => e.type === 'meal');
+            let warn = false;
+            if (lastMeal) {
+              const lastMealTime = new Date(lastMeal.time);
+              warn = (Date.now() - lastMealTime.getTime()) > 24 * 3600 * 1000;
+            } else {
+              warn = true;
+            }
+            return warn ? (
+              <View style={{ alignItems: 'center', marginRight: 18 }}>
+                <MaterialCommunityIcons name="alert" size={32} color="#e74c3c" />
+                <Text style={{ fontWeight: 'bold', color: '#e74c3c', fontSize: 16 }}>No meal in 24h</Text>
+              </View>
+            ) : null;
+          })()}
+          {/* Achievement: All symptoms logged for 3+ days */}
+          {(() => {
+            // For 3+ days, at least one symptom log per day
+            let streak = 0;
+            let d = new Date();
+            for (let i = 0; i < 30; i++) {
+              const dayStr = d.toISOString().slice(0, 10);
+              if (symptomLog.some(e => e.time && e.time.slice(0, 10) === dayStr)) {
+                streak++;
+                d.setDate(d.getDate() - 1);
+              } else {
+                break;
+              }
+            }
+            return streak >= 3 ? (
+              <View style={{ alignItems: 'center', marginRight: 18 }}>
+                <MaterialCommunityIcons name="star" size={32} color="#ffd700" />
+                <Text style={{ fontWeight: 'bold', color: '#ffd700', fontSize: 16 }}>3d+ Symptom Logging</Text>
+              </View>
+            ) : null;
+          })()}
+        </ScrollView>
         {/* Autophagy Badge */}
         {badgeVisible && (
           <Pressable
@@ -212,9 +528,9 @@ export default function HomeScreen() {
             <Text style={styles.fastingTime}>{formatTimeHM(fastingElapsed)}</Text>
             <Text style={styles.cardText}>Elapsed</Text>
             <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: `${fastingElapsed / (16 * 3600) * 100}%` }]} />
+              <View style={[styles.progressBarFill, { width: `${fastingElapsed / (fastingGoal * 3600) * 100}%` }]} />
             </View>
-            <Text style={styles.cardText}>{formatTimeHM(16 * 3600 - fastingElapsed)} remaining</Text>
+            <Text style={styles.cardText}>{formatTimeHM(fastingGoal * 3600 - fastingElapsed)} remaining</Text>
           </View>
           {/* Milestones/stepper */}
           <View style={styles.milestoneRow}>
@@ -255,13 +571,13 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Symptoms</Text>
           </View>
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: 24, color: ketoneReached ? '#6bb3b6' : '#e0e0e0' }}>💧</Text>
-            <Text style={{ fontWeight: 'bold', color: ketoneReached ? '#2d4d4d' : '#aaa' }}>{ketoneReached ? 'Yes' : 'No'}</Text>
+            <Text style={{ fontSize: 24, color: ketoneStatus === 'good' ? '#6bb3b6' : '#e0e0e0' }}>💧</Text>
+            <Text style={{ fontWeight: 'bold', color: ketoneStatus === 'good' ? '#2d4d4d' : '#aaa' }}>{ketoneStatus === 'good' ? 'Yes' : 'No'}</Text>
             <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Ketone</Text>
           </View>
           <View style={{ alignItems: 'center' }}>
-            <Text style={{ fontSize: 24, color: autophagyReached ? '#6bb3b6' : '#e0e0e0' }}>🦠</Text>
-            <Text style={{ fontWeight: 'bold', color: autophagyReached ? '#2d4d4d' : '#aaa' }}>{autophagyReached ? 'Yes' : 'No'}</Text>
+            <Text style={{ fontSize: 24, color: autophagyStatus === 'good' ? '#6bb3b6' : '#e0e0e0' }}>🦠</Text>
+            <Text style={{ fontWeight: 'bold', color: autophagyStatus === 'good' ? '#2d4d4d' : '#aaa' }}>{autophagyStatus === 'good' ? 'Yes' : 'No'}</Text>
             <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Autophagy</Text>
           </View>
         </View>
@@ -280,6 +596,19 @@ export default function HomeScreen() {
                     <Pressable style={[styles.foodTypeButton, foodType === 'snack' && styles.foodTypeButtonActive]} onPress={() => setFoodType('snack')} accessibilityLabel="Snack">
                       <Text style={{ fontSize: 20 }}>🥪 Snack</Text>
                     </Pressable>
+                  </View>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Diet Type:</Text>
+                  <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                    {['Standard','Low-Carb','Keto','Carnivore'].map(d => (
+                      <Pressable
+                        key={d}
+                        style={[styles.foodTypeButton, mealDietType === d && styles.foodTypeButtonActive]}
+                        onPress={() => setMealDietType(d)}
+                        accessibilityLabel={`Tag meal as ${d}`}
+                      >
+                        <Text style={{ fontSize: 16 }}>{d}</Text>
+                      </Pressable>
+                    ))}
                   </View>
                   <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
                   <View style={{ width: '100%', marginBottom: 16 }}>

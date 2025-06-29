@@ -1,23 +1,208 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLogs } from '../contexts/LogsContext';
+import { useModalAction } from '../contexts/ModalActionContext';
 
-const RECOMMENDATIONS = [
-  { key: 'meditation', label: 'Try a meditation session', emoji: '🧘' },
-  { key: 'exercise', label: 'Do gentle exercise', emoji: '🚶' },
-  { key: 'meal', label: 'Log your next meal', emoji: '🍽️' },
-  { key: 'hydration', label: 'Drink water', emoji: '💧' },
-];
-
-export default function InfoScreen() {
-  const { useAutophagyStatus } = useLogs();
+export default function InfoScreen({ navigation }) {
+  const { foodLog, symptomLog, fastLog, useAutophagyStatus } = useLogs();
   const { nextChallenge, currentLevel } = useAutophagyStatus();
-  const [done, setDone] = React.useState({});
-  // Pick a recommendation not done today
+  const { triggerModalAction } = useModalAction();
   const today = new Date().toISOString().slice(0, 10);
-  const available = RECOMMENDATIONS.filter(r => !done[`${r.key}-${today}`]);
-  const rec = available.length > 0 ? available[0] : null;
+  const [done, setDone] = useState({});
+  const todaysMeals = foodLog.filter(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === today);
+  const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
+  const [fastingDismissedUntil, setFastingDismissedUntil] = useState(null);
+
+  // Notification logic
+  const notifications = [];
+
+  // 1. No meal in 24h
+  const lastMeal = foodLog.find(e => e.type === 'meal');
+  let noMeal24h = false;
+  if (lastMeal) {
+    const lastMealTime = new Date(lastMeal.time);
+    noMeal24h = (Date.now() - lastMealTime.getTime()) > 24 * 3600 * 1000;
+  } else {
+    noMeal24h = true;
+  }
+  const now = Date.now();
+  const fastingCardSuppressed = fastingDismissedUntil && now < fastingDismissedUntil;
+  if (noMeal24h && !fastingCardSuppressed) {
+    notifications.push({
+      key: 'no-meal',
+      icon: 'alert',
+      color: '#e74c3c',
+      title: 'No meal logged in 24h',
+      desc: 'You have not logged a meal in over 24 hours. Please log your meal for accurate tracking.',
+      action: () => triggerModalAction('logMeal'),
+      actionLabel: 'Log Meal',
+      secondaryAction: () => setFastingDismissedUntil(Date.now() + 6 * 3600 * 1000),
+      secondaryLabel: "I'm still fasting",
+    });
+  }
+
+  // 2. No symptoms logged today
+  if (todaysSymptoms.length === 0) {
+    notifications.push({
+      key: 'no-symptom',
+      icon: 'stethoscope',
+      color: '#f7b731',
+      title: 'No symptoms logged today',
+      desc: 'You have not logged any symptoms today. Logging symptoms helps track your progress.',
+      action: () => triggerModalAction('logSymptom'),
+      actionLabel: 'Log Symptom',
+    });
+  }
+
+  // 3. Next autophagy challenge
+  if (nextChallenge) {
+    notifications.push({
+      key: 'autophagy-challenge',
+      icon: 'bacteria',
+      color: '#6bb3b6',
+      title: 'Next Autophagy Challenge',
+      desc: `Your next challenge: ${nextChallenge}h fast (${currentLevel} level).`,
+      action: () => triggerModalAction('logFast'),
+      actionLabel: 'Start Fast',
+    });
+  }
+
+  // 4. Streaks/achievements
+  // Fasting streak
+  let fastingStreak = 0;
+  const fastsByDay = fastLog.reduce((acc, entry) => {
+    const start = new Date(entry.start);
+    const end = new Date(entry.end);
+    const duration = (end - start) / 1000;
+    if (duration >= 16 * 3600) {
+      const day = end.toISOString().slice(0, 10);
+      acc[day] = true;
+    }
+    return acc;
+  }, {});
+  let d = new Date();
+  for (let i = 0; i < 30; i++) {
+    const dayStr = d.toISOString().slice(0, 10);
+    if (fastsByDay[dayStr]) {
+      fastingStreak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  if (fastingStreak >= 3) {
+    notifications.push({
+      key: 'fasting-streak',
+      icon: 'fire',
+      color: '#89ce00',
+      title: 'Fasting Streak',
+      desc: `You are on a ${fastingStreak}-day fasting streak!`,
+      action: null,
+      actionLabel: null,
+    });
+  }
+  // Longest fast
+  const longest = fastLog.reduce((max, entry) => {
+    const start = new Date(entry.start);
+    const end = new Date(entry.end);
+    const duration = (end - start) / 3600000;
+    return Math.max(max, duration);
+  }, 0);
+  if (longest >= 24) {
+    notifications.push({
+      key: 'longest-fast',
+      icon: 'timer-sand',
+      color: '#6bb3b6',
+      title: 'Longest Fast',
+      desc: `Your longest fast is ${Math.round(longest)} hours.`,
+      action: null,
+      actionLabel: null,
+    });
+  }
+  // Meals streak
+  let mealStreak = 0;
+  d = new Date();
+  for (let i = 0; i < 30; i++) {
+    const dayStr = d.toISOString().slice(0, 10);
+    if (foodLog.some(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === dayStr)) {
+      mealStreak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  if (mealStreak >= 3) {
+    notifications.push({
+      key: 'meal-streak',
+      icon: 'food',
+      color: '#89ce00',
+      title: 'Meal Logging Streak',
+      desc: `You have logged meals for ${mealStreak} days in a row!`,
+      action: null,
+      actionLabel: null,
+    });
+  }
+  // Symptom logging achievement
+  let symptomStreak = 0;
+  d = new Date();
+  for (let i = 0; i < 30; i++) {
+    const dayStr = d.toISOString().slice(0, 10);
+    if (symptomLog.some(e => e.time && e.time.slice(0, 10) === dayStr)) {
+      symptomStreak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  if (symptomStreak >= 3) {
+    notifications.push({
+      key: 'symptom-streak',
+      icon: 'star',
+      color: '#ffd700',
+      title: 'Symptom Logging Achievement',
+      desc: `You have logged symptoms for ${symptomStreak} days in a row!`,
+      action: null,
+      actionLabel: null,
+    });
+  }
+
+  // 5. Recommendations (only if not done today)
+  if (!done[`meditation-${today}`]) {
+    notifications.push({
+      key: 'rec-meditation',
+      icon: 'meditation',
+      color: '#b3c7f7',
+      title: 'Try a meditation session',
+      desc: 'Take a few minutes to relax and meditate today.',
+      action: () => setDone({ ...done, [`meditation-${today}`]: true }),
+      actionLabel: 'Mark as done',
+    });
+  }
+  if (!done[`exercise-${today}`]) {
+    notifications.push({
+      key: 'rec-exercise',
+      icon: 'walk',
+      color: '#b3c7f7',
+      title: 'Do gentle exercise',
+      desc: 'A short walk or stretching can help.',
+      action: () => setDone({ ...done, [`exercise-${today}`]: true }),
+      actionLabel: 'Mark as done',
+    });
+  }
+  if (!done[`hydration-${today}`]) {
+    notifications.push({
+      key: 'rec-hydration',
+      icon: 'water',
+      color: '#b3c7f7',
+      title: 'Drink water',
+      desc: 'Stay hydrated throughout the day.',
+      action: () => setDone({ ...done, [`hydration-${today}`]: true }),
+      actionLabel: 'Mark as done',
+    });
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
@@ -26,29 +211,25 @@ export default function InfoScreen() {
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <Text style={styles.title}>Info</Text>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Next Autophagy Challenge</Text>
-          {nextChallenge ? (
-            <Text style={styles.cardText}>Your next challenge: <Text style={{ fontWeight: 'bold' }}>{nextChallenge}h fast</Text> ({currentLevel} level)</Text>
-          ) : (
-            <Text style={styles.cardText}>All challenges complete! 🎉</Text>
-          )}
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Recommended Activity</Text>
-          {rec ? (
-            <Pressable onPress={() => setDone({ ...done, [`${rec.key}-${today}`]: true })} style={{ flexDirection: 'row', alignItems: 'center', padding: 8, borderRadius: 8, backgroundColor: '#eaf6f6', marginTop: 8 }} accessibilityLabel={`Mark ${rec.label} as done`}>
-              <Text style={{ fontSize: 24, marginRight: 8 }}>{rec.emoji}</Text>
-              <Text style={{ fontSize: 16, color: '#2d4d4d' }}>{rec.label}</Text>
-              <Text style={{ marginLeft: 12, color: '#89ce00', fontWeight: 'bold' }}>Mark as done</Text>
-            </Pressable>
-          ) : (
-            <Text style={styles.cardText}>All recommended activities completed for today!</Text>
-          )}
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.cardText}>Personalized information and education will appear here based on your logs and schedule.</Text>
-        </View>
+        {notifications.map(n => (
+          <View key={n.key} style={[styles.notification, { borderLeftColor: n.color }]}> 
+            <MaterialCommunityIcons name={n.icon} size={32} color={n.color} style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.notificationTitle, { color: n.color }]}>{n.title}</Text>
+              <Text style={styles.notificationDesc}>{n.desc}</Text>
+              {n.action && n.actionLabel && (
+                <Pressable style={[styles.actionButton, { backgroundColor: n.color }]} onPress={n.action} accessibilityLabel={n.actionLabel}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>{n.actionLabel}</Text>
+                </Pressable>
+              )}
+              {n.secondaryAction && n.secondaryLabel && (
+                <Pressable style={[styles.actionButton, { backgroundColor: '#ccc', marginTop: 6 }]} onPress={n.secondaryAction} accessibilityLabel={n.secondaryLabel}>
+                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>{n.secondaryLabel}</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        ))}
       </ScrollView>
     </View>
   );
@@ -61,25 +242,35 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: '#2d4d4d',
   },
-  card: {
+  notification: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 20,
+    padding: 18,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+    borderLeftWidth: 6,
+    borderLeftColor: '#6bb3b6',
   },
-  cardTitle: {
+  notificationTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#2d4d4d',
-  },
-  cardText: {
-    fontSize: 16,
-    color: '#4d6d6d',
     marginBottom: 4,
+  },
+  notificationDesc: {
+    fontSize: 15,
+    color: '#4d6d6d',
+    marginBottom: 8,
+  },
+  actionButton: {
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    alignSelf: 'flex-start',
+    marginTop: 4,
   },
 }); 
