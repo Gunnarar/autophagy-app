@@ -11,7 +11,8 @@ export default function InfoScreen({ navigation }) {
   const { triggerModalAction } = useModalAction();
   const today = new Date().toISOString().slice(0, 10);
   const [done, setDone] = useState({});
-  const todaysMeals = foodLog.filter(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === today);
+  const mealTypes = ['meal', 'animalMeat', 'carbMeal'];
+  const todaysMeals = foodLog.filter(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
   const [fastingDismissedUntil, setFastingDismissedUntil] = useState(null);
 
@@ -19,7 +20,7 @@ export default function InfoScreen({ navigation }) {
   const notifications = [];
 
   // 1. No meal in 24h
-  const lastMeal = foodLog.find(e => e.type === 'meal');
+  const lastMeal = foodLog.find(e => mealTypes.includes(e.type));
   let noMeal24h = false;
   if (lastMeal) {
     const lastMealTime = new Date(lastMeal.time);
@@ -126,7 +127,7 @@ export default function InfoScreen({ navigation }) {
   d = new Date();
   for (let i = 0; i < 30; i++) {
     const dayStr = d.toISOString().slice(0, 10);
-    if (foodLog.some(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === dayStr)) {
+    if (foodLog.some(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === dayStr)) {
       mealStreak++;
       d.setDate(d.getDate() - 1);
     } else {

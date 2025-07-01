@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useUser } from '../contexts/UserContext';
+import { useLogs } from '../contexts/LogsContext';
 
 const DIET_TYPES = [
   { key: 'standard', label: 'Standard' },
@@ -16,6 +17,7 @@ function getWeekStart(date) {
 
 export default function DietLogScreen() {
   const { user, saveUser } = useUser();
+  const { foodLog, setFoodLog } = useLogs();
   const [meatPounds, setMeatPounds] = useState('');
   const [carbNotes, setCarbNotes] = useState('');
   const [dietType, setDietType] = useState(user?.dietType || 'standard');
@@ -31,12 +33,30 @@ export default function DietLogScreen() {
   const carbCount = thisWeekCarbs.length;
 
   const handleLogMeat = async () => {
+    const pounds = parseFloat(meatPounds);
+    if (!meatPounds || isNaN(pounds) || pounds <= 0) {
+      Alert.alert('Invalid input', 'Please enter a positive number of pounds.');
+      return;
+    }
     const entry = { date: today, pounds: meatPounds };
     await saveUser({
       ...user,
       animalMeatLog: [...animalMeatLog, entry],
     });
+    // Add to foodLog for unified logs
+    setFoodLog([
+      {
+        id: Date.now(),
+        type: 'animalMeat',
+        time: new Date().toISOString(),
+        pounds: meatPounds,
+        note: '',
+        logType: 'food',
+      },
+      ...foodLog,
+    ]);
     setMeatPounds('');
+    Alert.alert('Success', 'Animal meat log added.');
   };
 
   const handleLogCarb = async () => {
@@ -45,7 +65,20 @@ export default function DietLogScreen() {
       ...user,
       carbMealLog: [...carbMealLog, entry],
     });
+    // Add to foodLog for unified logs
+    setFoodLog([
+      {
+        id: Date.now(),
+        type: 'carbMeal',
+        time: new Date().toISOString(),
+        isCarb: true,
+        note: carbNotes,
+        logType: 'food',
+      },
+      ...foodLog,
+    ]);
     setCarbNotes('');
+    Alert.alert('Success', 'Carb meal log added.');
   };
 
   const handleDietType = async (type) => {

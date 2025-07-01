@@ -27,6 +27,7 @@ export function LogsProvider({ children }) {
   const [symptomLog, setSymptomLog] = useState([]);
   const [fastLog, setFastLog] = useState([]);
   const [autophagyProgress, setAutophagyProgress] = useState({ completed: {}, monthly: {} });
+  const [loaded, setLoaded] = useState(false);
 
   // Load logs from storage on mount
   useEffect(() => {
@@ -37,6 +38,7 @@ export function LogsProvider({ children }) {
       if (storedSymptom) setSymptomLog(JSON.parse(storedSymptom));
       const storedFast = await AsyncStorage.getItem('fastLog');
       if (storedFast) setFastLog(JSON.parse(storedFast));
+      setLoaded(true);
     })();
   }, []);
 
@@ -48,11 +50,15 @@ export function LogsProvider({ children }) {
     })();
   }, []);
 
-  // Save logs to storage when they change
-  useEffect(() => { AsyncStorage.setItem('foodLog', JSON.stringify(foodLog)); }, [foodLog]);
-  useEffect(() => { AsyncStorage.setItem('symptomLog', JSON.stringify(symptomLog)); }, [symptomLog]);
-  useEffect(() => { AsyncStorage.setItem('fastLog', JSON.stringify(fastLog)); }, [fastLog]);
-  useEffect(() => { AsyncStorage.setItem('autophagyProgress', JSON.stringify(autophagyProgress)); }, [autophagyProgress]);
+  // Save logs to storage when they change, but only after initial load
+  useEffect(() => { if (loaded) AsyncStorage.setItem('foodLog', JSON.stringify(foodLog)); }, [foodLog, loaded]);
+  useEffect(() => {
+    if (loaded) {
+      AsyncStorage.setItem('symptomLog', JSON.stringify(symptomLog));
+    }
+  }, [symptomLog, loaded]);
+  useEffect(() => { if (loaded) AsyncStorage.setItem('fastLog', JSON.stringify(fastLog)); }, [fastLog, loaded]);
+  useEffect(() => { if (loaded) AsyncStorage.setItem('autophagyProgress', JSON.stringify(autophagyProgress)); }, [autophagyProgress, loaded]);
 
   // Update autophagy progress when fastLog changes
   useEffect(() => {

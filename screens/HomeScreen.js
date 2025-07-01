@@ -10,23 +10,20 @@ import StatusPill from '../components/StatusPill';
 import { useModalAction } from '../contexts/ModalActionContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUser } from '../contexts/UserContext';
+import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 
 export default function HomeScreen() {
   const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useAutophagyStatus } = useLogs();
   const navigation = useNavigation();
   const { currentLevel, nextChallenge, completed } = useAutophagyStatus();
-  const [foodModalVisible, setFoodModalVisible] = useState(false);
-  const [foodType, setFoodType] = useState('meal');
-  const [foodNote, setFoodNote] = useState('');
   const [symptomModalVisible, setSymptomModalVisible] = useState(false);
   const [symptomType, setSymptomType] = useState('tremor');
   const [severity, setSeverity] = useState('mild');
   const [symptomNote, setSymptomNote] = useState('');
-  const scale = useRef(new Animated.Value(1)).current;
-  const [showFastStopPicker, setShowFastStopPicker] = useState(false);
-  const [addModalVisible, setAddModalVisible] = useState(false);
   const [addTime, setAddTime] = useState(new Date());
   const [showAddTimePicker, setShowAddTimePicker] = useState(false);
+  const scale = useRef(new Animated.Value(1)).current;
+  const [showFastStopPicker, setShowFastStopPicker] = useState(false);
   const { setModalActionHandler } = useModalAction();
   const [fastingGoalHours, setFastingGoalHours] = useState(16);
   const [lastMealTime, setLastMealTime] = useState(null);
@@ -34,11 +31,7 @@ export default function HomeScreen() {
   const [statusOverride, setStatusOverride] = useState(null);
   const [fastingPlan, setFastingPlan] = useState({ hours: 16, label: '16:8' });
   const [dietPreference, setDietPreference] = useState('Standard');
-  const [mealDietType, setMealDietType] = useState(dietPreference);
   const { user, saveUser } = useUser();
-  const [meatPounds, setMeatPounds] = useState('');
-  const [carbNotes, setCarbNotes] = useState('');
-  const [dietType, setDietType] = useState(user?.dietType || 'standard');
   const today = new Date().toISOString().slice(0, 10);
   function getWeekStart(date) {
     const d = new Date(date);
@@ -54,6 +47,27 @@ export default function HomeScreen() {
   const totalMeat = thisWeekMeat.reduce((sum, e) => sum + (parseFloat(e.pounds) || 0), 0);
   const carbCount = thisWeekCarbs.length;
 
+  // Calculate last 4 weeks' data for meat and carb meals
+  function getWeekStartDate(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay());
+    return d.toISOString().slice(0, 10);
+  }
+  const weeks = [];
+  let d = new Date();
+  for (let i = 0; i < 4; i++) {
+    const weekStart = getWeekStartDate(d);
+    const weekMeat = animalMeatLog.filter(e => getWeekStartDate(e.date) === weekStart);
+    const weekCarbs = carbMealLog.filter(e => getWeekStartDate(e.date) === weekStart);
+    weeks.unshift({
+      label: `W${4 - i}`,
+      meat: weekMeat.reduce((sum, e) => sum + (parseFloat(e.pounds) || 0), 0),
+      carbs: weekCarbs.length,
+    });
+    d.setDate(d.getDate() - 7);
+  }
+
   React.useEffect(() => {
     Animated.loop(
       Animated.sequence([
@@ -66,10 +80,7 @@ export default function HomeScreen() {
   React.useEffect(() => {
     // Register modal action handler
     const handler = (action) => {
-      if (action === 'logMeal') {
-        setFoodType('meal');
-        setFoodModalVisible(true);
-      } else if (action === 'logSymptom') {
+      if (action === 'logSymptom') {
         setSymptomModalVisible(true);
       }
     };
@@ -124,8 +135,9 @@ export default function HomeScreen() {
   const fastingStart = foodLog.length > 0 ? new Date(foodLog[0].time) : new Date();
   const fastingElapsed = Math.floor((Date.now() - fastingStart) / 1000);
 
-  // Calculate today's date string
-  const todaysMeals = foodLog.filter(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === today);
+  // Update meal streak calculation
+  const mealTypes = ['meal', 'animalMeat', 'carbMeal'];
+  const todaysMeals = foodLog.filter(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === today);
   const todaysSnacks = foodLog.filter(e => e.type === 'snack' && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
   const allKetoOrCarnivore = todaysMeals.length > 0 && todaysMeals.every(e => e.dietType === 'Keto' || e.dietType === 'Carnivore');
@@ -205,20 +217,6 @@ export default function HomeScreen() {
     bgColors = ['#eaf6f6', '#b3c7f7']; // default blue/green
   }
 
-  // Save food entry
-  const handleSaveFood = () => {
-    const entry = {
-      type: foodType,
-      time: new Date().toISOString(),
-      note: foodNote,
-      id: Date.now(),
-    };
-    setFoodLog([entry, ...foodLog]);
-    setFoodModalVisible(false);
-    setFoodType('meal');
-    setFoodNote('');
-  };
-
   // Save symptom entry
   const handleSaveSymptom = () => {
     const entry = {
@@ -233,22 +231,6 @@ export default function HomeScreen() {
     setSymptomType('tremor');
     setSeverity('mild');
     setSymptomNote('');
-  };
-
-  // Save food entry with time
-  const handleSaveFoodWithTime = () => {
-    const entry = {
-      type: foodType,
-      time: addTime.toISOString(),
-      note: foodNote,
-      id: Date.now(),
-      dietType: mealDietType,
-    };
-    setFoodLog([entry, ...foodLog]);
-    setFoodModalVisible(false);
-    setFoodType('meal');
-    setFoodNote('');
-    setAddTime(new Date());
   };
 
   // Save symptom entry with time
@@ -275,35 +257,7 @@ export default function HomeScreen() {
     })();
   }, []);
 
-  const handleLogDiet = async () => {
-    let didLog = false;
-    if (meatPounds) {
-      const entry = { date: today, pounds: meatPounds };
-      await saveUser({
-        ...user,
-        animalMeatLog: [...animalMeatLog, entry],
-      });
-      setMeatPounds('');
-      didLog = true;
-    }
-    if (carbNotes) {
-      const entry = { date: today, notes: carbNotes };
-      await saveUser({
-        ...user,
-        carbMealLog: [...carbMealLog, entry],
-      });
-      setCarbNotes('');
-      didLog = true;
-    }
-    if (!didLog) {
-      Alert.alert('Nothing to log', 'Please enter pounds of animal meat or notes for a carb meal.');
-      return;
-    }
-    setFoodModalVisible(false);
-  };
-
   const handleDietType = async (type) => {
-    setDietType(type);
     await saveUser({ ...user, dietType: type });
   };
 
@@ -449,7 +403,7 @@ export default function HomeScreen() {
             let d = new Date();
             for (let i = 0; i < 30; i++) {
               const dayStr = d.toISOString().slice(0, 10);
-              if (foodLog.some(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === dayStr)) {
+              if (foodLog.some(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === dayStr)) {
                 streak++;
                 d.setDate(d.getDate() - 1);
               } else {
@@ -465,7 +419,7 @@ export default function HomeScreen() {
           })()}
           {/* Warning: No meal logged in 24h */}
           {(() => {
-            const lastMeal = foodLog.find(e => e.type === 'meal');
+            const lastMeal = foodLog.find(e => mealTypes.includes(e.type));
             let warn = false;
             if (lastMeal) {
               const lastMealTime = new Date(lastMeal.time);
@@ -595,57 +549,57 @@ export default function HomeScreen() {
             <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Autophagy</Text>
           </View>
         </View>
-        {/* Food Modal */}
-        <Modal visible={foodModalVisible} transparent animationType="fade" onRequestClose={() => setFoodModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={() => setFoodModalVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Dietary Log</Text>
-                  <Text style={styles.sectionTitle}>Diet Type</Text>
-                  <View style={styles.dietTypeRow}>
-                    {['standard', 'animal'].map(dt => (
-                      <Pressable
-                        key={dt}
-                        style={[styles.foodTypeButton, dietType === dt && styles.foodTypeButtonActive]}
-                        onPress={() => handleDietType(dt)}
-                        accessibilityLabel={`Select ${dt} diet`}
-                      >
-                        <Text style={dietType === dt ? styles.dietTypeTextActive : styles.dietTypeText}>{dt.charAt(0).toUpperCase() + dt.slice(1)}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                  <Text style={styles.sectionTitle}>Log Animal Meat (lbs)</Text>
-                  <View style={styles.row}>
-                    <TextInput
-                      style={styles.input}
-                      value={meatPounds}
-                      onChangeText={setMeatPounds}
-                      placeholder="Pounds"
-                      keyboardType="numeric"
-                    />
-                  </View>
-                  <Text style={styles.sectionTitle}>Log Carb Meal</Text>
-                  <View style={styles.row}>
-                    <TextInput
-                      style={styles.input}
-                      value={carbNotes}
-                      onChangeText={setCarbNotes}
-                      placeholder="Notes (optional)"
-                    />
-                  </View>
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>This Week's Summary</Text>
-                    <Text style={styles.summaryText}>Total Animal Meat: <Text style={{ color: '#89ce00', fontWeight: 'bold' }}>{totalMeat} lbs</Text></Text>
-                    <Text style={styles.summaryText}>Carb Meals: <Text style={{ color: '#b3c7f7', fontWeight: 'bold' }}>{carbCount}</Text></Text>
-                  </View>
-                  <Button title="Log" onPress={handleLogDiet} />
-                  <Button title="Close" onPress={() => setFoodModalVisible(false)} color="#888" />
-                </View>
-              </TouchableWithoutFeedback>
+        {/* This Week's Summary */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>This Week's Summary</Text>
+          <Text style={styles.summaryText}>Total Animal Meat: <Text style={{ color: '#89ce00', fontWeight: 'bold' }}>{totalMeat} lbs</Text></Text>
+          <Text style={styles.summaryText}>Carb Meals: <Text style={{ color: '#b3c7f7', fontWeight: 'bold' }}>{carbCount}</Text></Text>
+        </View>
+        {/* Weekly Diet Bar Chart */}
+        <View style={{ alignItems: 'center', marginBottom: 24 }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#4d6d6d', marginBottom: 8 }}>Diet Log (Last 4 Weeks)</Text>
+          <Svg width={220} height={120}>
+            {weeks.map((w, i) => (
+              <React.Fragment key={w.label}>
+                <Rect
+                  x={20 + i * 45}
+                  y={100 - w.meat * 15}
+                  width={16}
+                  height={w.meat * 15}
+                  fill="#89ce00"
+                  rx={3}
+                  accessibilityLabel={`Week ${i + 1} animal meat: ${w.meat} lbs`}
+                />
+                <Rect
+                  x={20 + i * 45 + 18}
+                  y={100 - w.carbs * 15}
+                  width={16}
+                  height={w.carbs * 15}
+                  fill="#b3c7f7"
+                  rx={3}
+                  accessibilityLabel={`Week ${i + 1} carb meals: ${w.carbs}`}
+                />
+                <SvgText
+                  x={28 + i * 45}
+                  y={115}
+                  fontSize="12"
+                  fill="#4d6d6d"
+                  textAnchor="middle"
+                >{w.label}</SvgText>
+              </React.Fragment>
+            ))}
+          </Svg>
+          <View style={{ flexDirection: 'row', marginTop: 8 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
+              <View style={{ width: 16, height: 8, backgroundColor: '#89ce00', marginRight: 4 }} />
+              <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Meat (lbs)</Text>
             </View>
-          </TouchableWithoutFeedback>
-        </Modal>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ width: 16, height: 8, backgroundColor: '#b3c7f7', marginRight: 4 }} />
+              <Text style={{ fontSize: 12, color: '#4d6d6d' }}>Carb Meals</Text>
+            </View>
+          </View>
+        </View>
         {/* Symptom Modal */}
         <Modal visible={symptomModalVisible} transparent animationType="fade" onRequestClose={() => setSymptomModalVisible(false)}>
           <TouchableWithoutFeedback onPress={() => setSymptomModalVisible(false)}>
@@ -756,40 +710,11 @@ export default function HomeScreen() {
           shadowRadius: 8,
           elevation: 6,
         }}
-        onPress={() => setAddModalVisible(true)}
+        onPress={() => navigation.navigate('DietLog')}
         accessibilityLabel="Add log entry"
       >
         <Ionicons name="add" size={36} color="#fff" />
       </Pressable>
-      {/* Bottom action sheet/modal for add options */}
-      <Modal visible={addModalVisible} transparent animationType="slide" onRequestClose={() => setAddModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setAddModalVisible(false)}>
-          <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)', justifyContent: 'flex-end' }}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={{ backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24, paddingBottom: 36 }}>
-                <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2d4d4d', marginBottom: 16, textAlign: 'center' }}>Add Entry</Text>
-                {[
-                  { key: 'meal', label: 'Meal', icon: <MaterialCommunityIcons name="food" size={28} color="#6bb3b6" />, onPress: () => { setFoodType('meal'); setFoodModalVisible(true); setAddModalVisible(false); } },
-                  { key: 'symptom', label: 'Symptom', icon: <MaterialCommunityIcons name="stethoscope" size={28} color="#6bb3b6" />, onPress: () => { setSymptomModalVisible(true); setAddModalVisible(false); } },
-                ].map(opt => (
-                  <Pressable
-                    key={opt.key}
-                    style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#e0e0e0' }}
-                    onPress={opt.onPress}
-                    accessibilityLabel={`Add ${opt.label}`}
-                  >
-                    {opt.icon}
-                    <Text style={{ fontSize: 18, color: '#2d4d4d', marginLeft: 16 }}>{opt.label}</Text>
-                  </Pressable>
-                ))}
-                <Pressable style={{ marginTop: 12, alignItems: 'center' }} onPress={() => setAddModalVisible(false)} accessibilityLabel="Cancel add entry">
-                  <Text style={{ color: '#6bb3b6', fontWeight: 'bold', fontSize: 16 }}>Cancel</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
     </View>
   );
 }

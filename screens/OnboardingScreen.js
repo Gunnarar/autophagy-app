@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useUser } from '../contexts/UserContext';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
@@ -18,6 +18,8 @@ const steps = [
   { key: 'startDate', label: 'Pick a Start Date', isDate: true },
 ];
 
+const requiredFields = ['name', 'age', 'height', 'weight', 'email', 'startDate'];
+
 export default function OnboardingScreen({ navigation }) {
   const { saveUser } = useUser();
   const [form, setForm] = useState({});
@@ -27,12 +29,25 @@ export default function OnboardingScreen({ navigation }) {
   const handleChange = (key, value) => setForm({ ...form, [key]: value });
 
   const handleNext = () => {
+    const { key } = steps[step];
+    if (requiredFields.includes(key) && (!form[key] || form[key].toString().trim() === '')) {
+      Alert.alert('Missing info', `Please enter your ${steps[step].label}.`);
+      return;
+    }
     if (step < steps.length - 1) setStep(step + 1);
     else handleSubmit();
   };
 
   const handleSubmit = async () => {
+    // Validate all required fields
+    for (const key of requiredFields) {
+      if (!form[key] || form[key].toString().trim() === '') {
+        Alert.alert('Missing info', `Please enter your ${steps.find(s => s.key === key).label}.`);
+        return;
+      }
+    }
     await saveUser({ ...form, onboarded: true });
+    Alert.alert('Success', 'Onboarding complete!');
     navigation.replace('MainTabs');
   };
 

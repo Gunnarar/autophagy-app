@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, Alert } from 'react-native';
 import { useUser } from '../contexts/UserContext';
 
 export default function ProfileDetailsScreen() {
@@ -7,13 +7,23 @@ export default function ProfileDetailsScreen() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(user || {});
 
+  const requiredFields = ['name', 'age', 'height', 'weight', 'email', 'startDate'];
+
   if (!user) return <View style={styles.container}><Text>Loading...</Text></View>;
 
   const handleChange = (key, value) => setForm({ ...form, [key]: value });
 
   const handleSave = async () => {
+    // Validate all required fields
+    for (const key of requiredFields) {
+      if (!form[key] || form[key].toString().trim() === '') {
+        Alert.alert('Missing info', `Please enter your ${key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}.`);
+        return;
+      }
+    }
     await saveUser(form);
     setEditing(false);
+    Alert.alert('Success', 'Profile updated!');
   };
 
   return (
