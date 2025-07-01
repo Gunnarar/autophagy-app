@@ -184,7 +184,6 @@ export default function LogsScreen() {
             { key: 'all', label: 'All', icon: <Ionicons name="list" size={18} color={filterType === 'all' ? '#fff' : '#6bb3b6'} /> },
             { key: 'food', label: 'Food', icon: <MaterialCommunityIcons name="food" size={18} color={filterType === 'food' ? '#fff' : '#6bb3b6'} /> },
             { key: 'symptom', label: 'Symptoms', icon: <MaterialCommunityIcons name="stethoscope" size={18} color={filterType === 'symptom' ? '#fff' : '#6bb3b6'} /> },
-            { key: 'fasting', label: 'Fasting', icon: <MaterialCommunityIcons name="timer-sand" size={18} color={filterType === 'fasting' ? '#fff' : '#6bb3b6'} /> },
           ].map(pill => (
             <Pressable
               key={pill.key}
@@ -214,7 +213,6 @@ export default function LogsScreen() {
             let highlight = false;
             if (filterType === 'food' && period.endFood) highlight = true;
             if (filterType === 'symptom' && period.symptoms && period.symptoms.length > 0) highlight = true;
-            if (filterType === 'fasting' && idx === 0) highlight = true; // latest/ongoing fast
             // For 'all', no highlight
             const isOngoing = !period.endFood;
             return (
@@ -242,18 +240,6 @@ export default function LogsScreen() {
                       </Pressable>
                     )}
                   </Text>
-                  {/* Edit fast button (not for ongoing fast) */}
-                  {!isOngoing && (
-                    <Pressable onPress={() => {
-                      setEditFast(period);
-                      setEditFastStart(period.start ? new Date(period.start) : new Date());
-                      setEditFastEnd(period.end ? new Date(period.end) : new Date());
-                      setEditFastNote(period.endFood && period.endFood.note ? period.endFood.note : '');
-                      setEditFastModalVisible(true);
-                    }} accessibilityLabel="Edit fast entry" style={{ marginLeft: 8 }}>
-                      <Ionicons name="pencil" size={20} color="#6bb3b6" />
-                    </Pressable>
-                  )}
                 </View>
                 <Text style={styles.cardText}>Duration: {formatTimeHM(Math.floor((period.end - (period.start || period.end)) / 1000))}</Text>
                 {period.symptoms.length > 0 ? (
@@ -300,9 +286,6 @@ export default function LogsScreen() {
                       <View style={{ flexDirection: 'row', marginBottom: 16 }}>
                         <Pressable style={[styles.foodTypeButton, modalType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setModalType('meal')} accessibilityLabel="Meal">
                           <Text style={{ fontSize: 20 }}>🍽️ Meal</Text>
-                        </Pressable>
-                        <Pressable style={[styles.foodTypeButton, modalType === 'snack' && styles.foodTypeButtonActive]} onPress={() => setModalType('snack')} accessibilityLabel="Snack">
-                          <Text style={{ fontSize: 20 }}>🥪 Snack</Text>
                         </Pressable>
                       </View>
                       <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
@@ -424,9 +407,6 @@ export default function LogsScreen() {
                       <View style={{ flexDirection: 'row', marginBottom: 16 }}>
                         <Pressable style={[styles.foodTypeButton, editFoodType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setEditFoodType('meal')} accessibilityLabel="Meal">
                           <Text style={{ fontSize: 20 }}>🍽️ Meal</Text>
-                        </Pressable>
-                        <Pressable style={[styles.foodTypeButton, editFoodType === 'snack' && styles.foodTypeButtonActive]} onPress={() => setEditFoodType('snack')} accessibilityLabel="Snack">
-                          <Text style={{ fontSize: 20 }}>🥪 Snack</Text>
                         </Pressable>
                       </View>
                     </>

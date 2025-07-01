@@ -55,54 +55,65 @@ Images 1 through 4 are screenshots from applications that we want to take inspir
 - Writing changes
 - Nonmotor symptoms
 
-## Prioritized Roadmap
+## 🛣️ Updated Roadmap
 
 ### Top Priority (Core Functionality & Accessibility)
+- **Onboarding & Profile**
+  - Multi-step onboarding: name, address, age, height, weight, email, cell phone, medications, symptoms, 12/24 month goals, start date.
+  - Persistent user profile with ability to view/edit all onboarding data.
+  - Start date triggers onboarding completion (and, in the future, onboarding email).
 - **Fasting-Based Tracking**
-  - Fasting timer (start/stop, log periods, see history)
-  - Fasting progress metrics (autophagy "windows")
-  - Ongoing fast clearly shown on Home
-  - **Accessibility:** Large fonts, high contrast, big touch targets, screen reader support
+  - Fasting timer (start/stop, log periods, see history).
+  - Fasting progress metrics (autophagy "windows").
+  - Ongoing fast clearly shown on Home.
+  - Predefined fasting programs (24h, 36h, 48h, up to 7 days), with progressive unlocking.
+  - Schedule and reminders for upcoming fasts.
+  - **Accessibility:** Large fonts, high contrast, big touch targets, screen reader support.
 - **Dietary/Food Logging**
-  - Log meals/snacks with time, notes, and (optionally) macronutrients
-  - Simple, fast entry (floating + button, time picker)
-  - **Core symptoms logging** (tremor, bradykinesia, rigidity, etc.)
+  - Log meals/snacks with time, notes, and (optionally) macronutrients.
+  - Track pounds of animal meat per week and carb meal frequency.
+  - Select diet type ("standard" or "animal").
+  - Simple, fast entry (floating + button, time picker).
 - **Symptom Logging**
-  - Log symptoms with type, severity, time, and notes
-  - Filter and review symptom history
+  - Log symptoms with type, severity, time, and notes.
+  - Associate symptoms with fasting periods.
+  - Filter and review symptom history.
 - **Logs & Filtering**
-  - Unified log view with pill-style filters (All, Food, Symptoms, Fasting)
-  - Highlight filtered results, but keep all visible for context
+  - Unified log view with pill-style filters (All, Food, Symptoms, Fasting).
+  - Highlight filtered results, but keep all visible for context.
 - **Feedback & Guidance**
-  - Friendly empty states ("No logs yet, tap + to add your first!")
-  - Success feedback (toast/banner on add/edit/delete)
-  - Error handling (user-friendly messages)
+  - Friendly empty states ("No logs yet, tap + to add your first!").
+  - Success feedback (toast/banner on add/edit/delete).
+  - Error handling (user-friendly messages).
 
 ### High Value (User Engagement & Medical Relevance)
 - **Reminders & Notifications**
-  - Custom reminders for fasting, meals, symptoms, or medication
+  - Custom reminders for fasting, meals, symptoms, or medication.
+  - Preparation tips for upcoming fasts.
 - **Data Visualization**
-  - Simple charts/timelines for fasting, symptoms, and food patterns
-  - Streaks, milestones, or "longest fast" badges
+  - Simple charts/timelines for fasting, symptoms, and food patterns.
+  - Streaks, milestones, or "longest fast" badges.
 - **Personalization**
-  - Customizable quick actions (if reintroduced)
-  - Large text/dark mode toggle in Profile
+  - Customizable quick actions (if reintroduced).
+  - Large text/dark mode toggle in Profile.
 - **Medical Safety**
-  - Medication logging (optional, with warnings for fasting/med conflicts)
-  - Export logs as CSV/PDF for healthcare providers
+  - Medication logging (optional, with warnings for fasting/med conflicts).
+  - Export logs as CSV/PDF for healthcare providers.
 
 ### Advanced/Optional (For Future)
+- **User Feedback Indicators**
+  - In-app prompts for users to log hunger, mood, or other indicators during fasts.
 - **Ketone Tracking**
-  - Manual input or device integration for ketone levels
-  - Feedback on autophagy likelihood
+  - Manual input or device integration for ketone levels.
+  - Feedback on autophagy likelihood.
 - **Biomarker Tracking**
-  - Manual input of lab results (for advanced users)
-  - Educational content about biomarkers
+  - Manual input of lab results (for advanced users).
+  - Educational content about biomarkers.
 - **Offline Support & Sync**
-  - Local-first data, sync when online
+  - Local-first data, sync when online.
 - **Theming & Delight**
-  - Subtle animations, Genesis4PD color palette, dark/light mode
+  - Subtle animations, Genesis4PD color palette, dark/light mode.
 
-### Inspiration & Design
-- Take UI/UX inspiration from referenced apps and screenshots
-- Use Genesis4PD color palette for branding and comfort
+### Design & Inspiration
+- Take UI/UX inspiration from referenced apps and screenshots (Easy Fast, MindMyPD).
+- Use Genesis4PD color palette for branding and comfort.

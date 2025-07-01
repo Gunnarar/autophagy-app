@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLogs } from '../contexts/LogsContext';
@@ -210,7 +210,17 @@ export default function InfoScreen({ navigation }) {
         style={StyleSheet.absoluteFill}
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <Text style={styles.title}>Info</Text>
+        <View style={styles.headerBox}>
+          <Text style={styles.welcome}>Welcome to Genesis4PD!</Text>
+          <Text style={styles.desc}>Track your progress, learn about fasting, and get the most out of your program.</Text>
+        </View>
+        <TouchableOpacity
+          style={styles.infoButton}
+          onPress={() => navigation.navigate('FastingPrograms')}
+        >
+          <MaterialCommunityIcons name="timer-sand" size={24} color="#89ce00" style={{ marginRight: 12 }} />
+          <Text style={styles.infoButtonText}>Fasting Program Info</Text>
+        </TouchableOpacity>
         {notifications.map(n => (
           <View key={n.key} style={[styles.notification, { borderLeftColor: n.color }]}> 
             <MaterialCommunityIcons name={n.icon} size={32} color={n.color} style={{ marginRight: 12 }} />
@@ -236,6 +246,25 @@ export default function InfoScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
+  container: { flexGrow: 1, backgroundColor: '#d9e4ff', padding: 24 },
+  headerBox: { alignItems: 'center', marginBottom: 24 },
+  welcome: { fontSize: 24, fontWeight: 'bold', color: '#2d4d4d', marginBottom: 4 },
+  desc: { fontSize: 16, color: '#4d6d6d', textAlign: 'center' },
+  infoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginBottom: 24,
+    width: '100%',
+    shadowColor: '#b3c7f7',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  infoButtonText: { fontSize: 18, fontWeight: '600', color: '#2d4d4d' },
   title: {
     fontSize: 28,
     fontWeight: 'bold',

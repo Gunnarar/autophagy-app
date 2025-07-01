@@ -6,55 +6,80 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useEffect, useState } from 'react';
-import { FastingProvider, useFasting } from './contexts/FastingContext';
 import { LogsProvider, useLogs } from './contexts/LogsContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import HomeScreen from './screens/HomeScreen';
-import FastingScreen from './screens/FastingScreen';
 import SymptomsScreen from './screens/SymptomsScreen';
 import LogsScreen from './screens/LogsScreen';
 import ProfileScreen from './screens/ProfileScreen';
 import InfoScreen from './screens/InfoScreen';
 import { formatTimeHMS, formatTimeHM, FAST_GOAL_SECONDS, MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES } from './utils/constants';
 import { ModalActionProvider } from './contexts/ModalActionContext';
+import { UserProvider, useUser } from './contexts/UserContext';
+import OnboardingScreen from './screens/OnboardingScreen';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import FastingProgramsScreen from './screens/FastingProgramsScreen';
+import ProfileDetailsScreen from './screens/ProfileDetailsScreen';
+import DietLogScreen from './screens/DietLogScreen';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      initialRouteName="Home"
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: '#6bb3b6',
+        tabBarInactiveTintColor: '#888',
+        tabBarStyle: { height: 60, paddingBottom: 8 },
+        tabBarIcon: ({ color, size }) => {
+          if (route.name === 'Home') {
+            return <Ionicons name="home" size={size} color={color} />;
+          } else if (route.name === 'Logs') {
+            return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
+          } else if (route.name === 'Profile') {
+            return <Ionicons name="person" size={size} color={color} />;
+          } else if (route.name === 'Info') {
+            return <MaterialCommunityIcons name="information" size={size} color={color} />;
+          }
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Logs" component={LogsScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Info" component={InfoScreen} />
+    </Tab.Navigator>
+  );
+}
+
+function Root() {
+  const { user, loading } = useUser();
+  if (loading) return <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Loading...</Text></View>;
+  if (!user || !user.onboarded) return <OnboardingScreen />;
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="MainTabs" component={MainTabs} />
+      <Stack.Screen name="FastingPrograms" component={FastingProgramsScreen} />
+      <Stack.Screen name="ProfileDetails" component={ProfileDetailsScreen} options={{ headerShown: true, title: 'Profile Details' }} />
+      <Stack.Screen name="DietLog" component={DietLogScreen} options={{ headerShown: true, title: 'Diet Log' }} />
+    </Stack.Navigator>
+  );
+}
 
 export default function App() {
   return (
-    <ModalActionProvider>
-      <LogsProvider>
-        <FastingProvider>
+    <UserProvider>
+      <ModalActionProvider>
+        <LogsProvider>
           <NavigationContainer>
-            <Tab.Navigator
-              initialRouteName="Home"
-              screenOptions={({ route }) => ({
-                headerShown: false,
-                tabBarActiveTintColor: '#6bb3b6',
-                tabBarInactiveTintColor: '#888',
-                tabBarStyle: { height: 60, paddingBottom: 8 },
-                tabBarIcon: ({ color, size }) => {
-                  if (route.name === 'Home') {
-                    return <Ionicons name="home" size={size} color={color} />;
-                  } else if (route.name === 'Logs') {
-                    return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
-                  } else if (route.name === 'Profile') {
-                    return <Ionicons name="person" size={size} color={color} />;
-                  } else if (route.name === 'Info') {
-                    return <MaterialCommunityIcons name="information" size={size} color={color} />;
-                  }
-                },
-              })}
-            >
-              <Tab.Screen name="Home" component={HomeScreen} />
-              <Tab.Screen name="Logs" component={LogsScreen} />
-              <Tab.Screen name="Profile" component={ProfileScreen} />
-              <Tab.Screen name="Info" component={InfoScreen} />
-            </Tab.Navigator>
+            <Root />
           </NavigationContainer>
-        </FastingProvider>
-      </LogsProvider>
-    </ModalActionProvider>
+        </LogsProvider>
+      </ModalActionProvider>
+    </UserProvider>
   );
 }
 

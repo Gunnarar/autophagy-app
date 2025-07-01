@@ -101,4 +101,15 @@ export const AUTOPHAGY_LEVELS = [
     name: 'Master',
     challenges: [384], // 384+ hours
   },
+];
+
+export const FASTING_PROGRAMS = [
+  { key: '24h', label: '24 Hour Fast', duration: 24, unlockAfter: null },
+  { key: '36h', label: '36 Hour Fast', duration: 36, unlockAfter: '24h' },
+  { key: '48h', label: '48 Hour Fast', duration: 48, unlockAfter: '36h' },
+  { key: '72h', label: '72 Hour Fast', duration: 72, unlockAfter: '48h' },
+  { key: '96h', label: '96 Hour Fast (4d)', duration: 96, unlockAfter: '72h' },
+  { key: '120h', label: '120 Hour Fast (5d)', duration: 120, unlockAfter: '96h' },
+  { key: '144h', label: '144 Hour Fast (6d)', duration: 144, unlockAfter: '120h' },
+  { key: '168h', label: '168 Hour Fast (7d)', duration: 168, unlockAfter: '144h' },
 ]; 

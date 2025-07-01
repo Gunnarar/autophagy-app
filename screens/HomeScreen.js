@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, ScrollView, Animated, Image } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, ScrollView, Animated, Image, TouchableOpacity, Button, Alert } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLogs } from '../contexts/LogsContext';
@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import StatusPill from '../components/StatusPill';
 import { useModalAction } from '../contexts/ModalActionContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useUser } from '../contexts/UserContext';
 
 export default function HomeScreen() {
   const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useAutophagyStatus } = useLogs();
@@ -22,10 +23,7 @@ export default function HomeScreen() {
   const [severity, setSeverity] = useState('mild');
   const [symptomNote, setSymptomNote] = useState('');
   const scale = useRef(new Animated.Value(1)).current;
-  const [fastStopModalVisible, setFastStopModalVisible] = useState(false);
-  const [fastStopTime, setFastStopTime] = useState(new Date());
   const [showFastStopPicker, setShowFastStopPicker] = useState(false);
-  const [fastStopNote, setFastStopNote] = useState('');
   const [addModalVisible, setAddModalVisible] = useState(false);
   const [addTime, setAddTime] = useState(new Date());
   const [showAddTimePicker, setShowAddTimePicker] = useState(false);
@@ -37,6 +35,24 @@ export default function HomeScreen() {
   const [fastingPlan, setFastingPlan] = useState({ hours: 16, label: '16:8' });
   const [dietPreference, setDietPreference] = useState('Standard');
   const [mealDietType, setMealDietType] = useState(dietPreference);
+  const { user, saveUser } = useUser();
+  const [meatPounds, setMeatPounds] = useState('');
+  const [carbNotes, setCarbNotes] = useState('');
+  const [dietType, setDietType] = useState(user?.dietType || 'standard');
+  const today = new Date().toISOString().slice(0, 10);
+  function getWeekStart(date) {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay());
+    return d.toISOString().slice(0, 10);
+  }
+  const weekStart = getWeekStart(today);
+  const animalMeatLog = user?.animalMeatLog || [];
+  const carbMealLog = user?.carbMealLog || [];
+  const thisWeekMeat = animalMeatLog.filter(e => getWeekStart(e.date) === weekStart);
+  const thisWeekCarbs = carbMealLog.filter(e => getWeekStart(e.date) === weekStart);
+  const totalMeat = thisWeekMeat.reduce((sum, e) => sum + (parseFloat(e.pounds) || 0), 0);
+  const carbCount = thisWeekCarbs.length;
 
   React.useEffect(() => {
     Animated.loop(
@@ -55,8 +71,6 @@ export default function HomeScreen() {
         setFoodModalVisible(true);
       } else if (action === 'logSymptom') {
         setSymptomModalVisible(true);
-      } else if (action === 'logFast') {
-        setFastStopModalVisible(true);
       }
     };
     setModalActionHandler(handler);
@@ -111,7 +125,6 @@ export default function HomeScreen() {
   const fastingElapsed = Math.floor((Date.now() - fastingStart) / 1000);
 
   // Calculate today's date string
-  const today = new Date().toISOString().slice(0, 10);
   const todaysMeals = foodLog.filter(e => e.type === 'meal' && e.time && e.time.slice(0, 10) === today);
   const todaysSnacks = foodLog.filter(e => e.type === 'snack' && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
@@ -255,43 +268,44 @@ export default function HomeScreen() {
     setAddTime(new Date());
   };
 
-  // Save fast entry
-  const handleSaveFast = () => {
-    setFastLog([
-      {
-        start: new Date(fastingStart).toISOString(),
-        end: new Date().toISOString(),
-        note: fastStopNote,
-        id: Date.now(),
-      },
-      ...fastLog,
-    ]);
-    setFastStopModalVisible(false);
-    setFastStopNote('');
-  };
-
-  // Save fast entry with time
-  const handleSaveFastWithTime = () => {
-    setFastLog([
-      {
-        start: addTime.toISOString(),
-        end: new Date().toISOString(),
-        note: fastStopNote,
-        id: Date.now(),
-      },
-      ...fastLog,
-    ]);
-    setFastStopModalVisible(false);
-    setFastStopNote('');
-    setAddTime(new Date());
-  };
-
   React.useEffect(() => {
     (async () => {
       const storedDiet = await AsyncStorage.getItem('dietPreference');
       if (storedDiet) setDietPreference(storedDiet);
     })();
   }, []);
+
+  const handleLogDiet = async () => {
+    let didLog = false;
+    if (meatPounds) {
+      const entry = { date: today, pounds: meatPounds };
+      await saveUser({
+        ...user,
+        animalMeatLog: [...animalMeatLog, entry],
+      });
+      setMeatPounds('');
+      didLog = true;
+    }
+    if (carbNotes) {
+      const entry = { date: today, notes: carbNotes };
+      await saveUser({
+        ...user,
+        carbMealLog: [...carbMealLog, entry],
+      });
+      setCarbNotes('');
+      didLog = true;
+    }
+    if (!didLog) {
+      Alert.alert('Nothing to log', 'Please enter pounds of animal meat or notes for a carb meal.');
+      return;
+    }
+    setFoodModalVisible(false);
+  };
+
+  const handleDietType = async (type) => {
+    setDietType(type);
+    await saveUser({ ...user, dietType: type });
+  };
 
   return (
     <View style={{ flex: 1 }}>
@@ -587,62 +601,46 @@ export default function HomeScreen() {
             <View style={styles.modalOverlay}>
               <TouchableWithoutFeedback onPress={() => {}}>
                 <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Add Meal</Text>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Type:</Text>
-                  <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-                    <Pressable style={[styles.foodTypeButton, foodType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setFoodType('meal')} accessibilityLabel="Meal">
-                      <Text style={{ fontSize: 20 }}>🍽️ Meal</Text>
-                    </Pressable>
-                    <Pressable style={[styles.foodTypeButton, foodType === 'snack' && styles.foodTypeButtonActive]} onPress={() => setFoodType('snack')} accessibilityLabel="Snack">
-                      <Text style={{ fontSize: 20 }}>🥪 Snack</Text>
-                    </Pressable>
-                  </View>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Diet Type:</Text>
-                  <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-                    {['Standard','Low-Carb','Keto','Carnivore'].map(d => (
+                  <Text style={styles.modalTitle}>Dietary Log</Text>
+                  <Text style={styles.sectionTitle}>Diet Type</Text>
+                  <View style={styles.dietTypeRow}>
+                    {['standard', 'animal'].map(dt => (
                       <Pressable
-                        key={d}
-                        style={[styles.foodTypeButton, mealDietType === d && styles.foodTypeButtonActive]}
-                        onPress={() => setMealDietType(d)}
-                        accessibilityLabel={`Tag meal as ${d}`}
+                        key={dt}
+                        style={[styles.foodTypeButton, dietType === dt && styles.foodTypeButtonActive]}
+                        onPress={() => handleDietType(dt)}
+                        accessibilityLabel={`Select ${dt} diet`}
                       >
-                        <Text style={{ fontSize: 16 }}>{d}</Text>
+                        <Text style={dietType === dt ? styles.dietTypeTextActive : styles.dietTypeText}>{dt.charAt(0).toUpperCase() + dt.slice(1)}</Text>
                       </Pressable>
                     ))}
                   </View>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                  <View style={{ width: '100%', marginBottom: 16 }}>
+                  <Text style={styles.sectionTitle}>Log Animal Meat (lbs)</Text>
+                  <View style={styles.row}>
                     <TextInput
-                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
-                      numberOfLines={1}
-                      onChangeText={setFoodNote}
-                      value={foodNote}
-                      placeholder="e.g. high carb, keto, protein shake"
-                      accessibilityLabel="Food note input"
+                      style={styles.input}
+                      value={meatPounds}
+                      onChangeText={setMeatPounds}
+                      placeholder="Pounds"
+                      keyboardType="numeric"
                     />
                   </View>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
-                  <Pressable
-                    style={[styles.modalButton, { marginBottom: 12 }]}
-                    onPress={() => setShowAddTimePicker(true)}
-                    accessibilityLabel="Edit date and time"
-                  >
-                    <Text style={{ color: '#fff' }}>{addTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-                  </Pressable>
-                  <DateTimePickerModal
-                    isVisible={showAddTimePicker}
-                    mode="datetime"
-                    date={addTime}
-                    onConfirm={date => { setAddTime(date); setShowAddTimePicker(false); }}
-                    onCancel={() => setShowAddTimePicker(false)}
-                    is24Hour={true}
-                  />
-                  <Pressable style={styles.modalButton} onPress={handleSaveFoodWithTime} accessibilityLabel="Save meal entry">
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                  </Pressable>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setFoodModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                  </Pressable>
+                  <Text style={styles.sectionTitle}>Log Carb Meal</Text>
+                  <View style={styles.row}>
+                    <TextInput
+                      style={styles.input}
+                      value={carbNotes}
+                      onChangeText={setCarbNotes}
+                      placeholder="Notes (optional)"
+                    />
+                  </View>
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>This Week's Summary</Text>
+                    <Text style={styles.summaryText}>Total Animal Meat: <Text style={{ color: '#89ce00', fontWeight: 'bold' }}>{totalMeat} lbs</Text></Text>
+                    <Text style={styles.summaryText}>Carb Meals: <Text style={{ color: '#b3c7f7', fontWeight: 'bold' }}>{carbCount}</Text></Text>
+                  </View>
+                  <Button title="Log" onPress={handleLogDiet} />
+                  <Button title="Close" onPress={() => setFoodModalVisible(false)} color="#888" />
                 </View>
               </TouchableWithoutFeedback>
             </View>
@@ -740,51 +738,6 @@ export default function HomeScreen() {
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-        {/* Fasting Stop Modal */}
-        <Modal visible={fastStopModalVisible} transparent animationType="fade" onRequestClose={() => setFastStopModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={() => setFastStopModalVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Stop Fasting</Text>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
-                  <Pressable
-                    style={[styles.modalButton, { marginBottom: 12 }]}
-                    onPress={() => setShowAddTimePicker(true)}
-                    accessibilityLabel="Edit start time"
-                  >
-                    <Text style={{ color: '#fff' }}>{addTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-                  </Pressable>
-                  <DateTimePickerModal
-                    isVisible={showAddTimePicker}
-                    mode="datetime"
-                    date={addTime}
-                    onConfirm={date => { setAddTime(date); setShowAddTimePicker(false); }}
-                    onCancel={() => setShowAddTimePicker(false)}
-                    is24Hour={true}
-                  />
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                  <View style={{ width: '100%', marginBottom: 16 }}>
-                    <TextInput
-                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
-                      numberOfLines={1}
-                      onChangeText={setFastStopNote}
-                      value={fastStopNote}
-                      placeholder="e.g. interrupted, completed, etc."
-                      accessibilityLabel="Fast note input"
-                    />
-                  </View>
-                  <Pressable style={styles.modalButton} onPress={handleSaveFastWithTime} accessibilityLabel="Stop fasting">
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Stop</Text>
-                  </Pressable>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setFastStopModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                  </Pressable>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
       </ScrollView>
       {/* Floating + button */}
       <Pressable
@@ -817,9 +770,7 @@ export default function HomeScreen() {
                 <Text style={{ fontSize: 20, fontWeight: 'bold', color: '#2d4d4d', marginBottom: 16, textAlign: 'center' }}>Add Entry</Text>
                 {[
                   { key: 'meal', label: 'Meal', icon: <MaterialCommunityIcons name="food" size={28} color="#6bb3b6" />, onPress: () => { setFoodType('meal'); setFoodModalVisible(true); setAddModalVisible(false); } },
-                  { key: 'snack', label: 'Snack', icon: <MaterialCommunityIcons name="food-apple" size={28} color="#6bb3b6" />, onPress: () => { setFoodType('snack'); setFoodModalVisible(true); setAddModalVisible(false); } },
                   { key: 'symptom', label: 'Symptom', icon: <MaterialCommunityIcons name="stethoscope" size={28} color="#6bb3b6" />, onPress: () => { setSymptomModalVisible(true); setAddModalVisible(false); } },
-                  { key: 'fast', label: 'Fast', icon: <MaterialCommunityIcons name="timer-sand" size={28} color="#6bb3b6" />, onPress: () => { setFastStopModalVisible(true); setAddModalVisible(false); } },
                 ].map(opt => (
                   <Pressable
                     key={opt.key}
@@ -960,4 +911,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  headerRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 16 },
+  dietTypeRow: { flexDirection: 'row', marginBottom: 8 },
+  dietTypeText: { color: '#4d6d6d', fontWeight: 'bold' },
+  dietTypeTextActive: { color: '#fff', fontWeight: 'bold' },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, fontSize: 16, marginRight: 8, flex: 1, backgroundColor: '#fff' },
+  section: { width: '100%', marginBottom: 24 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#4d6d6d', marginBottom: 8 },
+  summaryText: { fontSize: 16, color: '#2d4d4d', marginTop: 4 },
 }); 
