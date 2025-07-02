@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, Alert, ScrollView, Button } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
 import { formatTimeHM, SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
 export default function LogsScreen() {
   const [filterType, setFilterType] = useState('all');
-  const [filterDate, setFilterDate] = useState('today');
-  const { foodLog, setFoodLog, symptomLog, setSymptomLog } = useLogs();
+  const [timeRange, setTimeRange] = useState('week'); // week, month, 3m, 6m, year
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog } = useLogs();
   const [pickerMode, setPickerMode] = useState(null); // for fast/symptom time pickers
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editLogType, setEditLogType] = useState(null); // 'food' or 'symptom'
@@ -27,6 +29,8 @@ export default function LogsScreen() {
   const [editFastNote, setEditFastNote] = useState('');
   const [showEditFastStartPicker, setShowEditFastStartPicker] = useState(false);
   const [showEditFastEndPicker, setShowEditFastEndPicker] = useState(false);
+  const [exportModalVisible, setExportModalVisible] = useState(false);
+  const [exportTimeRange, setExportTimeRange] = useState('week');
 
   useEffect(() => {
     if (foodLog.length > 0 && foodLog.some(e => !e.time)) {
@@ -42,19 +46,37 @@ export default function LogsScreen() {
     ...symptomLog.map(e => ({ ...e, logType: 'symptom' })),
   ];
 
-  const today = new Date().toISOString().slice(0, 10);
+  // Time range filtering
+  const now = new Date();
+  let rangeStart = new Date();
+  if (timeRange === 'week') rangeStart.setDate(now.getDate() - 6);
+  else if (timeRange === 'month') rangeStart.setMonth(now.getMonth() - 1);
+  else if (timeRange === '3m') rangeStart.setMonth(now.getMonth() - 3);
+  else if (timeRange === '6m') rangeStart.setMonth(now.getMonth() - 6);
+  else if (timeRange === 'year') rangeStart.setFullYear(now.getFullYear() - 1);
+  rangeStart.setHours(0,0,0,0);
+  const inRange = d => new Date(d) >= rangeStart && new Date(d) <= now;
   const logs = allLogs.filter(e => {
     if (filterType !== 'all' && e.logType !== filterType) return false;
     const dateStr = e.time;
     if (!dateStr) return false;
-    if (filterDate === 'today') return dateStr.slice(0, 10) === today;
-    return true;
+    return inRange(dateStr);
   });
   logs.sort((a, b) => {
     const aDate = new Date(a.time);
     const bDate = new Date(b.time);
     return bDate - aDate;
   });
+
+  // Summary calculations (filtered by time range)
+  const meatPounds = foodLog.filter(e => e.type === 'animalMeat' && e.pounds && inRange(e.time)).reduce((sum, e) => sum + parseFloat(e.pounds), 0);
+  const prolongedFasts = fastLog.filter(f => {
+    const start = new Date(f.start);
+    const end = new Date(f.end);
+    const duration = (end - start) / 3600000;
+    return duration >= 24 && inRange(f.end);
+  }).length;
+  const symptomCount = symptomLog.filter(e => inRange(e.time)).length;
 
   const sortedFood = [...foodLog].sort((a, b) => new Date(a.time) - new Date(b.time));
   const fastingPeriods = [];
@@ -75,6 +97,86 @@ export default function LogsScreen() {
     fastingPeriods.push({ start: lastFood, end: new Date(), symptoms, endFood: null });
   }
 
+  // Helper: get date range for export
+  function getExportRange(rangeKey) {
+    const now = new Date();
+    let start = new Date();
+    if (rangeKey === 'week') start.setDate(now.getDate() - 6);
+    else if (rangeKey === 'month') start.setMonth(now.getMonth() - 1);
+    else if (rangeKey === '3m') start.setMonth(now.getMonth() - 3);
+    else if (rangeKey === '6m') start.setMonth(now.getMonth() - 6);
+    else if (rangeKey === 'year') start.setFullYear(now.getFullYear() - 1);
+    start.setHours(0,0,0,0);
+    return { start, end: now };
+  }
+
+  async function handleExportCSV() {
+    try {
+      const { start, end } = getExportRange(exportTimeRange);
+      const inRange = d => new Date(d) >= start && new Date(d) <= end;
+      // Filter logs
+      const food = foodLog.filter(e => e.time && inRange(e.time));
+      const symptoms = symptomLog.filter(e => e.time && inRange(e.time));
+      const fasts = fastLog.filter(f => f.start && f.end && inRange(f.end));
+      // Summary
+      const meatPounds = food.filter(e => e.type === 'animalMeat' && e.pounds).reduce((sum, e) => sum + parseFloat(e.pounds), 0);
+      const prolongedFasts = fasts.filter(f => {
+        const start = new Date(f.start);
+        const end = new Date(f.end);
+        const duration = (end - start) / 3600000;
+        return duration >= 24;
+      }).length;
+      const symptomCount = symptoms.length;
+      // CSV header
+      let csv = `Genesis4PD Log Export\nTime Range: ${exportTimeRange}\nExported: ${new Date().toLocaleString()}\n\n`;
+      csv += `Summary\n"Total Meat (lbs)","Prolonged Fasts (>=24h)","Symptoms"\n"${meatPounds.toFixed(1)}","${prolongedFasts}","${symptomCount}"\n\n`;
+      // Logs header
+      csv += 'Type,Time,Details\n';
+      // Combine all logs
+      const all = [
+        ...food.map(e => ({
+          type: 'Meal',
+          time: e.time,
+          details: [
+            e.pounds ? `Pounds: ${e.pounds}` : null,
+            e.isCarb ? 'Carb Meal: Yes' : null,
+            e.note ? `Note: ${e.note}` : null,
+          ].filter(Boolean).join('; ')
+        })),
+        ...symptoms.map(e => ({
+          type: 'Symptom',
+          time: e.time,
+          details: [
+            SYMPTOM_TYPES.find(t => t.key === e.type)?.label || e.type,
+            e.severity ? `Severity: ${SEVERITIES.find(s => s.key === e.severity)?.label || e.severity}` : null,
+            e.note ? `Note: ${e.note}` : null,
+          ].filter(Boolean).join('; ')
+        })),
+        ...fasts.map(f => {
+          const start = new Date(f.start);
+          const end = new Date(f.end);
+          const duration = ((end - start) / 3600000).toFixed(1);
+          return {
+            type: 'Fast',
+            time: f.end,
+            details: `Start: ${start.toLocaleString()}, End: ${end.toLocaleString()}, Duration: ${duration}h${f.note ? `, Note: ${f.note}` : ''}`
+          };
+        })
+      ];
+      all.sort((a, b) => new Date(b.time) - new Date(a.time));
+      for (const entry of all) {
+        csv += `"${entry.type}","${new Date(entry.time).toLocaleString()}","${entry.details.replace(/"/g, '""')}"\n`;
+      }
+      // Save to file
+      const fileUri = FileSystem.cacheDirectory + `genesis4pd-logs-${Date.now()}.csv`;
+      await FileSystem.writeAsStringAsync(fileUri, csv, { encoding: FileSystem.EncodingType.UTF8 });
+      await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: 'Share Genesis4PD Logs' });
+      setExportModalVisible(false);
+    } catch (err) {
+      Alert.alert('Export Error', err.message || 'Failed to export logs.');
+    }
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
@@ -82,7 +184,91 @@ export default function LogsScreen() {
         style={StyleSheet.absoluteFill}
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <Text style={styles.title}>Logs</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <Text style={styles.title}>Logs</Text>
+          <Button title="Export" onPress={() => setExportModalVisible(true)} />
+        </View>
+        {/* Export Time Range Modal */}
+        <Modal visible={exportModalVisible} transparent animationType="fade" onRequestClose={() => setExportModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => setExportModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Export Logs</Text>
+                  <Text style={{ marginBottom: 12, color: '#4d6d6d' }}>Select time range for export:</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginBottom: 16 }}>
+                    {[
+                      { key: 'week', label: 'Week' },
+                      { key: 'month', label: 'Month' },
+                      { key: '3m', label: '3 Months' },
+                      { key: '6m', label: '6 Months' },
+                      { key: 'year', label: 'Year' },
+                    ].map(opt => (
+                      <Pressable
+                        key={opt.key}
+                        onPress={() => setExportTimeRange(opt.key)}
+                        style={{
+                          backgroundColor: exportTimeRange === opt.key ? '#6bb3b6' : '#eaf6f6',
+                          borderColor: '#6bb3b6',
+                          borderWidth: 1,
+                          borderRadius: 20,
+                          paddingVertical: 6,
+                          paddingHorizontal: 16,
+                          margin: 4,
+                        }}
+                      >
+                        <Text style={{ color: exportTimeRange === opt.key ? '#fff' : '#6bb3b6', fontWeight: 'bold' }}>{opt.label}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                  <Button title="Export as CSV" onPress={handleExportCSV} />
+                  <Button title="Cancel" onPress={() => setExportModalVisible(false)} color="#888" />
+                </View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        {/* Time Range Picker */}
+        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16 }}>
+          {[
+            { key: 'week', label: 'Week' },
+            { key: 'month', label: 'Month' },
+            { key: '3m', label: '3 Months' },
+            { key: '6m', label: '6 Months' },
+            { key: 'year', label: 'Year' },
+          ].map(opt => (
+            <Pressable
+              key={opt.key}
+              onPress={() => setTimeRange(opt.key)}
+              style={{
+                backgroundColor: timeRange === opt.key ? '#6bb3b6' : '#eaf6f6',
+                borderColor: '#6bb3b6',
+                borderWidth: 1,
+                borderRadius: 20,
+                paddingVertical: 6,
+                paddingHorizontal: 16,
+                marginHorizontal: 4,
+              }}
+            >
+              <Text style={{ color: timeRange === opt.key ? '#fff' : '#6bb3b6', fontWeight: 'bold' }}>{opt.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        {/* Summary Section */}
+        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 2 }}>
+          <View style={{ alignItems: 'center', flex: 1 }}>
+            <Text style={{ fontSize: 16, color: '#4d6d6d' }}>Meat (lbs)</Text>
+            <Text style={{ fontWeight: 'bold', color: '#89ce00', fontSize: 20 }}>{meatPounds.toFixed(1)}</Text>
+          </View>
+          <View style={{ alignItems: 'center', flex: 1 }}>
+            <Text style={{ fontSize: 16, color: '#4d6d6d' }}>Prolonged Fasts</Text>
+            <Text style={{ fontWeight: 'bold', color: '#6bb3b6', fontSize: 20 }}>{prolongedFasts}</Text>
+          </View>
+          <View style={{ alignItems: 'center', flex: 1 }}>
+            <Text style={{ fontSize: 16, color: '#4d6d6d' }}>Symptoms</Text>
+            <Text style={{ fontWeight: 'bold', color: '#e74c3c', fontSize: 20 }}>{symptomCount}</Text>
+          </View>
+        </View>
         {/* Pill-style filter */}
         <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16 }}>
           {[
