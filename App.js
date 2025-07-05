@@ -27,31 +27,31 @@ const Stack = createNativeStackNavigator();
 
 function MainTabs() {
   return (
-    <Tab.Navigator
-      initialRouteName="Home"
-      screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: '#6bb3b6',
-        tabBarInactiveTintColor: '#888',
-        tabBarStyle: { height: 60, paddingBottom: 8 },
-        tabBarIcon: ({ color, size }) => {
-          if (route.name === 'Home') {
-            return <Ionicons name="home" size={size} color={color} />;
-          } else if (route.name === 'Logs') {
-            return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
-          } else if (route.name === 'Profile') {
-            return <Ionicons name="person" size={size} color={color} />;
-          } else if (route.name === 'Info') {
-            return <MaterialCommunityIcons name="information" size={size} color={color} />;
-          }
-        },
-      })}
-    >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Logs" component={LogsScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
-      <Tab.Screen name="Info" component={InfoScreen} />
-    </Tab.Navigator>
+            <Tab.Navigator
+              initialRouteName="Home"
+              screenOptions={({ route }) => ({
+                headerShown: false,
+                tabBarActiveTintColor: '#6bb3b6',
+                tabBarInactiveTintColor: '#888',
+                tabBarStyle: { height: 60, paddingBottom: 8 },
+                tabBarIcon: ({ color, size }) => {
+                  if (route.name === 'Home') {
+                    return <Ionicons name="home" size={size} color={color} />;
+                  } else if (route.name === 'Logs') {
+                    return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
+                  } else if (route.name === 'Profile') {
+                    return <Ionicons name="person" size={size} color={color} />;
+                  } else if (route.name === 'Info') {
+                    return <MaterialCommunityIcons name="information" size={size} color={color} />;
+                  }
+                },
+              })}
+            >
+              <Tab.Screen name="Home" component={HomeScreen} />
+              <Tab.Screen name="Logs" component={LogsScreen} />
+              <Tab.Screen name="Profile" component={ProfileScreen} />
+              <Tab.Screen name="Info" component={InfoScreen} />
+            </Tab.Navigator>
   );
 }
 
@@ -77,8 +77,8 @@ export default function App() {
           <NavigationContainer>
             <Root />
           </NavigationContainer>
-        </LogsProvider>
-      </ModalActionProvider>
+      </LogsProvider>
+    </ModalActionProvider>
     </UserProvider>
   );
 }

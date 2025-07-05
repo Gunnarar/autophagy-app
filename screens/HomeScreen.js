@@ -13,7 +13,7 @@ import { useUser } from '../contexts/UserContext';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 
 export default function HomeScreen() {
-  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useAutophagyStatus } = useLogs();
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useAutophagyStatus, useUnifiedFastRecommendation } = useLogs();
   const navigation = useNavigation();
   const { currentLevel, nextChallenge, completed } = useAutophagyStatus();
   const [symptomModalVisible, setSymptomModalVisible] = useState(false);
@@ -33,6 +33,8 @@ export default function HomeScreen() {
   const [dietPreference, setDietPreference] = useState('Standard');
   const { user, saveUser } = useUser();
   const today = new Date().toISOString().slice(0, 10);
+  const unifiedRec = useUnifiedFastRecommendation();
+  const [fastRecDismissed, setFastRecDismissed] = useState(false);
   function getWeekStart(date) {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -261,6 +263,21 @@ export default function HomeScreen() {
     await saveUser({ ...user, dietType: type });
   };
 
+  React.useEffect(() => {
+    (async () => {
+      // Dismiss logic for fast recommendation
+      const today = new Date().toISOString().slice(0, 10);
+      const dismissed = await AsyncStorage.getItem('fastRecDismissed');
+      setFastRecDismissed(dismissed === today);
+    })();
+  }, []);
+
+  const handleDismissFastRec = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    await AsyncStorage.setItem('fastRecDismissed', today);
+    setFastRecDismissed(true);
+  };
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
@@ -269,6 +286,20 @@ export default function HomeScreen() {
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <Text style={styles.title}>Dashboard</Text>
+        {/* Always-visible Fasting Status & Challenge Card */}
+        {unifiedRec && (
+          <View style={styles.statusCard}>
+            <MaterialCommunityIcons name="timer-sand" size={28} color={unifiedRec.caution ? '#e74c3c' : '#89ce00'} style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, color: unifiedRec.caution ? '#e74c3c' : '#2d4d4d' }}>Fasting Status & Challenge</Text>
+              <Text style={{ color: '#4d6d6d', fontSize: 14 }}>{unifiedRec.reason}</Text>
+              <Text style={{ color: '#2d4d4d', fontSize: 15, marginBottom: 2 }}><Text style={{ fontWeight: 'bold' }}>Benefits:</Text> {unifiedRec.benefits}</Text>
+              <Text style={{ color: '#4d6d6d', fontSize: 14, marginBottom: 2 }}><Text style={{ fontWeight: 'bold' }}>What to expect:</Text> {unifiedRec.whatToExpect}</Text>
+              {unifiedRec.challengeMsg && <Text style={{ color: '#89ce00', fontSize: 14, marginBottom: 2 }}>{unifiedRec.challengeMsg}</Text>}
+              {unifiedRec.caution && <Text style={{ color: '#e74c3c', fontWeight: 'bold', fontSize: 13 }}>Caution: Consider a shorter fast first.</Text>}
+            </View>
+          </View>
+        )}
         {/* Status Pills Row */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 18 }}>
           <StatusPill
@@ -845,4 +876,14 @@ const styles = StyleSheet.create({
   section: { width: '100%', marginBottom: 24 },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#4d6d6d', marginBottom: 8 },
   summaryText: { fontSize: 16, color: '#2d4d4d', marginTop: 4 },
+  statusCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
 }); 

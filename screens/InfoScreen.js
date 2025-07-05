@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, Alert, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLogs } from '../contexts/LogsContext';
 import { useModalAction } from '../contexts/ModalActionContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function InfoScreen({ navigation }) {
-  const { foodLog, symptomLog, fastLog, useAutophagyStatus } = useLogs();
+  const { foodLog, symptomLog, fastLog, useAutophagyStatus, useUnifiedFastRecommendation } = useLogs();
   const { nextChallenge, currentLevel } = useAutophagyStatus();
   const { triggerModalAction } = useModalAction();
   const today = new Date().toISOString().slice(0, 10);
@@ -15,6 +16,22 @@ export default function InfoScreen({ navigation }) {
   const todaysMeals = foodLog.filter(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
   const [fastingDismissedUntil, setFastingDismissedUntil] = useState(null);
+  const unifiedRec = useUnifiedFastRecommendation();
+  const [fastRecDismissed, setFastRecDismissed] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const dismissed = await AsyncStorage.getItem('fastRecDismissed');
+      setFastRecDismissed(dismissed === today);
+    })();
+  }, []);
+
+  const handleDismissFastRec = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    await AsyncStorage.setItem('fastRecDismissed', today);
+    setFastRecDismissed(true);
+  };
 
   // Notification logic
   const notifications = [];
@@ -204,6 +221,22 @@ export default function InfoScreen({ navigation }) {
     });
   }
 
+  // 6. Unified Fast Recommendation (show only if not dismissed)
+  if (unifiedRec && !fastRecDismissed) {
+    notifications.unshift({
+      key: 'unified-fast-recommendation',
+      icon: 'timer-sand',
+      color: unifiedRec.caution ? '#e74c3c' : '#89ce00',
+      title: `Next Recommended Fast: ${unifiedRec.recommendedProgram.duration}h`,
+      desc: unifiedRec.reason,
+      benefits: unifiedRec.benefits,
+      whatToExpect: unifiedRec.whatToExpect,
+      challengeMsg: unifiedRec.challengeMsg,
+      caution: unifiedRec.caution,
+      dismissible: true,
+    });
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <LinearGradient
@@ -215,19 +248,33 @@ export default function InfoScreen({ navigation }) {
           <Text style={styles.welcome}>Welcome to Genesis4PD!</Text>
           <Text style={styles.desc}>Track your progress, learn about fasting, and get the most out of your program.</Text>
         </View>
-        <TouchableOpacity
-          style={styles.infoButton}
-          onPress={() => navigation.navigate('FastingPrograms')}
-        >
-          <MaterialCommunityIcons name="timer-sand" size={24} color="#89ce00" style={{ marginRight: 12 }} />
-          <Text style={styles.infoButtonText}>Fasting Program Info</Text>
-        </TouchableOpacity>
+        {/* Always-visible Fasting Status & Challenge Card */}
+        {unifiedRec && (
+          <View style={styles.statusCard}>
+            <MaterialCommunityIcons name="timer-sand" size={28} color={unifiedRec.caution ? '#e74c3c' : '#89ce00'} style={{ marginRight: 12 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontWeight: 'bold', fontSize: 16, color: unifiedRec.caution ? '#e74c3c' : '#2d4d4d' }}>Fasting Status & Challenge</Text>
+              <Text style={{ color: '#4d6d6d', fontSize: 14 }}>{unifiedRec.reason}</Text>
+              <Text style={{ color: '#2d4d4d', fontSize: 15, marginBottom: 2 }}><Text style={{ fontWeight: 'bold' }}>Benefits:</Text> {unifiedRec.benefits}</Text>
+              <Text style={{ color: '#4d6d6d', fontSize: 14, marginBottom: 2 }}><Text style={{ fontWeight: 'bold' }}>What to expect:</Text> {unifiedRec.whatToExpect}</Text>
+              {unifiedRec.challengeMsg && <Text style={{ color: '#89ce00', fontSize: 14, marginBottom: 2 }}>{unifiedRec.challengeMsg}</Text>}
+              {unifiedRec.caution && <Text style={{ color: '#e74c3c', fontWeight: 'bold', fontSize: 13 }}>Caution: Consider a shorter fast first.</Text>}
+            </View>
+          </View>
+        )}
         {notifications.map(n => (
           <View key={n.key} style={[styles.notification, { borderLeftColor: n.color }]}> 
             <MaterialCommunityIcons name={n.icon} size={32} color={n.color} style={{ marginRight: 12 }} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.notificationTitle, { color: n.color }]}>{n.title}</Text>
               <Text style={styles.notificationDesc}>{n.desc}</Text>
+              {n.key === 'unified-fast-recommendation' && (
+                <>
+                  <Text style={{ color: '#2d4d4d', fontSize: 15, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Benefits:</Text> {n.benefits}</Text>
+                  <Text style={{ color: '#4d6d6d', fontSize: 14, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>What to expect:</Text> {n.whatToExpect}</Text>
+                  {n.challengeMsg && <Text style={{ color: '#89ce00', fontSize: 14, marginBottom: 4 }}>{n.challengeMsg}</Text>}
+                </>
+              )}
               {n.action && n.actionLabel && (
                 <Pressable style={[styles.actionButton, { backgroundColor: n.color }]} onPress={n.action} accessibilityLabel={n.actionLabel}>
                   <Text style={{ color: '#fff', fontWeight: 'bold' }}>{n.actionLabel}</Text>
@@ -239,6 +286,11 @@ export default function InfoScreen({ navigation }) {
                 </Pressable>
               )}
             </View>
+            {n.dismissible && (
+              <Pressable onPress={handleDismissFastRec} style={{ marginLeft: 12, padding: 4 }} accessibilityLabel="Dismiss recommendation">
+                <MaterialCommunityIcons name="close" size={22} color="#888" />
+              </Pressable>
+            )}
           </View>
         ))}
       </ScrollView>
@@ -302,5 +354,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     alignSelf: 'flex-start',
     marginTop: 4,
+  },
+  statusCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
 }); 

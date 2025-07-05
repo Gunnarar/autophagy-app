@@ -1,5 +1,51 @@
 # autophagy-app
 
+## 🚦 Current Status (June 2024)
+
+**Genesis4PD Autophagy App** is a robust, user-friendly health-tracking app for Parkinson's Disease, focused on fasting, diet, and symptom logging. The MVP is complete and ready for final QA and user testing. All core flows are unified, accessible, and polished. See below for details.
+
+### ✅ Core Features Implemented
+- **Onboarding & Profile**: Multi-step onboarding, persistent profile, edit/view all data, required field validation, user-friendly errors.
+- **Fasting Tracking**: Fasting timer, log/history, progress metrics (autophagy windows), ongoing fast shown on Home, predefined programs (24h–7d) with progressive unlocking, schedule/snooze fasts.
+- **Diet/Food Logging**: Unified meal logging (animal meat, carb meals, regular meals) via a single Diet Log screen. All logs stored in a unified log context. Carb meals visually marked. Weekly summary and bar chart.
+- **Symptom Logging**: Log symptoms with type, severity, time, notes. Associate with fasting periods. Filter/review history. Friendly empty states.
+- **Logs & Filtering**: Unified, time-ordered log view with pill-style filters (All, Food, Symptoms, Fasting). Summary section tallies meat, fasts, symptoms.
+- **Export**: Export logs as CSV (with summary) for any time range (week, month, 3m, 6m, year). Uses expo-file-system and expo-sharing.
+- **Accessibility & Feedback**: Large fonts, high contrast, big touch targets, screen reader support. All actions show user feedback. Error handling and empty states reviewed.
+- **Data Persistence**: All logs and user data are persisted with AsyncStorage. Race conditions fixed.
+- **Data Visualization**: Simple bar chart for weekly animal meat and carb meals. Streaks, milestones, badges.
+
+### 🛣️ Roadmap Progress
+
+#### Top Priority (Core Functionality & Accessibility)
+- [x] **Onboarding & Profile**
+- [x] **Fasting-Based Tracking**
+- [x] **Dietary/Food Logging**
+- [x] **Symptom Logging**
+- [x] **Logs & Filtering**
+- [x] **Feedback & Guidance**
+
+#### High Value (User Engagement & Medical Relevance)
+- [ ] **Reminders & Notifications** _(Deferred: requires on-device QA)_
+- [x] **Data Visualization** _(basic charts/streaks done)_
+- [ ] **Personalization** _(dark mode toggle, quick actions: future)_
+- [ ] **Medical Safety** _(medication logging: future)_
+
+#### Advanced/Optional (For Future)
+- [ ] **User Feedback Indicators** _(future)_
+- [ ] **Ketone Tracking** _(future)_
+- [ ] **Biomarker Tracking** _(future)_
+- [ ] **Offline Support & Sync** _(future)_
+- [ ] **Theming & Delight** _(future)_
+
+### 🧪 Next Steps
+- Final QA and user testing (see QA checklist in project notes)
+- Polish UI/UX based on user feedback
+- Prepare for deployment (Expo Go, EAS Build, TestFlight/Play Store)
+- Plan for reminders/notifications and advanced features
+
+---
+
 This is the autophagy app for https://www.genesis4pd.com/pd-protocols.  Goals of the app are as follows:
 
 Measuring autophagy, particularly in the context of an app for your Genesis Health for Parkinson's Disease business, is challenging because autophagy is a complex cellular process that cannot be directly measured in real-time with consumer-grade technology. However, you can incorporate proxy metrics and user-input data that are scientifically associated with autophagy, especially tailored for Parkinson's patients. Below are the primary methods to estimate or track autophagy in an app, along with considerations for implementation and relevance to Parkinson's disease.

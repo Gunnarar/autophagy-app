@@ -185,7 +185,7 @@ export default function LogsScreen() {
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-          <Text style={styles.title}>Logs</Text>
+        <Text style={styles.title}>Logs</Text>
           <Button title="Export" onPress={() => setExportModalVisible(true)} />
         </View>
         {/* Export Time Range Modal */}
@@ -309,7 +309,7 @@ export default function LogsScreen() {
         )}
         {/* Log list */}
         {logs.map((entry, idx) => (
-          <View
+              <View
             key={entry.id}
             style={{
               ...styles.card,
@@ -328,17 +328,17 @@ export default function LogsScreen() {
                   : '#fff',
             }}
           >
-            <Text style={styles.cardTitle}>
+                  <Text style={styles.cardTitle}>
               {entry.logType === 'food' ? 'Meal' : SYMPTOM_TYPES[entry.type] || entry.type}
               {'  '}
               <Text style={{ color: '#4d6d6d', fontWeight: 'normal', fontSize: 14 }}>
                 {new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
-              </Text>
+                  </Text>
               {/* Fat red X for carb meals */}
               {entry.logType === 'food' && entry.isCarb ? (
                 <MaterialCommunityIcons name="close-circle" size={22} color="#e74c3c" style={{ marginLeft: 8, marginBottom: -4 }} />
               ) : null}
-            </Text>
+                        </Text>
             {/* Show pounds of meat if present */}
             {entry.pounds ? (
               <Text style={styles.cardText}>Pounds of Meat: {entry.pounds}</Text>
@@ -353,10 +353,10 @@ export default function LogsScreen() {
             <View style={{ flexDirection: 'row', marginTop: 8 }}>
               <Pressable onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }} style={[styles.modalButton, { marginRight: 8 }]} accessibilityLabel="Edit log">
                 <Text style={{ color: '#fff', fontWeight: 'bold' }}>Edit</Text>
-              </Pressable>
+                        </Pressable>
               <Pressable onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }} style={[styles.modalButton, { backgroundColor: '#ccc' }]} accessibilityLabel="Delete log">
-                <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
-              </Pressable>
+                          <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
+                        </Pressable>
             </View>
           </View>
         ))}
@@ -368,199 +368,199 @@ export default function LogsScreen() {
           </View>
         )}
       </ScrollView>
-      <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={() => setEditModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setEditModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Edit {editLogType === 'food' ? 'Food' : 'Symptom'} Log</Text>
-                {editLogType === 'food' ? (
-                  <>
-                    <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Type:</Text>
-                    <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-                      <Pressable style={[styles.foodTypeButton, editFoodType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setEditFoodType('meal')} accessibilityLabel="Meal">
-                        <Text style={{ fontSize: 20 }}>🍽️ Meal</Text>
-                      </Pressable>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
-                    <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-                      {SYMPTOM_TYPES.map(t => (
-                        <Pressable
-                          key={t.key}
-                          style={[
-                            styles.foodTypeButton,
-                            editSymptomType === t.key && styles.foodTypeButtonActive,
-                          ]}
-                          onPress={() => setEditSymptomType(t.key)}
-                          accessibilityLabel={t.label}
-                        >
-                          <Text style={{ fontSize: 20 }}>{t.emoji}</Text>
+        <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={() => setEditModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => setEditModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Edit {editLogType === 'food' ? 'Food' : 'Symptom'} Log</Text>
+                  {editLogType === 'food' ? (
+                    <>
+                      <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Type:</Text>
+                      <View style={{ flexDirection: 'row', marginBottom: 16 }}>
+                        <Pressable style={[styles.foodTypeButton, editFoodType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setEditFoodType('meal')} accessibilityLabel="Meal">
+                          <Text style={{ fontSize: 20 }}>🍽️ Meal</Text>
                         </Pressable>
-                      ))}
-                    </View>
-                    <Text style={{ textAlign: 'center', fontSize: 16, color: '#2d4d4d', marginBottom: 12 }}>
-                      {SYMPTOM_TYPES.find(t => t.key === editSymptomType)?.label}
-                    </Text>
-                    <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Severity:</Text>
-                    <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-                      {SEVERITIES.map(s => (
-                        <Pressable
-                          key={s.key}
-                          style={[styles.foodTypeButton, editSeverity === s.key && styles.foodTypeButtonActive]}
-                          onPress={() => setEditSeverity(s.key)}
-                          accessibilityLabel={s.label}
-                        >
-                          <Text style={{ fontSize: 16 }}>{s.label}</Text>
-                        </Pressable>
-                      ))}
-                    </View>
-                  </>
-                )}
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
-                <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setShowEditTimePicker(true)}>
-                  <Text style={{ color: '#fff' }}>{editTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                </Pressable>
-                <DateTimePickerModal
-                  isVisible={showEditTimePicker}
-                  mode="datetime"
-                  date={editTime}
-                  onConfirm={date => { setEditTime(date); setShowEditTimePicker(false); }}
-                  onCancel={() => setShowEditTimePicker(false)}
-                  is24Hour={true}
-                />
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                <View style={{ width: '100%', marginBottom: 16 }}>
-                  <TextInput
-                    style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
-                    numberOfLines={1}
-                    onChangeText={setEditNote}
-                    value={editNote}
-                    placeholder="e.g. high carb, before meds, etc."
-                    accessibilityLabel="Log note input"
+                      </View>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
+                      <View style={{ flexDirection: 'row', marginBottom: 8 }}>
+                        {SYMPTOM_TYPES.map(t => (
+                          <Pressable
+                            key={t.key}
+                            style={[
+                              styles.foodTypeButton,
+                              editSymptomType === t.key && styles.foodTypeButtonActive,
+                            ]}
+                            onPress={() => setEditSymptomType(t.key)}
+                            accessibilityLabel={t.label}
+                          >
+                            <Text style={{ fontSize: 20 }}>{t.emoji}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                      <Text style={{ textAlign: 'center', fontSize: 16, color: '#2d4d4d', marginBottom: 12 }}>
+                        {SYMPTOM_TYPES.find(t => t.key === editSymptomType)?.label}
+                      </Text>
+                      <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Severity:</Text>
+                      <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+                        {SEVERITIES.map(s => (
+                          <Pressable
+                            key={s.key}
+                            style={[styles.foodTypeButton, editSeverity === s.key && styles.foodTypeButtonActive]}
+                            onPress={() => setEditSeverity(s.key)}
+                            accessibilityLabel={s.label}
+                          >
+                            <Text style={{ fontSize: 16 }}>{s.label}</Text>
+                          </Pressable>
+                        ))}
+                      </View>
+                    </>
+                  )}
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
+                  <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setShowEditTimePicker(true)}>
+                    <Text style={{ color: '#fff' }}>{editTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={showEditTimePicker}
+                    mode="datetime"
+                    date={editTime}
+                    onConfirm={date => { setEditTime(date); setShowEditTimePicker(false); }}
+                    onCancel={() => setShowEditTimePicker(false)}
+                    is24Hour={true}
                   />
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => {
-                    // Delete log
-                    if (editLogType === 'food') {
-                      setFoodLog(foodLog.filter(e => e.id !== editLog.id));
-                    } else {
-                      setSymptomLog(symptomLog.filter(e => e.id !== editLog.id));
-                    }
-                    setEditModalVisible(false);
-                  }} accessibilityLabel="Delete">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                  <View style={{ width: '100%', marginBottom: 16 }}>
+                    <TextInput
+                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
+                      numberOfLines={1}
+                      onChangeText={setEditNote}
+                      value={editNote}
+                      placeholder="e.g. high carb, before meds, etc."
+                      accessibilityLabel="Log note input"
+                    />
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+                    <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => {
+                      // Delete log
+                      if (editLogType === 'food') {
+                        setFoodLog(foodLog.filter(e => e.id !== editLog.id));
+                      } else {
+                        setSymptomLog(symptomLog.filter(e => e.id !== editLog.id));
+                      }
+                      setEditModalVisible(false);
+                    }} accessibilityLabel="Delete">
+                      <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
+                    </Pressable>
+                    <Pressable style={styles.modalButton} onPress={() => {
+                      // Save changes
+                      if (editLogType === 'food') {
+                        setFoodLog(foodLog.map(e => e.id === editLog.id ? {
+                          ...e,
+                          type: editFoodType,
+                          time: editTime.toISOString(),
+                          note: editNote,
+                        } : e));
+                      } else {
+                        setSymptomLog(symptomLog.map(e => e.id === editLog.id ? {
+                          ...e,
+                          type: editSymptomType,
+                          severity: editSeverity,
+                          time: editTime.toISOString(),
+                          note: editNote,
+                        } : e));
+                      }
+                      setEditModalVisible(false);
+                    }} accessibilityLabel="Save">
+                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                    </Pressable>
+                  </View>
+                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setEditModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
                   </Pressable>
-                  <Pressable style={styles.modalButton} onPress={() => {
-                    // Save changes
-                    if (editLogType === 'food') {
-                      setFoodLog(foodLog.map(e => e.id === editLog.id ? {
-                        ...e,
-                        type: editFoodType,
-                        time: editTime.toISOString(),
-                        note: editNote,
-                      } : e));
-                    } else {
-                      setSymptomLog(symptomLog.map(e => e.id === editLog.id ? {
-                        ...e,
-                        type: editSymptomType,
-                        severity: editSeverity,
-                        time: editTime.toISOString(),
-                        note: editNote,
-                      } : e));
-                    }
-                    setEditModalVisible(false);
-                  }} accessibilityLabel="Save">
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                  </Pressable>
                 </View>
-                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setEditModalVisible(false)} accessibilityLabel="Cancel">
-                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-      <Modal visible={editFastModalVisible} transparent animationType="fade" onRequestClose={() => setEditFastModalVisible(false)}>
-        <TouchableWithoutFeedback onPress={() => setEditFastModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Edit Fast</Text>
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
-                <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setShowEditFastStartPicker(true)}>
-                  <Text style={{ color: '#fff' }}>{editFastStart.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                </Pressable>
-                <DateTimePickerModal
-                  isVisible={showEditFastStartPicker}
-                  mode="datetime"
-                  date={editFastStart}
-                  onConfirm={date => { setEditFastStart(date); setShowEditFastStartPicker(false); }}
-                  onCancel={() => setShowEditFastStartPicker(false)}
-                  is24Hour={true}
-                />
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>End Time:</Text>
-                <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setShowEditFastEndPicker(true)}>
-                  <Text style={{ color: '#fff' }}>{editFastEnd.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                </Pressable>
-                <DateTimePickerModal
-                  isVisible={showEditFastEndPicker}
-                  mode="datetime"
-                  date={editFastEnd}
-                  onConfirm={date => { setEditFastEnd(date); setShowEditFastEndPicker(false); }}
-                  onCancel={() => setShowEditFastEndPicker(false)}
-                  is24Hour={true}
-                />
-                <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                <View style={{ width: '100%', marginBottom: 16 }}>
-                  <TextInput
-                    style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
-                    numberOfLines={1}
-                    onChangeText={setEditFastNote}
-                    value={editFastNote}
-                    placeholder="e.g. completed, interrupted, etc."
-                    accessibilityLabel="Fast note input"
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        <Modal visible={editFastModalVisible} transparent animationType="fade" onRequestClose={() => setEditFastModalVisible(false)}>
+          <TouchableWithoutFeedback onPress={() => setEditFastModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>Edit Fast</Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
+                  <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setShowEditFastStartPicker(true)}>
+                    <Text style={{ color: '#fff' }}>{editFastStart.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
+                  </Pressable>
+                  <DateTimePickerModal
+                    isVisible={showEditFastStartPicker}
+                    mode="datetime"
+                    date={editFastStart}
+                    onConfirm={date => { setEditFastStart(date); setShowEditFastStartPicker(false); }}
+                    onCancel={() => setShowEditFastStartPicker(false)}
+                    is24Hour={true}
                   />
-                </View>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => {
-                    // Delete fast
-                    if (editFast && editFast.endFood) {
-                      // Remove fast by matching end time
-                      setFoodLog(foodLog.filter(e => e.id !== editFast.endFood.id));
-                    }
-                    setEditFastModalVisible(false);
-                  }} accessibilityLabel="Delete fast">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>End Time:</Text>
+                  <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setShowEditFastEndPicker(true)}>
+                    <Text style={{ color: '#fff' }}>{editFastEnd.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
                   </Pressable>
-                  <Pressable style={styles.modalButton} onPress={() => {
-                    // Save changes
-                    if (editFast && editFast.endFood) {
-                      // Update food entry
-                      setFoodLog(foodLog.map(e => e.id === editFast.endFood.id ? {
-                        ...e,
-                        time: editFastEnd.toISOString(),
-                        note: editFastNote,
-                      } : e));
-                    }
-                    // No explicit fastLog, so just update foodLog
-                    setEditFastModalVisible(false);
-                  }} accessibilityLabel="Save fast">
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                  <DateTimePickerModal
+                    isVisible={showEditFastEndPicker}
+                    mode="datetime"
+                    date={editFastEnd}
+                    onConfirm={date => { setEditFastEnd(date); setShowEditFastEndPicker(false); }}
+                    onCancel={() => setShowEditFastEndPicker(false)}
+                    is24Hour={true}
+                  />
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                  <View style={{ width: '100%', marginBottom: 16 }}>
+                    <TextInput
+                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
+                      numberOfLines={1}
+                      onChangeText={setEditFastNote}
+                      value={editFastNote}
+                      placeholder="e.g. completed, interrupted, etc."
+                      accessibilityLabel="Fast note input"
+                    />
+                  </View>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
+                    <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => {
+                      // Delete fast
+                      if (editFast && editFast.endFood) {
+                        // Remove fast by matching end time
+                        setFoodLog(foodLog.filter(e => e.id !== editFast.endFood.id));
+                      }
+                      setEditFastModalVisible(false);
+                    }} accessibilityLabel="Delete fast">
+                      <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
+                    </Pressable>
+                    <Pressable style={styles.modalButton} onPress={() => {
+                      // Save changes
+                      if (editFast && editFast.endFood) {
+                        // Update food entry
+                        setFoodLog(foodLog.map(e => e.id === editFast.endFood.id ? {
+                          ...e,
+                          time: editFastEnd.toISOString(),
+                          note: editFastNote,
+                        } : e));
+                      }
+                      // No explicit fastLog, so just update foodLog
+                      setEditFastModalVisible(false);
+                    }} accessibilityLabel="Save fast">
+                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                    </Pressable>
+                  </View>
+                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setEditFastModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
                   </Pressable>
                 </View>
-                <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setEditFastModalVisible(false)} accessibilityLabel="Cancel">
-                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
     </View>
   );
 }
