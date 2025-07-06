@@ -248,20 +248,6 @@ export default function InfoScreen({ navigation }) {
           <Text style={styles.welcome}>Welcome to Genesis4PD!</Text>
           <Text style={styles.desc}>Track your progress, learn about fasting, and get the most out of your program.</Text>
         </View>
-        {/* Always-visible Fasting Status & Challenge Card */}
-        {unifiedRec && (
-          <View style={styles.statusCard}>
-            <MaterialCommunityIcons name="timer-sand" size={28} color={unifiedRec.caution ? '#e74c3c' : '#89ce00'} style={{ marginRight: 12 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ fontWeight: 'bold', fontSize: 16, color: unifiedRec.caution ? '#e74c3c' : '#2d4d4d' }}>Fasting Status & Challenge</Text>
-              <Text style={{ color: '#4d6d6d', fontSize: 14 }}>{unifiedRec.reason}</Text>
-              <Text style={{ color: '#2d4d4d', fontSize: 15, marginBottom: 2 }}><Text style={{ fontWeight: 'bold' }}>Benefits:</Text> {unifiedRec.benefits}</Text>
-              <Text style={{ color: '#4d6d6d', fontSize: 14, marginBottom: 2 }}><Text style={{ fontWeight: 'bold' }}>What to expect:</Text> {unifiedRec.whatToExpect}</Text>
-              {unifiedRec.challengeMsg && <Text style={{ color: '#89ce00', fontSize: 14, marginBottom: 2 }}>{unifiedRec.challengeMsg}</Text>}
-              {unifiedRec.caution && <Text style={{ color: '#e74c3c', fontWeight: 'bold', fontSize: 13 }}>Caution: Consider a shorter fast first.</Text>}
-            </View>
-          </View>
-        )}
         {notifications.map(n => (
           <View key={n.key} style={[styles.notification, { borderLeftColor: n.color }]}> 
             <MaterialCommunityIcons name={n.icon} size={32} color={n.color} style={{ marginRight: 12 }} />
