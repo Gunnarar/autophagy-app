@@ -66,12 +66,14 @@ export const MILESTONE_INFO = {
 };
 
 export const SYMPTOM_TYPES = [
-  { key: 'tremor', label: 'Tremor', emoji: '🤲' },
+  { key: 'tremor', label: 'Tremor', emoji: '✋' },
   { key: 'slowness', label: 'Slowness', emoji: '🐢' },
-  { key: 'stiffness', label: 'Stiffness', emoji: '🦵' },
-  { key: 'fatigue', label: 'Fatigue', emoji: '😴' },
-  { key: 'mood', label: 'Mood', emoji: '🙂' },
-  { key: 'other', label: 'Other', emoji: '❓' },
+  { key: 'stiffness', label: 'Stiffness', emoji: '💪' },
+  { key: 'posture', label: 'Posture/Balance', emoji: '🧍' },
+  { key: 'automatic', label: 'Loss of Automatic Movements', emoji: '🤖' },
+  { key: 'speech', label: 'Speech Changes', emoji: '🗣️' },
+  { key: 'writing', label: 'Writing Changes', emoji: '✍️' },
+  { key: 'nonmotor', label: 'Nonmotor Symptoms', emoji: '🧠' },
 ];
 
 export const SEVERITIES = [

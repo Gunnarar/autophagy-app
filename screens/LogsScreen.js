@@ -11,7 +11,7 @@ import * as Sharing from 'expo-sharing';
 export default function LogsScreen() {
   const [filterType, setFilterType] = useState('all');
   const [timeRange, setTimeRange] = useState('week'); // week, month, 3m, 6m, year
-  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog } = useLogs();
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, ketoneLog } = useLogs();
   const [pickerMode, setPickerMode] = useState(null); // for fast/symptom time pickers
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editLogType, setEditLogType] = useState(null); // 'food' or 'symptom'
@@ -44,6 +44,7 @@ export default function LogsScreen() {
   const allLogs = [
     ...foodLog.map(e => ({ ...e, logType: 'food' })),
     ...symptomLog.map(e => ({ ...e, logType: 'symptom' })),
+    ...ketoneLog.map(e => ({ ...e, logType: 'ketone' })),
   ];
 
   // Time range filtering
@@ -275,6 +276,7 @@ export default function LogsScreen() {
             { key: 'all', label: 'All', icon: <Ionicons name="list" size={18} color={filterType === 'all' ? '#fff' : '#6bb3b6'} /> },
             { key: 'food', label: 'Food', icon: <MaterialCommunityIcons name="food" size={18} color={filterType === 'food' ? '#fff' : '#6bb3b6'} /> },
             { key: 'symptom', label: 'Symptoms', icon: <MaterialCommunityIcons name="stethoscope" size={18} color={filterType === 'symptom' ? '#fff' : '#6bb3b6'} /> },
+            { key: 'ketone', label: 'Ketones', icon: <MaterialCommunityIcons name="water" size={18} color={filterType === 'ketone' ? '#fff' : '#6bb3b6'} /> },
           ].map(pill => (
             <Pressable
               key={pill.key}
@@ -329,7 +331,7 @@ export default function LogsScreen() {
             }}
           >
                   <Text style={styles.cardTitle}>
-              {entry.logType === 'food' ? 'Meal' : SYMPTOM_TYPES[entry.type] || entry.type}
+              {entry.logType === 'food' ? 'Meal' : entry.logType === 'symptom' ? (SYMPTOM_TYPES[entry.type] || entry.type) : 'Ketone'}
               {'  '}
               <Text style={{ color: '#4d6d6d', fontWeight: 'normal', fontSize: 14 }}>
                 {new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
@@ -349,6 +351,10 @@ export default function LogsScreen() {
             ) : null}
             {entry.logType === 'symptom' && (
               <Text style={styles.cardText}>Severity: {SEVERITIES[entry.severity] || entry.severity}</Text>
+            )}
+            {/* Show ketone value/unit if ketone log */}
+            {entry.logType === 'ketone' && (
+              <Text style={styles.cardText}>Ketone: {entry.value} {entry.unit}</Text>
             )}
             <View style={{ flexDirection: 'row', marginTop: 8 }}>
               <Pressable onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }} style={[styles.modalButton, { marginRight: 8 }]} accessibilityLabel="Edit log">

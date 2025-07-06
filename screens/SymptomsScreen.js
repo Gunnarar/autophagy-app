@@ -4,6 +4,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
 import { LinearGradient } from 'expo-linear-gradient';
+import { theme } from '../utils/theme';
 
 export default function SymptomsScreen() {
   const { symptomLog, setSymptomLog } = useLogs();
@@ -68,7 +69,7 @@ export default function SymptomsScreen() {
         colors={['#101c23', '#182c34']}
         style={StyleSheet.absoluteFill}
       />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: theme.spacing.regular, paddingBottom: 40 }}>
         <Text style={styles.title}>Symptoms</Text>
         <View style={styles.card}>
           <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setModalVisible(true)}>
@@ -107,50 +108,33 @@ export default function SymptomsScreen() {
               <TouchableWithoutFeedback onPress={() => {}}>
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Symptom' : 'Add Symptom'}</Text>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
-                  <View style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-evenly',
-                    alignItems: 'center',
-                    marginBottom: 8,
-                    width: '100%',
-                    paddingHorizontal: 8
-                  }}>
+                  <Text style={styles.sectionTitle}>Symptom</Text>
+                  <View style={styles.emojiRowImproved}>
                     {SYMPTOM_TYPES.map(t => (
                       <Pressable
                         key={t.key}
                         style={[
-                          {
-                            borderRadius: 18,
-                            width: 36,
-                            height: 36,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: symptomType === t.key ? '#eaf6f6' : 'transparent',
-                            borderWidth: symptomType === t.key ? 2 : 0,
-                            borderColor: symptomType === t.key ? '#6bb3b6' : 'transparent'
-                          }
+                          styles.emojiCircle,
+                          symptomType === t.key && styles.emojiCircleActive
                         ]}
                         onPress={() => setSymptomType(t.key)}
                         accessibilityLabel={t.label}
                       >
-                        <Text style={{ fontSize: 20, textAlign: 'center' }}>{t.emoji}</Text>
+                        <Text style={styles.emoji}>{t.emoji}</Text>
                       </Pressable>
                     ))}
                   </View>
-                  <Text style={{ textAlign: 'center', fontSize: 16, color: '#2d4d4d', marginBottom: 12 }}>
-                    {SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}
-                  </Text>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Severity:</Text>
-                  <View style={{ flexDirection: 'row', marginBottom: 12 }}>
+                  <Text style={styles.selectedLabel}>{SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}</Text>
+                  <Text style={styles.sectionTitle}>Severity</Text>
+                  <View style={styles.severityRowImproved}>
                     {SEVERITIES.map(s => (
                       <Pressable
                         key={s.key}
-                        style={[styles.foodTypeButton, severity === s.key && styles.foodTypeButtonActive]}
+                        style={[styles.severityPill, severity === s.key && styles.severityPillActive]}
                         onPress={() => setSeverity(s.key)}
                         accessibilityLabel={s.label}
                       >
-                        <Text style={{ fontSize: 16 }}>{s.label}</Text>
+                        <Text style={[styles.severityPillText, severity === s.key && styles.severityPillTextActive]}>{s.label}</Text>
                       </Pressable>
                     ))}
                   </View>
@@ -169,12 +153,10 @@ export default function SymptomsScreen() {
                     onCancel={() => setPickerMode(false)}
                     is24Hour={true}
                   />
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
+                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: theme.colors.textSecondary }}>Note (optional):</Text>
                   <View style={{ width: '100%', marginBottom: 16 }}>
                     <TextInput
-                      style={{
-                        borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40
-                      }}
+                      style={styles.noteInput}
                       numberOfLines={1}
                       onChangeText={setSymptomNote}
                       value={symptomNote}
@@ -185,8 +167,8 @@ export default function SymptomsScreen() {
                   <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save symptom entry">
                     <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
                   </Pressable>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                  <Pressable style={[styles.modalButton, { backgroundColor: theme.colors.disabled, marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={{ color: theme.colors.text, fontWeight: 'bold' }}>Cancel</Text>
                   </Pressable>
                 </View>
               </TouchableWithoutFeedback>
@@ -199,31 +181,26 @@ export default function SymptomsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: '#eaf6f6',
-    padding: 20,
-  },
   title: {
-    fontSize: 28,
+    fontSize: theme.fontSizes.xlarge,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#2d4d4d',
+    marginBottom: theme.spacing.medium,
+    color: theme.colors.text,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.large,
+    padding: theme.spacing.regular,
+    marginBottom: theme.spacing.regular,
+    shadowColor: theme.colors.shadow,
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
   cardText: {
-    fontSize: 16,
-    color: '#4d6d6d',
-    marginBottom: 4,
+    fontSize: theme.fontSizes.regular,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.tiny,
   },
   modalOverlay: {
     flex: 1,
@@ -232,12 +209,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.large,
     padding: 24,
     width: 300,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.shadow,
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
@@ -246,26 +223,90 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 12,
-    color: '#2d4d4d',
+    color: theme.colors.text,
   },
   modalButton: {
-    backgroundColor: '#6bb3b6',
-    borderRadius: 8,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.regular,
     paddingVertical: 10,
     paddingHorizontal: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  foodTypeButton: {
+  emojiRowImproved: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginBottom: 8,
+    width: '100%',
+    paddingHorizontal: 8,
+  },
+  emojiCircle: {
+    borderRadius: 18,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+  },
+  emojiCircleActive: {
+    backgroundColor: theme.colors.background,
+    borderWidth: 2,
+    borderColor: theme.colors.primary,
+  },
+  emoji: {
+    fontSize: 20,
+    textAlign: 'center',
+  },
+  selectedLabel: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    color: theme.colors.text,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: theme.colors.text,
+  },
+  severityRowImproved: {
+    flexDirection: 'row',
+    marginBottom: 12,
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  severityPill: {
     flex: 1,
-    backgroundColor: '#eaf6f6',
-    borderRadius: 8,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.regular,
     padding: 12,
     marginHorizontal: 4,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#6bb3b6',
+    borderColor: theme.colors.primary,
   },
-  foodTypeButtonActive: {
-    backgroundColor: '#6bb3b6',
+  severityPillActive: {
+    backgroundColor: theme.colors.primary,
+  },
+  severityPillText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: theme.colors.text,
+  },
+  severityPillTextActive: {
+    color: '#fff',
+  },
+  noteInput: {
+    borderColor: theme.colors.border,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+    fontSize: 16,
+    color: theme.colors.text,
+    backgroundColor: '#f8f8f8',
+    minHeight: 40,
   },
   symptomLogEmoji: {
     fontSize: 24,
@@ -273,14 +314,14 @@ const styles = StyleSheet.create({
   },
   symptomLogTime: {
     fontSize: 13,
-    color: '#4d6d6d',
+    color: theme.colors.textSecondary,
     marginBottom: 2,
     maxWidth: 180,
     textAlign: 'center',
   },
   symptomLogNote: {
     fontSize: 13,
-    color: '#6bb3b6',
+    color: theme.colors.primary,
     marginBottom: 2,
     maxWidth: 180,
     textAlign: 'center',

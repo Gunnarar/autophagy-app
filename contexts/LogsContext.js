@@ -108,6 +108,9 @@ function getUnifiedFastRecommendation(fastLog, foodLog, symptomLog, autophagySta
   const RECENT_DAYS = 60; // 2 months
   const CARB_MEAL_WINDOW_DAYS = 7;
   const CARB_MEAL_LIMIT = 2;
+  const ANIMAL_MEAL_MIN = 3; // Require at least 3 animal-based meals in last 7 days for multi-day fast
+  const REFEED_DAYS = 5; // Minimum refeed period after prolonged fast
+  const PROLONGED_FAST_HOURS = 48;
   const programs = [
     { key: '24h', duration: 24, benefits: 'Initiates autophagy, supports metabolic reset, may improve insulin sensitivity.' },
     { key: '36h', duration: 36, benefits: 'Deeper autophagy, increased fat burning, possible stem cell activation.' },
@@ -145,12 +148,37 @@ function getUnifiedFastRecommendation(fastLog, foodLog, symptomLog, autophagySta
   }
   // Check recent meal pattern (e.g., carb meals in last 7 days)
   const carbMeals = foodLog.filter(e => e.isCarb && (now - new Date(e.time)) / (1000 * 3600 * 24) <= CARB_MEAL_WINDOW_DAYS).length;
+  const animalMeals = foodLog.filter(e => e.type === 'animalMeat' && (now - new Date(e.time)) / (1000 * 3600 * 24) <= CARB_MEAL_WINDOW_DAYS).length;
   let caution = false;
   let reason = `Based on your recent fasting history, we recommend a ${recommended.duration}h fast.`;
+  let overrideTo24h = false;
   if (carbMeals > CARB_MEAL_LIMIT) {
     recommended = programs[0];
     reason = "You've had several carb meals recently. Start with a 24h fast to reset.";
     caution = true;
+    overrideTo24h = true;
+  }
+  if (!overrideTo24h && recommended.duration > 24 && animalMeals < ANIMAL_MEAL_MIN) {
+    recommended = programs[0];
+    reason = "We recommend a 24h fast. For multi-day fasts, ensure at least 3 animal-based meals in the week prior.";
+    caution = true;
+  }
+  // New: Require refeed after prolonged fast (>=48h)
+  const prolongedFasts = fastLog.filter(f => {
+    const start = new Date(f.start);
+    const end = new Date(f.end);
+    const duration = (end - start) / 3600000;
+    return duration >= PROLONGED_FAST_HOURS;
+  }).sort((a, b) => new Date(b.end) - new Date(a.end));
+  if (prolongedFasts.length > 0) {
+    const lastProlonged = prolongedFasts[0];
+    const lastEnd = new Date(lastProlonged.end);
+    const daysSinceLastProlonged = (now - lastEnd) / (1000 * 3600 * 24);
+    if (daysSinceLastProlonged < REFEED_DAYS && recommended.duration >= PROLONGED_FAST_HOURS) {
+      recommended = programs[0];
+      reason = `You recently completed a prolonged fast. Allow at least ${REFEED_DAYS} days of refeed (normal eating) before attempting another prolonged fast.`;
+      caution = true;
+    }
   }
   // Educational feedback: what to expect
   let whatToExpect = '';
@@ -184,6 +212,11 @@ function getUnifiedFastRecommendation(fastLog, foodLog, symptomLog, autophagySta
   } else if (nextChallenge && recommended.duration === nextChallenge) {
     challengeMsg = `This fast is your next autophagy challenge! Completing it will unlock a new level.`;
   }
+  // Advise to plan next multi-day fast soon after current one, if eligible
+  let planNextMsg = '';
+  if (!caution && recommended.duration > 24) {
+    planNextMsg = 'Tip: For best results, plan your next multi-day fast soon after completing this one, while your diet is still supportive.';
+  }
   return {
     recommendedProgram: recommended,
     reason,
@@ -191,6 +224,7 @@ function getUnifiedFastRecommendation(fastLog, foodLog, symptomLog, autophagySta
     benefits: recommended.benefits,
     whatToExpect,
     challengeMsg,
+    planNextMsg,
   };
 }
 
@@ -198,6 +232,7 @@ export function LogsProvider({ children }) {
   const [foodLog, setFoodLog] = useState([]);
   const [symptomLog, setSymptomLog] = useState([]);
   const [fastLog, setFastLog] = useState([]);
+  const [ketoneLog, setKetoneLog] = useState([]);
   const [autophagyProgress, setAutophagyProgress] = useState({ completed: {}, monthly: {} });
   const [loaded, setLoaded] = useState(false);
   const { user, saveUser } = useUser();
@@ -211,6 +246,8 @@ export function LogsProvider({ children }) {
       if (storedSymptom) setSymptomLog(JSON.parse(storedSymptom));
       const storedFast = await AsyncStorage.getItem('fastLog');
       if (storedFast) setFastLog(JSON.parse(storedFast));
+      const storedKetone = await AsyncStorage.getItem('ketoneLog');
+      if (storedKetone) setKetoneLog(JSON.parse(storedKetone));
       setLoaded(true);
     })();
   }, []);
@@ -232,6 +269,7 @@ export function LogsProvider({ children }) {
   }, [symptomLog, loaded]);
   useEffect(() => { if (loaded) AsyncStorage.setItem('fastLog', JSON.stringify(fastLog)); }, [fastLog, loaded]);
   useEffect(() => { if (loaded) AsyncStorage.setItem('autophagyProgress', JSON.stringify(autophagyProgress)); }, [autophagyProgress, loaded]);
+  useEffect(() => { if (loaded) AsyncStorage.setItem('ketoneLog', JSON.stringify(ketoneLog)); }, [ketoneLog, loaded]);
 
   // Update autophagy progress and completedFasts when fastLog changes
   useEffect(() => {
@@ -334,6 +372,7 @@ export function LogsProvider({ children }) {
       foodLog, setFoodLog,
       symptomLog, setSymptomLog,
       fastLog, setFastLog,
+      ketoneLog, setKetoneLog,
       autophagyProgress, useAutophagyStatus,
       useUnifiedFastRecommendation
     }}>
