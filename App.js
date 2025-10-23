@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, TouchableOpacity, TouchableWithoutFeedback, TextInput, ScrollView, Animated, Image } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -21,8 +21,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import FastingProgramsScreen from './screens/FastingProgramsScreen';
 import ProfileDetailsScreen from './screens/ProfileDetailsScreen';
 import DietLogScreen from './screens/DietLogScreen';
+import { theme } from './utils/theme';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-const Tab = createBottomTabNavigator();
+const Tab = createMaterialTopTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function MainTabs() {
@@ -30,21 +32,12 @@ function MainTabs() {
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: '#6bb3b6',
+        tabBarActiveTintColor: theme.colors.primary,
         tabBarInactiveTintColor: '#888',
-        tabBarStyle: { height: 60, paddingBottom: 8 },
-        tabBarIcon: ({ color, size }) => {
-          if (route.name === 'Home') {
-            return <Ionicons name="home" size={size} color={color} />;
-          } else if (route.name === 'Logs') {
-            return <MaterialCommunityIcons name="clipboard-list" size={size} color={color} />;
-          } else if (route.name === 'Profile') {
-            return <Ionicons name="person" size={size} color={color} />;
-          } else if (route.name === 'Info') {
-            return <MaterialCommunityIcons name="information" size={size} color={color} />;
-          }
-        },
+        tabBarStyle: { backgroundColor: '#fff' },
+        tabBarIndicatorStyle: { backgroundColor: theme.colors.primary },
+        tabBarLabelStyle: { fontWeight: 'bold', fontSize: 14 },
+        tabBarShowIcon: false,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -71,75 +64,79 @@ function Root() {
 
 export default function App() {
   return (
-    <UserProvider>
-      <ModalActionProvider>
-        <LogsProvider>
-          <NavigationContainer>
-            <Root />
-          </NavigationContainer>
+    <SafeAreaProvider>
+      <UserProvider>
+        <ModalActionProvider>
+          <LogsProvider>
+            <NavigationContainer>
+              <SafeAreaView style={{ flex: 1 }}>
+                <Root />
+              </SafeAreaView>
+            </NavigationContainer>
         </LogsProvider>
       </ModalActionProvider>
-    </UserProvider>
+      </UserProvider>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: '#eaf6f6',
-    padding: 20,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing.regular,
   },
   title: {
-    fontSize: 28,
+    fontSize: theme.fontSizes.xlarge,
     fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#2d4d4d',
+    marginBottom: theme.spacing.medium,
+    color: theme.colors.text,
   },
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.large,
+    padding: theme.spacing.regular,
+    marginBottom: theme.spacing.regular,
+    shadowColor: theme.colors.shadow,
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: theme.fontSizes.medium,
     fontWeight: '600',
-    marginBottom: 8,
-    color: '#2d4d4d',
+    marginBottom: theme.spacing.xsmall,
+    color: theme.colors.text,
   },
   cardText: {
-    fontSize: 16,
-    color: '#4d6d6d',
-    marginBottom: 4,
+    fontSize: theme.fontSizes.regular,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.tiny,
   },
   fastingTime: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#6bb3b6',
-    marginBottom: 8,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.xsmall,
   },
   progressBarBg: {
     width: '100%',
     height: 18,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: theme.colors.border,
     borderRadius: 9,
-    marginVertical: 12,
+    marginVertical: theme.spacing.small,
     overflow: 'hidden',
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: '#6bb3b6',
+    backgroundColor: theme.colors.primary,
     borderRadius: 9,
   },
   milestoneRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
-    marginTop: 12,
+    marginTop: theme.spacing.small,
   },
   milestoneCol: {
     alignItems: 'center',
@@ -149,15 +146,15 @@ const styles = StyleSheet.create({
     width: 14,
     height: 14,
     borderRadius: 7,
-    backgroundColor: '#e0e0e0',
+    backgroundColor: theme.colors.border,
     marginBottom: 4,
   },
   milestoneDotActive: {
-    backgroundColor: '#6bb3b6',
+    backgroundColor: theme.colors.primary,
   },
   milestoneLabel: {
-    fontSize: 12,
-    color: '#4d6d6d',
+    fontSize: theme.fontSizes.xsmall,
+    color: theme.colors.textSecondary,
   },
   modalOverlay: {
     flex: 1,
@@ -166,12 +163,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    backgroundColor: theme.colors.card,
+    borderRadius: theme.borderRadius.large,
     padding: 24,
     width: 300,
     alignItems: 'center',
-    shadowColor: '#000',
+    shadowColor: theme.colors.shadow,
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 5,
@@ -180,37 +177,37 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 12,
-    color: '#2d4d4d',
+    color: theme.colors.text,
   },
   modalDesc: {
-    fontSize: 16,
-    color: '#4d6d6d',
+    fontSize: theme.fontSizes.regular,
+    color: theme.colors.textSecondary,
     marginBottom: 20,
     textAlign: 'center',
   },
   modalButton: {
-    backgroundColor: '#6bb3b6',
-    borderRadius: 8,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.regular,
     paddingVertical: 10,
     paddingHorizontal: 24,
   },
   foodTypeButton: {
     flex: 1,
-    backgroundColor: '#eaf6f6',
-    borderRadius: 8,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.regular,
     padding: 12,
     marginHorizontal: 4,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#6bb3b6',
+    borderColor: theme.colors.primary,
   },
   foodTypeButtonActive: {
-    backgroundColor: '#6bb3b6',
+    backgroundColor: theme.colors.primary,
   },
   quickActionButton: {
     flex: 1,
-    backgroundColor: '#6bb3b6',
-    borderRadius: 12,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.medium,
     padding: 18,
     alignItems: 'center',
     justifyContent: 'center',
@@ -227,14 +224,14 @@ const styles = StyleSheet.create({
   },
   symptomLogTime: {
     fontSize: 13,
-    color: '#4d6d6d',
+    color: theme.colors.textSecondary,
     marginBottom: 2,
     maxWidth: 180,
     textAlign: 'center',
   },
   symptomLogNote: {
     fontSize: 13,
-    color: '#6bb3b6',
+    color: theme.colors.primary,
     marginBottom: 2,
     maxWidth: 180,
     textAlign: 'center',

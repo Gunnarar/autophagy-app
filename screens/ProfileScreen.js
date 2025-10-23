@@ -17,7 +17,7 @@ export default function ProfileScreen({ navigation }) {
         />
         <Text style={styles.name}>{user.name || 'Genesis User'}</Text>
         <Text style={styles.email}>{user.email || ''}</Text>
-      </View>
+        </View>
       <TouchableOpacity
         style={styles.sectionButton}
         onPress={() => navigation.navigate('ProfileDetails')}
@@ -32,7 +32,7 @@ export default function ProfileScreen({ navigation }) {
         <MaterialCommunityIcons name="timer-sand" size={24} color="#89ce00" style={{ marginRight: 12 }} />
         <Text style={styles.buttonText}>Fasting Programs</Text>
       </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
   );
 }
 
