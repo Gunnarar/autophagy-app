@@ -6,7 +6,12 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "test": "jest",
+    "eas:build:dev": "eas build --profile development --non-interactive",
+    "eas:build:preview": "eas build --profile preview --non-interactive",
+    "eas:build:production": "eas build --profile production --non-interactive",
+    "eas:submit": "eas submit --profile production --non-interactive"
   },
   "dependencies": {
     "@expo/config-plugins": "~10.0.0",
@@ -19,7 +24,7 @@
     "@react-navigation/native": "^7.1.9",
     "@react-navigation/native-stack": "^7.3.13",
     "date-fns": "^4.1.0",
-    "eas-cli": "^16.6.2",
+    "eas-cli": "^16.24.1",
     "expo": "^53.0.15",
     "expo-linear-gradient": "~14.1.5",
     "expo-notifications": "^0.31.3",
@@ -37,7 +42,17 @@
     "react-native-web": "^0.20.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "@testing-library/jest-native": "^5.4.2",
+    "@testing-library/react-native": "^12.5.1",
+    "jest-expo": "~53.0.0",
+    "react-test-renderer": "19.0.0"
+  },
+  "jest": {
+    "preset": "jest-expo",
+    "setupFilesAfterEnv": [
+      "@testing-library/jest-native/extend-expect"
+    ]
   },
   "private": true
 }
