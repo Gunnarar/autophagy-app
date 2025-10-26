@@ -46,43 +46,43 @@ jobs:
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
         run: |
           python3 - <<'PY'
-import base64
-import binascii
-import json
-import os
-import sys
+          import base64
+          import binascii
+          import json
+          import os
+          import sys
 
-raw = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON', '').strip()
-if not raw:
-    sys.stderr.write('GOOGLE_SERVICE_ACCOUNT_JSON secret is empty or unavailable\n')
-    sys.exit(1)
+          raw = os.environ.get('GOOGLE_SERVICE_ACCOUNT_JSON', '').strip()
+          if not raw:
+              sys.stderr.write('GOOGLE_SERVICE_ACCOUNT_JSON secret is empty or unavailable\n')
+              sys.exit(1)
 
-payloads = []
-try:
-    decoded = base64.b64decode(raw.encode(), validate=True).decode()
-except (binascii.Error, UnicodeDecodeError):
-    decoded = None
-else:
-    payloads.append(decoded)
-payloads.append(raw)
+          payloads = []
+          try:
+              decoded = base64.b64decode(raw.encode(), validate=True).decode()
+          except (binascii.Error, UnicodeDecodeError):
+              decoded = None
+          else:
+              payloads.append(decoded)
+          payloads.append(raw)
 
-last_error = None
-for payload in payloads:
-    try:
-        json.loads(payload)
-    except json.JSONDecodeError as exc:
-        last_error = exc
-        continue
-    with open('service-account.json', 'w', encoding='utf-8') as fh:
-        fh.write(payload)
-    break
-else:
-    sys.stderr.write(
-        'GOOGLE_SERVICE_ACCOUNT_JSON must be valid JSON or base64-encoded JSON '
-        f'(last error: {last_error})\n'
-    )
-    sys.exit(1)
-PY
+          last_error = None
+          for payload in payloads:
+              try:
+                  json.loads(payload)
+              except json.JSONDecodeError as exc:
+                  last_error = exc
+                  continue
+              with open('service-account.json', 'w', encoding='utf-8') as fh:
+                  fh.write(payload)
+              break
+          else:
+              sys.stderr.write(
+                  'GOOGLE_SERVICE_ACCOUNT_JSON must be valid JSON or base64-encoded JSON '
+                  f'(last error: {last_error})\n'
+              )
+              sys.exit(1)
+          PY
 
       - name: Submit Android build to Google Play
         if: ${{ github.event.inputs.platform != 'ios' }}
