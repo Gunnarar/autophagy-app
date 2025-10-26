@@ -1,6 +1,9 @@
 {
   "name": "genesis4pd-app",
-  "version": "1.0.0",
+  "version": "0.1.0",
+  "versionInfo": {
+    "androidVersionCode": 2
+  },
   "main": "index.js",
   "scripts": {
     "start": "expo start",
