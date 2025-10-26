@@ -39,3 +39,23 @@ jobs:
             --profile "${{ github.event.inputs.profile }}" \
             --platform "${{ github.event.inputs.platform }}" \
             --non-interactive
+
+      - name: Write Google service account key
+        if: ${{ github.event.inputs.platform != 'ios' }}
+        run: |
+          echo "${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}" > service-account.json
+
+      - name: Submit Android build to Google Play
+        if: ${{ github.event.inputs.platform != 'ios' }}
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+        run: |
+          eas submit \
+            --profile production \
+            --platform android \
+            --latest \
+            --non-interactive
+
+      - name: Clean up service account key
+        if: ${{ github.event.inputs.platform != 'ios' }}
+        run: rm -f service-account.json
