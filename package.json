@@ -14,7 +14,8 @@
     "eas:build:dev": "eas build --profile development --non-interactive",
     "eas:build:preview": "eas build --profile preview --non-interactive",
     "eas:build:production": "eas build --profile production --non-interactive",
-    "eas:submit": "eas submit --profile production --non-interactive"
+    "eas:submit": "eas submit --profile production --non-interactive",
+    "lint": "eslint . --ext .js,.jsx"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
@@ -26,6 +27,7 @@
     "@react-navigation/native-stack": "^7.3.13",
     "date-fns": "^4.1.0",
     "expo": "~53.0.23",
+    "expo-font": "~13.3.2",
     "expo-linear-gradient": "~14.1.5",
     "expo-notifications": "~0.31.4",
     "expo-sharing": "~13.1.5",
@@ -34,22 +36,23 @@
     "react-dom": "^19.0.0",
     "react-native": "0.79.6",
     "react-native-modal-datetime-picker": "^18.0.0",
+    "react-native-pager-view": "6.7.1",
     "react-native-safe-area-context": "^5.4.0",
     "react-native-screens": "~4.11.1",
     "react-native-share": "^12.1.0",
     "react-native-svg": "15.11.2",
     "react-native-tab-view": "^4.1.2",
-    "react-native-web": "^0.20.0",
-    "expo-font": "~13.3.2",
-    "react-native-pager-view": "6.7.1"
+    "react-native-web": "^0.20.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
+    "@react-native-community/eslint-config": "^3.2.0",
     "@testing-library/jest-native": "^5.4.2",
     "@testing-library/react-native": "^12.5.1",
+    "eas-cli": "^16.24.1",
+    "eslint": "^8.57.1",
     "jest-expo": "~53.0.0",
-    "react-test-renderer": "^19.0.0",
-    "eas-cli": "^16.24.1"
+    "react-test-renderer": "^19.0.0"
   },
   "jest": {
     "preset": "jest-expo",
