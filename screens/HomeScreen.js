@@ -5,7 +5,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLogs } from '../contexts/LogsContext';
 import { MILESTONES, MILESTONE_INFO, AUTOPHAGY_LEVELS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
-import StatusPill from '../components/StatusPill';
 import { useModalAction } from '../contexts/ModalActionContext';
 import { useUser } from '../contexts/UserContext';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
@@ -15,6 +14,8 @@ import FastingSummaryCard from '../components/FastingSummaryCard';
 import AutophagyKetoneCard from '../components/AutophagyKetoneCard';
 import KetoneLogModal from '../components/KetoneLogModal';
 import SymptomLogModal from '../components/SymptomLogModal';
+import StatusOverview from '../components/StatusOverview';
+import QuickActionFAB from '../components/QuickActionFAB';
 import { differenceInDays } from 'date-fns';
 import { loadString, saveString } from '../utils/storage';
 
@@ -217,10 +218,44 @@ export default function HomeScreen() {
     autophagyStatus === 'good' ? 'good' : autophagyStatus === 'warning' ? 'warning' : 'bad',
     todaysSymptoms.length === 0 ? 'good' : 'warning',
   ];
+  const statusOverviewItems = [
+    {
+      key: 'fasting',
+      label: 'Fasting',
+      status: fastingStatus,
+      icon: 'timer',
+    },
+    {
+      key: 'meals',
+      label: 'Meals',
+      status: todaysMeals.length > 0 ? 'good' : 'warning',
+      icon: 'food',
+    },
+    {
+      key: 'ketone',
+      label: 'Ketones',
+      status: ketoneStatus,
+      icon: 'test-tube',
+    },
+    {
+      key: 'autophagy',
+      label: 'Autophagy',
+      status: autophagyStatus,
+      icon: 'bacteria',
+    },
+    {
+      key: 'symptoms',
+      label: 'Symptoms',
+      status: todaysSymptoms.length === 0 ? 'good' : 'warning',
+      icon: 'stethoscope',
+    },
+  ];
+
   let bgColors;
-  if (pillStatuses.includes('bad')) {
+  const statusLevels = statusOverviewItems.map(item => item.status);
+  if (statusLevels.includes('bad')) {
     bgColors = ['#ffeaea', '#ffd6d6'];
-  } else if (pillStatuses.includes('warning')) {
+  } else if (statusLevels.includes('warning')) {
     bgColors = ['#fffbe5', '#fff3c4'];
   } else {
     bgColors = ['#eaf6f6', '#b3c7f7'];
@@ -422,6 +457,7 @@ export default function HomeScreen() {
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <Text style={styles.title}>Dashboard</Text>
+        <StatusOverview statuses={statusOverviewItems} />
         <FastingSummaryCard
           fastingElapsedSeconds={fastingElapsed}
           recommendedProgram={unifiedRec.recommendedProgram}
@@ -482,62 +518,14 @@ export default function HomeScreen() {
           onCancel={handleCancelLog}
         />
       </ScrollView>
-      {/* Speed Dial FAB */}
-      <View style={{ position: 'absolute', right: 24, bottom: 36, alignItems: 'center', zIndex: 100 }} pointerEvents="box-none">
-        {/* Add Symptom Button (animates diagonally up-left) */}
-        <Animated.View style={{
-          position: 'absolute',
-          right: 36,
-          bottom: 0,
-          opacity: symptomAnim,
-          transform: [
-            { translateX: symptomAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -36] }) },
-            { translateY: symptomAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -36] }) },
-            { scale: symptomAnim },
-          ],
-          zIndex: 101,
-        }} pointerEvents={fabOpen ? 'auto' : 'none'}>
-          <Pressable
-            style={styles.fabMini}
-            onPress={handleAddSymptom}
-            accessibilityLabel="Add symptom"
-          >
-            <Text style={styles.fabMiniIcon}>🧠</Text>
-          </Pressable>
-          <Text style={styles.fabMiniLabel}>Add Symptom</Text>
-        </Animated.View>
-        {/* Add Meal Button (animates up) */}
-        <Animated.View style={{
-          position: 'absolute',
-          right: 0,
-          bottom: 48,
-          opacity: mealAnim,
-          transform: [
-            { translateY: mealAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -48] }) },
-            { scale: mealAnim },
-          ],
-          zIndex: 101,
-        }} pointerEvents={fabOpen ? 'auto' : 'none'}>
-          <Pressable
-            style={styles.fabMini}
-            onPress={handleAddMeal}
-            accessibilityLabel="Add meal"
-          >
-            <Text style={styles.fabMiniIcon}>🍽️</Text>
-          </Pressable>
-          <Text style={styles.fabMiniLabel}>Add Meal</Text>
-        </Animated.View>
-        {/* Main FAB */}
-        <Pressable
-          style={styles.fab}
-          onPress={() => setFabOpen(open => !open)}
-          accessibilityLabel={fabOpen ? 'Close menu' : 'Add log entry'}
-        >
-          <Animated.View style={{ transform: [{ rotate: fabOpen ? '45deg' : '0deg' }] }}>
-            <Ionicons name="add" size={36} color="#fff" />
-          </Animated.View>
-        </Pressable>
-      </View>
+      <QuickActionFAB
+        open={fabOpen}
+        onToggle={() => setFabOpen(open => !open)}
+        onAddMeal={handleAddMeal}
+        onAddSymptom={handleAddSymptom}
+        mealAnim={mealAnim}
+        symptomAnim={symptomAnim}
+      />
     </View>
   );
 }
@@ -703,36 +691,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: 'bold',
-  },
-  fab: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 32,
-    width: 64,
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  fabMini: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: 32,
-    width: 64,
-    height: 64,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fabMiniIcon: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  fabMiniLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#fff',
   },
   emojiRowImproved: {
     flexDirection: 'row',
