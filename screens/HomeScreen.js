@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, Tex
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLogs } from '../contexts/LogsContext';
-import { MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES, AUTOPHAGY_LEVELS } from '../utils/constants';
-import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { MILESTONES, MILESTONE_INFO, AUTOPHAGY_LEVELS } from '../utils/constants';
 import { useNavigation } from '@react-navigation/native';
 import StatusPill from '../components/StatusPill';
 import { useModalAction } from '../contexts/ModalActionContext';
@@ -14,6 +13,8 @@ import { theme } from '../utils/theme';
 import LogEntryModal from '../components/LogEntryModal';
 import FastingSummaryCard from '../components/FastingSummaryCard';
 import AutophagyKetoneCard from '../components/AutophagyKetoneCard';
+import KetoneLogModal from '../components/KetoneLogModal';
+import SymptomLogModal from '../components/SymptomLogModal';
 import { differenceInDays } from 'date-fns';
 import { loadString, saveString } from '../utils/storage';
 
@@ -444,156 +445,35 @@ export default function HomeScreen() {
           ketoneHistory={ketoneHistory}
           onLogKetone={() => setKetoneModalVisible(true)}
         />
-        {/* Ketone Log Modal */}
-        <Modal visible={ketoneModalVisible} transparent animationType="fade" onRequestClose={() => setKetoneModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={() => setKetoneModalVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Log Ketone</Text>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Value:</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
-                    <TextInput
-                      style={[styles.input, { flex: 1, marginRight: 8 }]}
-                      keyboardType="decimal-pad"
-                      placeholder="e.g. 0.7"
-                      value={ketoneValue}
-                      onChangeText={setKetoneValue}
-                      accessibilityLabel="Ketone value input"
-                    />
-                    <Pressable
-                      style={[styles.foodTypeButton, ketoneUnit === 'mmol/L' && styles.foodTypeButtonActive, { marginRight: 4 }]}
-                      onPress={() => setKetoneUnit('mmol/L')}
-                      accessibilityLabel="mmol/L"
-                    >
-                      <Text>mmol/L</Text>
-                    </Pressable>
-                    <Pressable
-                      style={[styles.foodTypeButton, ketoneUnit === 'mg/dL' && styles.foodTypeButtonActive]}
-                      onPress={() => setKetoneUnit('mg/dL')}
-                      accessibilityLabel="mg/dL"
-                    >
-                      <Text>mg/dL</Text>
-                    </Pressable>
-                  </View>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
-                  <Pressable
-                    style={[styles.modalButton, { marginBottom: 12 }]}
-                    onPress={() => setKetoneTime(new Date())}
-                    accessibilityLabel="Set time to now"
-                  >
-                    <Text style={{ color: '#fff' }}>{ketoneTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-                  </Pressable>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                  <TextInput
-                    style={[styles.input, { marginBottom: 12 }]}
-                    placeholder="e.g. after exercise, before meds"
-                    value={ketoneNote}
-                    onChangeText={setKetoneNote}
-                    accessibilityLabel="Ketone note input"
-                  />
-                  <Pressable style={styles.modalButton} onPress={handleSaveKetone} accessibilityLabel="Save ketone entry">
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                  </Pressable>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setKetoneModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                  </Pressable>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-        <Modal visible={symptomModalVisible} transparent animationType="fade" onRequestClose={() => setSymptomModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={() => setSymptomModalVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Add Symptom</Text>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
-                  <View style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-evenly',
-                    alignItems: 'center',
-                    marginBottom: 8,
-                    width: '100%',
-                    paddingHorizontal: 8
-                  }}>
-                    {SYMPTOM_TYPES.map(t => (
-                      <Pressable
-                        key={t.key}
-                        style={[
-                          {
-                            borderRadius: 18,
-                            width: 36,
-                            height: 36,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            backgroundColor: symptomType === t.key ? '#eaf6f6' : 'transparent',
-                            borderWidth: symptomType === t.key ? 2 : 0,
-                            borderColor: symptomType === t.key ? '#6bb3b6' : 'transparent'
-                          }
-                        ]}
-                        onPress={() => setSymptomType(t.key)}
-                        accessibilityLabel={t.label}
-                      >
-                        <Text style={{ fontSize: 20, textAlign: 'center' }}>{t.emoji}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                  <Text style={{ textAlign: 'center', fontSize: 16, color: '#2d4d4d', marginBottom: 12 }}>
-                    {SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}
-                  </Text>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Severity:</Text>
-                  <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-                    {SEVERITIES.map(s => (
-                      <Pressable
-                        key={s.key}
-                        style={[styles.foodTypeButton, severity === s.key && styles.foodTypeButtonActive]}
-                        onPress={() => setSeverity(s.key)}
-                        accessibilityLabel={s.label}
-                      >
-                        <Text style={{ fontSize: 16 }}>{s.label}</Text>
-                      </Pressable>
-                    ))}
-                  </View>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                  <View style={{ width: '100%', marginBottom: 16 }}>
-                    <TextInput
-                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
-                      numberOfLines={1}
-                      onChangeText={setSymptomNote}
-                      value={symptomNote}
-                      placeholder="e.g. after exercise, before meds"
-                      accessibilityLabel="Symptom note input"
-                    />
-                  </View>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
-                  <Pressable
-                    style={[styles.modalButton, { marginBottom: 12 }]}
-                    onPress={() => setShowAddTimePicker(true)}
-                    accessibilityLabel="Edit date and time"
-                  >
-                    <Text style={{ color: '#fff' }}>{addTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}</Text>
-                  </Pressable>
-                  <DateTimePickerModal
-                    isVisible={showAddTimePicker}
-                    mode="datetime"
-                    date={addTime}
-                    onConfirm={date => { setAddTime(date); setShowAddTimePicker(false); }}
-                    onCancel={() => setShowAddTimePicker(false)}
-                    is24Hour={true}
-                  />
-                  <Pressable style={styles.modalButton} onPress={handleSaveSymptomWithTime} accessibilityLabel="Save symptom entry">
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                  </Pressable>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setSymptomModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                  </Pressable>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
+        <KetoneLogModal
+          visible={ketoneModalVisible}
+          value={ketoneValue}
+          unit={ketoneUnit}
+          time={ketoneTime}
+          note={ketoneNote}
+          onChangeValue={setKetoneValue}
+          onSelectUnit={setKetoneUnit}
+          onSetTimeToNow={() => setKetoneTime(new Date())}
+          onChangeNote={setKetoneNote}
+          onSave={handleSaveKetone}
+          onCancel={() => setKetoneModalVisible(false)}
+        />
+        <SymptomLogModal
+          visible={symptomModalVisible}
+          symptomType={symptomType}
+          severity={severity}
+          note={symptomNote}
+          time={addTime}
+          isTimePickerVisible={showAddTimePicker}
+          onSelectSymptom={setSymptomType}
+          onSelectSeverity={setSeverity}
+          onChangeNote={setSymptomNote}
+          onOpenTimePicker={() => setShowAddTimePicker(true)}
+          onCloseTimePicker={() => setShowAddTimePicker(false)}
+          onConfirmTime={date => { setAddTime(date); setShowAddTimePicker(false); }}
+          onSave={handleSaveSymptomWithTime}
+          onCancel={() => setSymptomModalVisible(false)}
+        />
         {/* LogEntryModal for Add Meal or Add Symptom */}
         <LogEntryModal
           mode={logModal?.mode}
@@ -737,47 +617,11 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     marginBottom: theme.spacing.tiny,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.large,
-    padding: 24,
-    width: 300,
-    alignItems: 'center',
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: theme.colors.text,
-  },
   modalButton: {
     backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.regular,
     paddingVertical: 10,
     paddingHorizontal: 24,
-  },
-  foodTypeButton: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.regular,
-    padding: 12,
-    marginHorizontal: 4,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-  },
-  foodTypeButtonActive: {
-    backgroundColor: theme.colors.primary,
   },
   quickActionButton: {
     flex: 1,
