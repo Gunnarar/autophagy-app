@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, Tex
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLogs } from '../contexts/LogsContext';
-import { formatTimeHM, MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES, AUTOPHAGY_LEVELS } from '../utils/constants';
+import { MILESTONES, MILESTONE_INFO, SYMPTOM_TYPES, SEVERITIES, AUTOPHAGY_LEVELS } from '../utils/constants';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useNavigation } from '@react-navigation/native';
 import StatusPill from '../components/StatusPill';
@@ -12,6 +12,7 @@ import { useUser } from '../contexts/UserContext';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { theme } from '../utils/theme';
 import LogEntryModal from '../components/LogEntryModal';
+import FastingSummaryCard from '../components/FastingSummaryCard';
 import { differenceInDays } from 'date-fns';
 import { loadString, saveString } from '../utils/storage';
 
@@ -38,7 +39,6 @@ export default function HomeScreen() {
   const today = new Date().toISOString().slice(0, 10);
   const unifiedRec = useUnifiedFastRecommendation();
   const [fastRecDismissed, setFastRecDismissed] = useState(false);
-  const [showLearnMore, setShowLearnMore] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const mealAnim = useRef(new Animated.Value(0)).current;
   const symptomAnim = useRef(new Animated.Value(0)).current;
@@ -420,52 +420,19 @@ export default function HomeScreen() {
       />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
         <Text style={styles.title}>Dashboard</Text>
-        <View style={styles.fastingCard}>
-          <Text style={styles.cardTitle}>Fasting</Text>
-          <View style={{ alignItems: 'center', marginBottom: theme.spacing.small }}>
-            <Text style={styles.fastingTime}>{formatTimeHM(fastingElapsed)}</Text>
-            <Text style={styles.cardText}>Elapsed</Text>
-            <View style={styles.progressBarBgPolished}>
-              <View style={[styles.progressBarFillPolished, { width: `${Math.min(100, (fastingElapsed / (unifiedRec.recommendedProgram.duration * 3600)) * 100)}%` }]} />
-            </View>
-            <Text style={styles.cardText}>
-              {fastingElapsed >= unifiedRec.recommendedProgram.duration * 3600
-                ? <Text style={styles.goalReached}><Text style={{ fontSize: 18 }}>🎉</Text> Goal reached!</Text>
-                : `${formatTimeHM(unifiedRec.recommendedProgram.duration * 3600 - fastingElapsed)} remaining`}
-            </Text>
-            <Text style={[styles.feedbackText, { color: fastingElapsed >= unifiedRec.recommendedProgram.duration * 3600 ? theme.colors.accent : theme.colors.primary }]}> 
-              {fastingElapsed >= unifiedRec.recommendedProgram.duration * 3600 ? 'You did it!' : 'Keep going!'}
-            </Text>
-            {ongoingFast ? (
-              <Pressable style={[styles.modalButton, { backgroundColor: theme.colors.accent, marginTop: 12 }]} onPress={handleStopFast} accessibilityLabel="Stop Fast">
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Stop Fast</Text>
-              </Pressable>
-            ) : (
-              <Pressable style={[styles.modalButton, { backgroundColor: theme.colors.primary, marginTop: 12 }]} onPress={handleStartFast} accessibilityLabel="Start Fast">
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Start Fast</Text>
-              </Pressable>
-            )}
-          </View>
-          <View style={{ alignItems: 'center', marginBottom: theme.spacing.small }}>
-            <Text style={styles.challengeText}>Next Challenge: <Text style={{ fontWeight: 'bold', color: theme.colors.primary }}>{unifiedRec.recommendedProgram.duration}h Fast</Text></Text>
-            <Text style={styles.statusText}>{unifiedRec.reason}</Text>
-          </View>
-          <Pressable
-            style={styles.learnMoreBtnPolished}
-            onPress={() => setShowLearnMore(e => !e)}
-            accessibilityLabel={showLearnMore ? 'Hide details' : 'Learn more about fasting benefits'}
-          >
-            <Text style={styles.learnMoreTextPolished}>{showLearnMore ? 'Hide details' : 'Learn more'}</Text>
-          </Pressable>
-          {showLearnMore && (
-            <View style={{ marginTop: 8 }}>
-              <Text style={styles.detailText}><Text style={{ fontWeight: 'bold' }}>Benefits:</Text> {unifiedRec.benefits}</Text>
-              <Text style={styles.detailText}><Text style={{ fontWeight: 'bold' }}>What to expect:</Text> {unifiedRec.whatToExpect}</Text>
-              {unifiedRec.challengeMsg && <Text style={[styles.detailText, { color: theme.colors.accent }]}>{unifiedRec.challengeMsg}</Text>}
-              {unifiedRec.caution && <Text style={[styles.detailText, { color: '#e74c3c', fontWeight: 'bold' }]}>Caution: Consider a shorter fast first.</Text>}
-            </View>
-          )}
-        </View>
+        <FastingSummaryCard
+          fastingElapsedSeconds={fastingElapsed}
+          recommendedProgram={unifiedRec.recommendedProgram}
+          reason={unifiedRec.reason}
+          benefits={unifiedRec.benefits}
+          whatToExpect={unifiedRec.whatToExpect}
+          challengeMsg={unifiedRec.challengeMsg}
+          caution={unifiedRec.caution}
+          planNextMsg={unifiedRec.planNextMsg}
+          hasOngoingFast={Boolean(ongoingFast)}
+          onStartFast={handleStartFast}
+          onStopFast={handleStopFast}
+        />
         {/* Autophagy & Ketones Card */}
         <View style={{ backgroundColor: theme.colors.card, borderRadius: theme.borderRadius.large, padding: theme.spacing.regular, marginBottom: theme.spacing.regular, alignItems: 'center', shadowColor: theme.colors.shadow, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
           <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.text, marginBottom: 8 }}>Autophagy & Ketones</Text>
