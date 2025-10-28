@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, Alert, ScrollView, Button } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
-import { formatTimeHM, SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
+import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
@@ -12,7 +12,6 @@ export default function LogsScreen() {
   const [filterType, setFilterType] = useState('all');
   const [timeRange, setTimeRange] = useState('week'); // week, month, 3m, 6m, year
   const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, ketoneLog } = useLogs();
-  const [pickerMode, setPickerMode] = useState(null); // for fast/symptom time pickers
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editLogType, setEditLogType] = useState(null); // 'food' or 'symptom'
   const [editLog, setEditLog] = useState(null);
@@ -50,17 +49,17 @@ export default function LogsScreen() {
   // Time range filtering
   const now = new Date();
   let rangeStart = new Date();
-  if (timeRange === 'week') rangeStart.setDate(now.getDate() - 6);
-  else if (timeRange === 'month') rangeStart.setMonth(now.getMonth() - 1);
-  else if (timeRange === '3m') rangeStart.setMonth(now.getMonth() - 3);
-  else if (timeRange === '6m') rangeStart.setMonth(now.getMonth() - 6);
-  else if (timeRange === 'year') rangeStart.setFullYear(now.getFullYear() - 1);
+  if (timeRange === 'week') {rangeStart.setDate(now.getDate() - 6);}
+  else if (timeRange === 'month') {rangeStart.setMonth(now.getMonth() - 1);}
+  else if (timeRange === '3m') {rangeStart.setMonth(now.getMonth() - 3);}
+  else if (timeRange === '6m') {rangeStart.setMonth(now.getMonth() - 6);}
+  else if (timeRange === 'year') {rangeStart.setFullYear(now.getFullYear() - 1);}
   rangeStart.setHours(0,0,0,0);
   const inRange = d => new Date(d) >= rangeStart && new Date(d) <= now;
   const logs = allLogs.filter(e => {
-    if (filterType !== 'all' && e.logType !== filterType) return false;
+    if (filterType !== 'all' && e.logType !== filterType) {return false;}
     const dateStr = e.time;
-    if (!dateStr) return false;
+    if (!dateStr) {return false;}
     return inRange(dateStr);
   });
   logs.sort((a, b) => {
@@ -102,11 +101,11 @@ export default function LogsScreen() {
   function getExportRange(rangeKey) {
     const now = new Date();
     let start = new Date();
-    if (rangeKey === 'week') start.setDate(now.getDate() - 6);
-    else if (rangeKey === 'month') start.setMonth(now.getMonth() - 1);
-    else if (rangeKey === '3m') start.setMonth(now.getMonth() - 3);
-    else if (rangeKey === '6m') start.setMonth(now.getMonth() - 6);
-    else if (rangeKey === 'year') start.setFullYear(now.getFullYear() - 1);
+    if (rangeKey === 'week') {start.setDate(now.getDate() - 6);}
+    else if (rangeKey === 'month') {start.setMonth(now.getMonth() - 1);}
+    else if (rangeKey === '3m') {start.setMonth(now.getMonth() - 3);}
+    else if (rangeKey === '6m') {start.setMonth(now.getMonth() - 6);}
+    else if (rangeKey === 'year') {start.setFullYear(now.getFullYear() - 1);}
     start.setHours(0,0,0,0);
     return { start, end: now };
   }
@@ -142,7 +141,7 @@ export default function LogsScreen() {
             e.pounds ? `Pounds: ${e.pounds}` : null,
             e.isCarb ? 'Carb Meal: Yes' : null,
             e.note ? `Note: ${e.note}` : null,
-          ].filter(Boolean).join('; ')
+          ].filter(Boolean).join('; '),
         })),
         ...symptoms.map(e => ({
           type: 'Symptom',
@@ -151,7 +150,7 @@ export default function LogsScreen() {
             SYMPTOM_TYPES.find(t => t.key === e.type)?.label || e.type,
             e.severity ? `Severity: ${SEVERITIES.find(s => s.key === e.severity)?.label || e.severity}` : null,
             e.note ? `Note: ${e.note}` : null,
-          ].filter(Boolean).join('; ')
+          ].filter(Boolean).join('; '),
         })),
         ...fasts.map(f => {
           const start = new Date(f.start);
@@ -160,9 +159,9 @@ export default function LogsScreen() {
           return {
             type: 'Fast',
             time: f.end,
-            details: `Start: ${start.toLocaleString()}, End: ${end.toLocaleString()}, Duration: ${duration}h${f.note ? `, Note: ${f.note}` : ''}`
+            details: `Start: ${start.toLocaleString()}, End: ${end.toLocaleString()}, Duration: ${duration}h${f.note ? `, Note: ${f.note}` : ''}`,
           };
-        })
+        }),
       ];
       all.sort((a, b) => new Date(b.time) - new Date(a.time));
       for (const entry of all) {
@@ -678,4 +677,4 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: '#2d4d4d',
   },
-}); 
+});

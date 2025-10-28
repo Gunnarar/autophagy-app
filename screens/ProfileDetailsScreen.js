@@ -9,7 +9,7 @@ export default function ProfileDetailsScreen() {
 
   const requiredFields = ['name', 'age', 'height', 'weight', 'email', 'startDate'];
 
-  if (!user) return <View style={styles.container}><Text>Loading...</Text></View>;
+  if (!user) {return <View style={styles.container}><Text>Loading...</Text></View>;}
 
   const handleChange = (key, value) => setForm({ ...form, [key]: value });
 
@@ -75,4 +75,4 @@ const styles = StyleSheet.create({
   label: { fontSize: 16, fontWeight: '600', marginBottom: 4 },
   value: { fontSize: 16, color: '#333', marginBottom: 4 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, fontSize: 16 },
-}); 
+});

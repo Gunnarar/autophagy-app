@@ -24,4 +24,4 @@ export function ModalActionProvider({ children }) {
 
 export function useModalAction() {
   return useContext(ModalActionContext);
-} 
+}

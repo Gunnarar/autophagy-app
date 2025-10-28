@@ -14,7 +14,7 @@ export default function NotificationList({ notifications = [], onDismiss }) {
   }
 
   return (
-    <View style={styles.list}> 
+    <View style={styles.list}>
       {notifications.map(notification => (
         <NotificationCard
           key={notification.key}

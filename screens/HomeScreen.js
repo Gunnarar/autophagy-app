@@ -1,13 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, ScrollView, Animated, Image, TouchableOpacity, Button, Alert } from 'react-native';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLogs } from '../contexts/LogsContext';
-import { MILESTONES, MILESTONE_INFO, AUTOPHAGY_LEVELS } from '../utils/constants';
-import { useNavigation } from '@react-navigation/native';
 import { useModalAction } from '../contexts/ModalActionContext';
-import { useUser } from '../contexts/UserContext';
-import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { theme } from '../utils/theme';
 import LogEntryModal from '../components/LogEntryModal';
 import FastingSummaryCard from '../components/FastingSummaryCard';
@@ -16,13 +11,10 @@ import KetoneLogModal from '../components/KetoneLogModal';
 import SymptomLogModal from '../components/SymptomLogModal';
 import StatusOverview from '../components/StatusOverview';
 import QuickActionFAB from '../components/QuickActionFAB';
-import { differenceInDays } from 'date-fns';
-import { loadString, saveString } from '../utils/storage';
+import { loadString } from '../utils/storage';
 
 export default function HomeScreen() {
-  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useAutophagyStatus, useUnifiedFastRecommendation } = useLogs();
-  const navigation = useNavigation();
-  const { currentLevel, nextChallenge, completed } = useAutophagyStatus();
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useUnifiedFastRecommendation, ketoneLog, setKetoneLog } = useLogs();
   const [symptomModalVisible, setSymptomModalVisible] = useState(false);
   const [symptomType, setSymptomType] = useState('tremor');
   const [severity, setSeverity] = useState('mild');
@@ -30,57 +22,19 @@ export default function HomeScreen() {
   const [addTime, setAddTime] = useState(new Date());
   const [showAddTimePicker, setShowAddTimePicker] = useState(false);
   const scale = useRef(new Animated.Value(1)).current;
-  const [showFastStopPicker, setShowFastStopPicker] = useState(false);
   const { setModalActionHandler } = useModalAction();
   const [fastingGoalHours, setFastingGoalHours] = useState(16);
   const [lastMealTime, setLastMealTime] = useState(null);
   const [fastingStreak, setFastingStreak] = useState(0);
-  const [statusOverride, setStatusOverride] = useState(null);
   const [fastingPlan, setFastingPlan] = useState({ hours: 16, label: '16:8' });
   const [dietPreference, setDietPreference] = useState('Standard');
-  const { user, saveUser } = useUser();
   const today = new Date().toISOString().slice(0, 10);
   const unifiedRec = useUnifiedFastRecommendation();
-  const [fastRecDismissed, setFastRecDismissed] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const mealAnim = useRef(new Animated.Value(0)).current;
   const symptomAnim = useRef(new Animated.Value(0)).current;
   const [logModal, setLogModal] = useState(null);
-  const { ketoneLog, setKetoneLog } = useLogs();
 
-  function getWeekStart(date) {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - d.getDay());
-    return d.toISOString().slice(0, 10);
-  }
-  const weekStart = getWeekStart(today);
-  const animalMeatLog = user?.animalMeatLog || [];
-  const carbMealLog = user?.carbMealLog || [];
-  const thisWeekMeat = animalMeatLog.filter(e => getWeekStart(e.date) === weekStart);
-  const thisWeekCarbs = carbMealLog.filter(e => getWeekStart(e.date) === weekStart);
-  const totalMeat = thisWeekMeat.reduce((sum, e) => sum + (parseFloat(e.pounds) || 0), 0);
-  const carbCount = thisWeekCarbs.length;
-
-  function getWeekStartDate(date) {
-    const d = new Date(date);
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - d.getDay());
-    return d.toISOString().slice(0, 10);
-  }
-  const weeks = [];
-  let d = new Date();
-  for (let i = 0; i < 4; i++) {
-    const weekStart = getWeekStartDate(d);
-    const weekMeat = animalMeatLog.filter(e => getWeekStartDate(e.date) === weekStart);
-    const weekCarbs = carbMealLog.filter(e => getWeekStartDate(e.date) === weekStart);
-    weeks.unshift({
-      label: `W${4 - i}`,
-      meat: weekMeat.reduce((sum, e) => sum + (parseFloat(e.pounds) || 0), 0),
-      carbs: weekCarbs.length,
-    });
-    d.setDate(d.getDate() - 7);
-  }
 
   useEffect(() => {
     Animated.loop(
@@ -156,7 +110,6 @@ export default function HomeScreen() {
 
   const mealTypes = ['meal', 'animalMeat', 'carbMeal'];
   const todaysMeals = foodLog.filter(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === today);
-  const todaysSnacks = foodLog.filter(e => e.type === 'snack' && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
   const allKetoOrCarnivore = todaysMeals.length > 0 && todaysMeals.every(e => e.dietType === 'Keto' || e.dietType === 'Carnivore');
 
@@ -199,25 +152,6 @@ export default function HomeScreen() {
     autophagyStatus = 'bad';
   }
 
-  const badgeVisible = Object.values(completed).some(arr => arr.length > 0);
-  let progress = 0;
-  if (nextChallenge) {
-    const maxFast = fastLog.reduce((max, entry) => {
-      const start = new Date(entry.start);
-      const end = new Date(entry.end);
-      const durationHrs = (end - start) / 3600000;
-      return Math.max(max, durationHrs);
-    }, 0);
-    progress = Math.min(1, maxFast / nextChallenge);
-  }
-
-  const pillStatuses = [
-    fastingStatus === 'good' ? 'good' : fastingStatus === 'warning' ? 'warning' : 'bad',
-    todaysMeals.length > 0 ? 'good' : 'warning',
-    ketoneStatus === 'good' ? 'good' : ketoneStatus === 'warning' ? 'warning' : 'bad',
-    autophagyStatus === 'good' ? 'good' : autophagyStatus === 'warning' ? 'warning' : 'bad',
-    todaysSymptoms.length === 0 ? 'good' : 'warning',
-  ];
   const statusOverviewItems = [
     {
       key: 'fasting',
@@ -261,21 +195,6 @@ export default function HomeScreen() {
     bgColors = ['#eaf6f6', '#b3c7f7'];
   }
 
-  const handleSaveSymptom = () => {
-    const entry = {
-      type: symptomType,
-      severity,
-      time: new Date().toISOString(),
-      note: symptomNote,
-      id: Date.now(),
-    };
-    setSymptomLog([entry, ...symptomLog]);
-    setSymptomModalVisible(false);
-    setSymptomType('tremor');
-    setSeverity('mild');
-    setSymptomNote('');
-  };
-
   const handleSaveSymptomWithTime = () => {
     const entry = {
       type: symptomType,
@@ -295,29 +214,10 @@ export default function HomeScreen() {
   useEffect(() => {
     (async () => {
       const storedDiet = await loadString('dietPreference');
-      if (storedDiet) setDietPreference(storedDiet);
+      if (storedDiet) {setDietPreference(storedDiet);}
     })();
   }, []);
 
-  const handleDietType = async (type) => {
-    await saveUser({ ...user, dietType: type });
-  };
-
-  useEffect(() => {
-    (async () => {
-      const today = new Date().toISOString().slice(0, 10);
-      const dismissed = await loadString('fastRecDismissed');
-      setFastRecDismissed(dismissed === today);
-    })();
-  }, []);
-
-  const handleDismissFastRec = async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    await saveString('fastRecDismissed', today);
-    setFastRecDismissed(true);
-  };
-
-  const activelyFasting = fastingElapsed > 0 && fastingElapsed < fastingGoal * 3600;
 
   useEffect(() => {
     if (fabOpen) {
@@ -331,7 +231,7 @@ export default function HomeScreen() {
         Animated.spring(mealAnim, { toValue: 0, useNativeDriver: true }),
       ]).start();
     }
-  }, [fabOpen]);
+  }, [fabOpen, mealAnim, symptomAnim]);
 
   function handleAddMeal() {
     setFabOpen(false);
@@ -388,7 +288,7 @@ export default function HomeScreen() {
     ]);
   }
   function handleStopFast() {
-    if (!ongoingFast) return;
+    if (!ongoingFast) {return;}
     setFastLog(fastLog.map(f =>
       f === ongoingFast ? { ...f, end: new Date().toISOString() } : f
     ));
@@ -399,7 +299,7 @@ export default function HomeScreen() {
   let autophagyDays = 0;
   const oneYearAgo = new Date(now.getTime() - 365 * 24 * 3600 * 1000);
   fastLog.forEach(fast => {
-    if (!fast.end) return;
+    if (!fast.end) {return;}
     const start = new Date(fast.start);
     const end = new Date(fast.end);
     if (end > oneYearAgo) {
@@ -432,7 +332,7 @@ export default function HomeScreen() {
   const [ketoneNote, setKetoneNote] = useState('');
 
   function handleSaveKetone() {
-    if (!ketoneValue) return;
+    if (!ketoneValue) {return;}
     setKetoneLog([
       {
         id: Date.now().toString(),
@@ -758,4 +658,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
     minHeight: 40,
   },
-}); 
+});

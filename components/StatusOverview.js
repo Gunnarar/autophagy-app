@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import StatusPill from './StatusPill';
 
 export default function StatusOverview({ statuses = [] }) {
-  if (!statuses.length) return null;
+  if (!statuses.length) {return null;}
 
   return (
     <View style={styles.container}>

@@ -4,7 +4,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../utils/theme';
 
 export default function NotificationCard({ notification, onDismiss }) {
-  if (!notification) return null;
+  if (!notification) {return null;}
 
   const {
     icon,

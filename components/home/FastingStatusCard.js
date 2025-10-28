@@ -5,7 +5,7 @@ import { theme } from '../../utils/theme';
 
 export default function FastingStatusCard({ unifiedRec }) {
   const [expanded, setExpanded] = useState(false);
-  if (!unifiedRec) return null;
+  if (!unifiedRec) {return null;}
   return (
     <LinearGradient
       colors={[theme.colors.blueLight, theme.colors.accent]}
@@ -93,4 +93,4 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textAlign: 'center',
   },
-}); 
+});

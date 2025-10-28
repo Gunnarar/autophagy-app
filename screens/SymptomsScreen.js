@@ -78,7 +78,7 @@ export default function SymptomsScreen() {
           {todaysEntries.length === 0 ? (
             <Text style={styles.cardText}>No symptoms logged today.</Text>
           ) : (
-            todaysEntries.map((entry, idx) => {
+            todaysEntries.map((entry, _idx) => {
               const typeObj = SYMPTOM_TYPES.find(t => t.key === entry.type);
               return (
                 <Pressable
@@ -115,7 +115,7 @@ export default function SymptomsScreen() {
                         key={t.key}
                         style={[
                           styles.emojiCircle,
-                          symptomType === t.key && styles.emojiCircleActive
+                          symptomType === t.key && styles.emojiCircleActive,
                         ]}
                         onPress={() => setSymptomType(t.key)}
                         accessibilityLabel={t.label}
@@ -326,4 +326,4 @@ const styles = StyleSheet.create({
     maxWidth: 180,
     textAlign: 'center',
   },
-}); 
+});

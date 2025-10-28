@@ -6,9 +6,9 @@ import { useUser } from '../contexts/UserContext';
 
 // For now, assume user.completedFasts is an array of completed program keys
 function getStatus(program, completedFasts) {
-  if (completedFasts?.includes(program.key)) return 'completed';
-  if (!program.unlockAfter) return 'unlocked';
-  if (completedFasts?.includes(program.unlockAfter)) return 'unlocked';
+  if (completedFasts?.includes(program.key)) {return 'completed';}
+  if (!program.unlockAfter) {return 'unlocked';}
+  if (completedFasts?.includes(program.unlockAfter)) {return 'unlocked';}
   return 'locked';
 }
 
@@ -18,7 +18,6 @@ export default function FastingProgramsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const [scheduledTime, setScheduledTime] = useState(null);
 
   const scheduledFast = user?.scheduledFast;
 
@@ -36,7 +35,6 @@ export default function FastingProgramsScreen() {
       },
     });
     setModalVisible(false);
-    setScheduledTime(null);
   };
 
   const handleSchedule = () => {
@@ -53,7 +51,6 @@ export default function FastingProgramsScreen() {
     });
     setShowDatePicker(false);
     setModalVisible(false);
-    setScheduledTime(null);
   };
 
   return (
@@ -170,4 +167,4 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12, color: '#2d4d4d' },
   modalDesc: { fontSize: 16, color: '#4d6d6d', marginBottom: 20, textAlign: 'center' },
-}); 
+});

@@ -36,28 +36,28 @@ export function LogsProvider({ children }) {
   useEffect(() => {
     (async () => {
       const storedProgress = await loadJSON('autophagyProgress', { completed: {}, monthly: {} });
-      if (storedProgress) setAutophagyProgress(storedProgress);
+      if (storedProgress) {setAutophagyProgress(storedProgress);}
     })();
   }, []);
 
   useEffect(() => {
-    if (loaded) saveJSON('foodLog', foodLog);
+    if (loaded) {saveJSON('foodLog', foodLog);}
   }, [foodLog, loaded]);
 
   useEffect(() => {
-    if (loaded) saveJSON('symptomLog', symptomLog);
+    if (loaded) {saveJSON('symptomLog', symptomLog);}
   }, [symptomLog, loaded]);
 
   useEffect(() => {
-    if (loaded) saveJSON('fastLog', fastLog);
+    if (loaded) {saveJSON('fastLog', fastLog);}
   }, [fastLog, loaded]);
 
   useEffect(() => {
-    if (loaded) saveJSON('autophagyProgress', autophagyProgress);
+    if (loaded) {saveJSON('autophagyProgress', autophagyProgress);}
   }, [autophagyProgress, loaded]);
 
   useEffect(() => {
-    if (loaded) saveJSON('ketoneLog', ketoneLog);
+    if (loaded) {saveJSON('ketoneLog', ketoneLog);}
   }, [ketoneLog, loaded]);
 
   useEffect(() => {
@@ -76,7 +76,7 @@ export function LogsProvider({ children }) {
   }, [fastLog, user, saveUser]);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded) {return;}
 
     setFastLog(currentFasts => {
       const manualFasts = currentFasts.filter(f => f.method !== 'inferred');

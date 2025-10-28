@@ -49,4 +49,4 @@ export const theme = {
   fontSizes,
   spacing,
   borderRadius,
-}; 
+};

@@ -85,7 +85,7 @@ export default function LogEntryModal({
                         key={t.key}
                         style={[
                           styles.emojiCircle,
-                          symptomType === t.key && styles.emojiCircleActive
+                          symptomType === t.key && styles.emojiCircleActive,
                         ]}
                         onPress={() => setSymptomType(t.key)}
                         accessibilityLabel={t.label}
@@ -279,4 +279,4 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
   },
-}; 
+};

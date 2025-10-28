@@ -5,7 +5,7 @@ import { theme } from '../utils/theme';
 function formatTimestamp(value) {
   try {
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return 'Invalid date';
+    if (Number.isNaN(date.getTime())) {return 'Invalid date';}
     return date.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
   } catch (error) {
     return 'Invalid date';

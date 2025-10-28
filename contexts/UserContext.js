@@ -10,7 +10,7 @@ export const UserProvider = ({ children }) => {
   useEffect(() => {
     (async () => {
       const storedUser = await loadJSON('userProfile', null);
-      if (storedUser) setUser(storedUser);
+      if (storedUser) {setUser(storedUser);}
       setLoading(false);
     })();
   }, []);
@@ -27,4 +27,4 @@ export const UserProvider = ({ children }) => {
   );
 };
 
-export const useUser = () => useContext(UserContext); 
+export const useUser = () => useContext(UserContext);

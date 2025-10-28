@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useUser } from '../contexts/UserContext';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -7,7 +7,7 @@ const AVATAR_PLACEHOLDER = 'https://ui-avatars.com/api/?name=Genesis+User&backgr
 
 export default function ProfileScreen({ navigation }) {
   const { user } = useUser();
-  if (!user) return <View style={styles.container}><Text>Loading...</Text></View>;
+  if (!user) {return <View style={styles.container}><Text>Loading...</Text></View>;}
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.avatarContainer}>
@@ -57,4 +57,4 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   buttonText: { fontSize: 18, fontWeight: '600', color: '#2d4d4d' },
-}); 
+});

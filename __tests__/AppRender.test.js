@@ -31,7 +31,6 @@ jest.mock('react-native-modal-datetime-picker', () => {
 });
 
 jest.mock('react-native-safe-area-context', () => {
-  const React = require('react');
   const { View } = require('react-native');
   return {
     SafeAreaProvider: ({ children }) => <View>{children}</View>,
@@ -41,7 +40,6 @@ jest.mock('react-native-safe-area-context', () => {
 });
 
 jest.mock('react-native-svg', () => {
-  const React = require('react');
   const { View } = require('react-native');
   return {
     __esModule: true,

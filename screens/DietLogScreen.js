@@ -161,4 +161,4 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, fontSize: 16, marginRight: 8, flex: 1, backgroundColor: '#fff' },
   summaryText: { fontSize: 16, color: '#2d4d4d', marginTop: 4 },
-}); 
+});

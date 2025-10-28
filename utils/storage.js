@@ -32,7 +32,7 @@ export async function saveString(key, value) {
 
 export async function loadJSON(key, defaultValue = null) {
   const raw = await loadString(key);
-  if (raw === null || raw === undefined) return defaultValue;
+  if (raw === null || raw === undefined) {return defaultValue;}
   try {
     return JSON.parse(raw);
   } catch (error) {

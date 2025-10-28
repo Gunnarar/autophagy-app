@@ -16,7 +16,7 @@ export function getCurrentMonthKey(date = new Date()) {
 }
 
 export function inferFastsFromFoodLog(foodLog = []) {
-  if (!Array.isArray(foodLog)) return [];
+  if (!Array.isArray(foodLog)) {return [];}
   const sorted = [...foodLog]
     .filter(entry => entry?.time)
     .sort((a, b) => new Date(a.time) - new Date(b.time));
@@ -54,10 +54,10 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
   const lastCompleted = {};
   for (const prog of FASTING_PROGRAMS) {
     const fasts = fastLog.filter(f => {
-      if (!f?.start || !f?.end) return false;
+      if (!f?.start || !f?.end) {return false;}
       const start = new Date(f.start);
       const end = new Date(f.end);
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {return false;}
       const duration = (end - start) / 3600000;
       return duration >= prog.duration;
     });
@@ -110,10 +110,10 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
 
   const prolongedFasts = fastLog
     .filter(f => {
-      if (!f?.start || !f?.end) return false;
+      if (!f?.start || !f?.end) {return false;}
       const start = new Date(f.start);
       const end = new Date(f.end);
-      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return false;
+      if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {return false;}
       const duration = (end - start) / 3600000;
       return duration >= PROLONGED_FAST_HOURS;
     })
@@ -132,7 +132,7 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
   }
 
   const fastingNow = (() => {
-    if (!recentFoodEntries.length) return false;
+    if (!recentFoodEntries.length) {return false;}
     const lastMeal = new Date(recentFoodEntries[0].time);
     return (now - lastMeal) / (1000 * 3600) >= 16;
   })();
@@ -186,13 +186,13 @@ export function calculateAutophagyProgress(fastLog = [], now = new Date()) {
   const completedFasts = new Set();
 
   (Array.isArray(fastLog) ? fastLog : []).forEach(entry => {
-    if (!entry?.start || !entry?.end) return;
+    if (!entry?.start || !entry?.end) {return;}
     const start = new Date(entry.start);
     const end = new Date(entry.end);
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {return;}
 
     const durationHrs = (end - start) / 3600000;
-    if (durationHrs < 24) return;
+    if (durationHrs < 24) {return;}
 
     if (start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth()) {
       monthHours += durationHrs;
@@ -207,7 +207,7 @@ export function calculateAutophagyProgress(fastLog = [], now = new Date()) {
     for (const level of AUTOPHAGY_LEVELS) {
       for (const ch of level.challenges) {
         if (durationHrs >= ch) {
-          if (!completed[level.name]) completed[level.name] = [];
+          if (!completed[level.name]) {completed[level.name] = [];}
           if (!completed[level.name].includes(ch)) {
             completed[level.name].push(ch);
           }

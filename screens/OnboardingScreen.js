@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useUser } from '../contexts/UserContext';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
@@ -34,8 +34,8 @@ export default function OnboardingScreen({ navigation }) {
       Alert.alert('Missing info', `Please enter your ${steps[step].label}.`);
       return;
     }
-    if (step < steps.length - 1) setStep(step + 1);
-    else handleSubmit();
+    if (step < steps.length - 1) {setStep(step + 1);}
+    else {handleSubmit();}
   };
 
   const handleSubmit = async () => {
@@ -99,4 +99,4 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, width: '100%', marginBottom: 16 },
   dateButton: { borderWidth: 1, borderColor: '#6bb3b6', borderRadius: 8, padding: 16, width: '100%', alignItems: 'center', marginBottom: 16 },
   dateButtonText: { fontSize: 16, color: '#2d4d4d' },
-}); 
+});

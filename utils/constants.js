@@ -103,7 +103,7 @@ export const AUTOPHAGY_LEVELS = [
     name: 'Master',
     challenges: [384], // 384+ hours
   },
-]; 
+];
 
 export const FASTING_PROGRAMS = [
   { key: '24h', label: '24 Hour Fast', duration: 24, unlockAfter: null },
@@ -114,4 +114,4 @@ export const FASTING_PROGRAMS = [
   { key: '120h', label: '120 Hour Fast (5d)', duration: 120, unlockAfter: '96h' },
   { key: '144h', label: '144 Hour Fast (6d)', duration: 144, unlockAfter: '120h' },
   { key: '168h', label: '168 Hour Fast (7d)', duration: 168, unlockAfter: '144h' },
-]; 
+];

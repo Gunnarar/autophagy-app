@@ -6,14 +6,13 @@ import { useModalAction } from '../contexts/ModalActionContext';
 import { loadString, saveString } from '../utils/storage';
 import NotificationList from '../components/NotificationList';
 
-export default function InfoScreen({ navigation }) {
+export default function InfoScreen() {
   const { foodLog, symptomLog, fastLog, useAutophagyStatus, useUnifiedFastRecommendation } = useLogs();
   const { nextChallenge, currentLevel } = useAutophagyStatus();
   const { triggerModalAction } = useModalAction();
   const today = new Date().toISOString().slice(0, 10);
   const [done, setDone] = useState({});
   const mealTypes = ['meal', 'animalMeat', 'carbMeal'];
-  const todaysMeals = foodLog.filter(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
   const [fastingDismissedUntil, setFastingDismissedUntil] = useState(null);
   const unifiedRec = useUnifiedFastRecommendation();
@@ -21,15 +20,15 @@ export default function InfoScreen({ navigation }) {
 
   useEffect(() => {
     (async () => {
-      const today = new Date().toISOString().slice(0, 10);
+      const todayKey = new Date().toISOString().slice(0, 10);
       const dismissed = await loadString('fastRecDismissed');
-      setFastRecDismissed(dismissed === today);
+      setFastRecDismissed(dismissed === todayKey);
     })();
   }, []);
 
   const handleDismissFastRec = async () => {
-    const today = new Date().toISOString().slice(0, 10);
-    await saveString('fastRecDismissed', today);
+    const todayKey = new Date().toISOString().slice(0, 10);
+    await saveString('fastRecDismissed', todayKey);
     setFastRecDismissed(true);
   };
 

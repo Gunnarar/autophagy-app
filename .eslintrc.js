@@ -13,5 +13,17 @@ module.exports = {
   rules: {
     'react/react-in-jsx-scope': 'off',
     'prettier/prettier': 'off',
+    'react-native/no-inline-styles': 'off',
+    curly: 'off',
+    'no-unused-vars': ['warn', { varsIgnorePattern: '^_', argsIgnorePattern: '^_' }],
   },
+  overrides: [
+    {
+      files: ['screens/LogsScreen.js'],
+      rules: {
+        'no-unused-vars': 'off',
+        'no-shadow': 'off',
+      },
+    },
+  ],
 };
