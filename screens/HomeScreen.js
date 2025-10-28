@@ -13,6 +13,7 @@ import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { theme } from '../utils/theme';
 import LogEntryModal from '../components/LogEntryModal';
 import FastingSummaryCard from '../components/FastingSummaryCard';
+import AutophagyKetoneCard from '../components/AutophagyKetoneCard';
 import { differenceInDays } from 'date-fns';
 import { loadString, saveString } from '../utils/storage';
 
@@ -433,36 +434,16 @@ export default function HomeScreen() {
           onStartFast={handleStartFast}
           onStopFast={handleStopFast}
         />
-        {/* Autophagy & Ketones Card */}
-        <View style={{ backgroundColor: theme.colors.card, borderRadius: theme.borderRadius.large, padding: theme.spacing.regular, marginBottom: theme.spacing.regular, alignItems: 'center', shadowColor: theme.colors.shadow, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 }}>
-          <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.text, marginBottom: 8 }}>Autophagy & Ketones</Text>
-          <Text style={{ fontSize: 18, color: theme.colors.primary, marginBottom: 8 }}>Autophagy: {autophagyDays} / 365 days</Text>
-          {ongoingFast && (
-            <Text style={{ fontSize: 16, color: theme.colors.textSecondary, marginBottom: 8 }}>Fasting: {fastTimer}</Text>
-          )}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Text style={{ fontSize: 18, color: ketoneColor, fontWeight: 'bold' }}>Ketones: </Text>
-            {latestKetone ? (
-              <Text style={{ fontSize: 18, color: ketoneColor, fontWeight: 'bold' }}>{latestKetone.value} {latestKetone.unit} <Text style={{ fontSize: 14, color: theme.colors.textSecondary }}>({new Date(latestKetone.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })})</Text></Text>
-            ) : (
-              <Text style={{ fontSize: 18, color: theme.colors.textSecondary }}>No data</Text>
-            )}
-            {ketoneInKetosis && <Text style={{ fontSize: 18, marginLeft: 6 }}>🟢</Text>}
-          </View>
-          <Pressable style={[styles.modalButton, { backgroundColor: theme.colors.primary, marginBottom: 8 }]} onPress={() => setKetoneModalVisible(true)} accessibilityLabel="Log Ketone">
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Log Ketone</Text>
-          </Pressable>
-          {ketoneHistory.length > 1 && (
-            <View style={{ width: '100%', marginTop: 8 }}>
-              <Text style={{ fontSize: 14, color: theme.colors.textSecondary, marginBottom: 4 }}>Recent Ketone Values:</Text>
-              {ketoneHistory.map((k, i) => (
-                <Text key={k.id} style={{ fontSize: 15, color: k.value >= 0.5 ? theme.colors.primary : theme.colors.textSecondary }}>
-                  {k.value} {k.unit} <Text style={{ color: theme.colors.textSecondary }}>({new Date(k.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })})</Text>{k.note ? ` - ${k.note}` : ''}
-                </Text>
-              ))}
-            </View>
-          )}
-        </View>
+        <AutophagyKetoneCard
+          autophagyDays={autophagyDays}
+          hasOngoingFast={Boolean(ongoingFast)}
+          fastingTimerLabel={fastTimer}
+          latestKetone={latestKetone}
+          ketoneInKetosis={ketoneInKetosis}
+          ketoneColor={ketoneColor}
+          ketoneHistory={ketoneHistory}
+          onLogKetone={() => setKetoneModalVisible(true)}
+        />
         {/* Ketone Log Modal */}
         <Modal visible={ketoneModalVisible} transparent animationType="fade" onRequestClose={() => setKetoneModalVisible(false)}>
           <TouchableWithoutFeedback onPress={() => setKetoneModalVisible(false)}>
