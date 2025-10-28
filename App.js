@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, Modal, Pressable, TouchableOpacity, TouchableWi
 import { NavigationContainer } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useEffect, useState } from 'react';
 import { LogsProvider, useLogs } from './contexts/LogsContext';

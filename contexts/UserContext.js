@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { loadJSON, saveJSON } from '../utils/storage';
 
 const UserContext = createContext();
 
@@ -9,15 +9,15 @@ export const UserProvider = ({ children }) => {
 
   useEffect(() => {
     (async () => {
-      const storedUser = await AsyncStorage.getItem('userProfile');
-      if (storedUser) setUser(JSON.parse(storedUser));
+      const storedUser = await loadJSON('userProfile', null);
+      if (storedUser) setUser(storedUser);
       setLoading(false);
     })();
   }, []);
 
   const saveUser = async (userData) => {
     setUser(userData);
-    await AsyncStorage.setItem('userProfile', JSON.stringify(userData));
+    await saveJSON('userProfile', userData);
   };
 
   return (

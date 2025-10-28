@@ -178,3 +178,76 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
     planNextMsg,
   };
 }
+
+export function calculateAutophagyProgress(fastLog = [], now = new Date()) {
+  const completed = {};
+  const monthKey = getCurrentMonthKey(now);
+  let monthHours = 0;
+  const completedFasts = new Set();
+
+  (Array.isArray(fastLog) ? fastLog : []).forEach(entry => {
+    if (!entry?.start || !entry?.end) return;
+    const start = new Date(entry.start);
+    const end = new Date(entry.end);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+
+    const durationHrs = (end - start) / 3600000;
+    if (durationHrs < 24) return;
+
+    if (start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth()) {
+      monthHours += durationHrs;
+    }
+
+    FASTING_PROGRAMS.forEach(program => {
+      if (durationHrs >= program.duration) {
+        completedFasts.add(program.key);
+      }
+    });
+
+    for (const level of AUTOPHAGY_LEVELS) {
+      for (const ch of level.challenges) {
+        if (durationHrs >= ch) {
+          if (!completed[level.name]) completed[level.name] = [];
+          if (!completed[level.name].includes(ch)) {
+            completed[level.name].push(ch);
+          }
+        }
+      }
+    }
+  });
+
+  Object.keys(completed).forEach(level => {
+    completed[level].sort((a, b) => a - b);
+  });
+
+  return {
+    completed,
+    monthly: { [monthKey]: monthHours },
+    completedFasts: Array.from(completedFasts).sort(),
+  };
+}
+
+export function getAutophagyStatus(progress = { completed: {}, monthly: {} }, now = new Date()) {
+  const { completed = {}, monthly = {} } = progress || {};
+  let currentLevel = null;
+  let nextChallenge = null;
+
+  for (const level of AUTOPHAGY_LEVELS) {
+    const done = completed[level.name] || [];
+    if (done.length < level.challenges.length) {
+      currentLevel = level.name;
+      nextChallenge = level.challenges[done.length];
+      break;
+    }
+  }
+
+  if (!currentLevel) {
+    currentLevel = 'Master';
+    nextChallenge = null;
+  }
+
+  const monthKey = getCurrentMonthKey(now);
+  const monthlyDays = Math.floor((monthly[monthKey] || 0) / 24);
+
+  return { currentLevel, nextChallenge, monthlyDays, completed };
+}

@@ -8,12 +8,12 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useNavigation } from '@react-navigation/native';
 import StatusPill from '../components/StatusPill';
 import { useModalAction } from '../contexts/ModalActionContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUser } from '../contexts/UserContext';
 import Svg, { Rect, Text as SvgText } from 'react-native-svg';
 import { theme } from '../utils/theme';
 import LogEntryModal from '../components/LogEntryModal';
 import { differenceInDays } from 'date-fns';
+import { loadString, saveString } from '../utils/storage';
 
 export default function HomeScreen() {
   const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useAutophagyStatus, useUnifiedFastRecommendation } = useLogs();
@@ -100,7 +100,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     (async () => {
-      const stored = await AsyncStorage.getItem('fastingSchedule');
+      const stored = await loadString('fastingSchedule');
       let hours = 16, label = '16:8';
       if (stored && stored.match(/^(\d+):(\d+)/)) {
         hours = parseInt(stored.split(':')[0], 10);
@@ -257,7 +257,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     (async () => {
-      const storedDiet = await AsyncStorage.getItem('dietPreference');
+      const storedDiet = await loadString('dietPreference');
       if (storedDiet) setDietPreference(storedDiet);
     })();
   }, []);
@@ -269,14 +269,14 @@ export default function HomeScreen() {
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const dismissed = await AsyncStorage.getItem('fastRecDismissed');
+      const dismissed = await loadString('fastRecDismissed');
       setFastRecDismissed(dismissed === today);
     })();
   }, []);
 
   const handleDismissFastRec = async () => {
     const today = new Date().toISOString().slice(0, 10);
-    await AsyncStorage.setItem('fastRecDismissed', today);
+    await saveString('fastRecDismissed', today);
     setFastRecDismissed(true);
   };
 

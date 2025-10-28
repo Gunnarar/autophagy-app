@@ -2,6 +2,8 @@ import {
   inferFastsFromFoodLog,
   getUnifiedFastRecommendation,
   FASTING_PROGRAMS,
+  calculateAutophagyProgress,
+  getAutophagyStatus,
 } from '../utils/logs';
 
 describe('inferFastsFromFoodLog', () => {
@@ -107,5 +109,32 @@ describe('getUnifiedFastRecommendation', () => {
     expect(result.caution).toBe(true);
     expect(result.reason).toContain('refeed');
     expect(result.whatToExpect).toContain('Monitor your symptoms');
+  });
+});
+
+describe('calculateAutophagyProgress & getAutophagyStatus', () => {
+  const now = new Date('2025-01-15T12:00:00.000Z');
+
+  it('aggregates monthly hours and completed challenges', () => {
+    const fastLog = [
+      {
+        start: '2025-01-10T00:00:00.000Z',
+        end: '2025-01-11T12:00:00.000Z', // 36h in current month
+      },
+      {
+        start: '2024-12-20T00:00:00.000Z',
+        end: '2024-12-21T18:00:00.000Z', // 42h previous month
+      },
+    ];
+
+    const progress = calculateAutophagyProgress(fastLog, now);
+    expect(progress.monthly).toEqual({ '2025-1': 36 });
+    expect(progress.completedFasts).toEqual(['24h', '36h']);
+    expect(progress.completed).toEqual({ Beginner: [24] });
+
+    const status = getAutophagyStatus(progress, now);
+    expect(status.currentLevel).toBe('Beginner');
+    expect(status.nextChallenge).toBe(48);
+    expect(status.monthlyDays).toBe(1);
   });
 });

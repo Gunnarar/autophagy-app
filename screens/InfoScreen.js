@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLogs } from '../contexts/LogsContext';
 import { useModalAction } from '../contexts/ModalActionContext';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { loadString, saveString } from '../utils/storage';
 
 export default function InfoScreen({ navigation }) {
   const { foodLog, symptomLog, fastLog, useAutophagyStatus, useUnifiedFastRecommendation } = useLogs();
@@ -22,14 +22,14 @@ export default function InfoScreen({ navigation }) {
   useEffect(() => {
     (async () => {
       const today = new Date().toISOString().slice(0, 10);
-      const dismissed = await AsyncStorage.getItem('fastRecDismissed');
+      const dismissed = await loadString('fastRecDismissed');
       setFastRecDismissed(dismissed === today);
     })();
   }, []);
 
   const handleDismissFastRec = async () => {
     const today = new Date().toISOString().slice(0, 10);
-    await AsyncStorage.setItem('fastRecDismissed', today);
+    await saveString('fastRecDismissed', today);
     setFastRecDismissed(true);
   };
 
