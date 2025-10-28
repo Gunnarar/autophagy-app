@@ -13,28 +13,36 @@ export default function StatusPill({ label, icon, value, status, info }) {
     status === 'good' ? '#89ce00' :
     status === 'warning' ? '#f7b731' :
     status === 'bad' ? '#e74c3c' : '#b3c7f7';
+  const pillStyle = React.useMemo(() => [styles.pill, { borderColor: color }], [color]);
+  const labelStyle = React.useMemo(() => [styles.label, { color }], [color]);
+  const gaugeFillStyle = React.useMemo(() => ({
+    width: `${Math.round(value * 100)}%`,
+    backgroundColor: color,
+  }), [color, value]);
+  const modalTitleStyle = React.useMemo(() => [styles.modalTitle, { color }], [color]);
+  const modalButtonStyle = React.useMemo(() => [styles.modalButton, { backgroundColor: color }], [color]);
   return (
     <>
       <Pressable
-        style={[styles.pill, { borderColor: color, backgroundColor: '#fff' }]}
+        style={pillStyle}
         onPress={() => setModalVisible(true)}
         accessibilityLabel={`Show more info about ${label}`}
       >
-        <MaterialCommunityIcons name={icon} size={28} color={color} style={{ marginRight: 8 }} />
-        <View style={{ flex: 1 }}>
-          <Text style={[styles.label, { color }]}>{label}</Text>
+        <MaterialCommunityIcons name={icon} size={28} color={color} style={styles.icon} />
+        <View style={styles.labelContainer}>
+          <Text style={labelStyle}>{label}</Text>
           <View style={styles.gaugeBg}>
-            <View style={[styles.gaugeFill, { width: `${Math.round(value * 100)}%`, backgroundColor: color }]} />
+            <View style={[styles.gaugeFill, gaugeFillStyle]} />
           </View>
         </View>
       </Pressable>
       <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
         <Pressable style={styles.modalOverlay} onPress={() => setModalVisible(false)}>
           <View style={styles.modalContent}>
-            <Text style={[styles.modalTitle, { color }]}>{label}</Text>
+            <Text style={modalTitleStyle}>{label}</Text>
             <Text style={styles.modalInfo}>{info}</Text>
-            <Pressable style={[styles.modalButton, { backgroundColor: color }]} onPress={() => setModalVisible(false)}>
-              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close</Text>
+            <Pressable style={modalButtonStyle} onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalButtonText}>Close</Text>
             </Pressable>
           </View>
         </Pressable>
@@ -59,6 +67,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.06,
     shadowRadius: 4,
     backgroundColor: '#fff',
+  },
+  icon: {
+    marginRight: 8,
+  },
+  labelContainer: {
+    flex: 1,
   },
   label: {
     fontSize: 16,
@@ -108,5 +122,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 24,
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });

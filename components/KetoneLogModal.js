@@ -26,7 +26,7 @@ export default function KetoneLogModal({
               <Text style={styles.label}>Value:</Text>
               <View style={styles.valueRow}>
                 <TextInput
-                  style={[styles.input, { flex: 1, marginRight: 8 }]}
+                  style={[styles.input, styles.inputFlexible]}
                   keyboardType="decimal-pad"
                   placeholder="e.g. 0.7"
                   value={value}
@@ -34,7 +34,7 @@ export default function KetoneLogModal({
                   accessibilityLabel="Ketone value input"
                 />
                 <Pressable
-                  style={[styles.unitButton, unit === 'mmol/L' && styles.unitButtonActive, { marginRight: 4 }]}
+                  style={[styles.unitButton, unit === 'mmol/L' && styles.unitButtonActive, styles.unitButtonSpacing]}
                   onPress={() => onSelectUnit?.('mmol/L')}
                   accessibilityLabel="mmol/L"
                 >
@@ -51,7 +51,7 @@ export default function KetoneLogModal({
 
               <Text style={styles.label}>Time:</Text>
               <Pressable
-                style={[styles.primaryButton, { marginBottom: 12 }]}
+                style={[styles.primaryButton, styles.primaryButtonSpacing]}
                 onPress={onSetTimeToNow}
                 accessibilityLabel="Set time to now"
               >
@@ -62,7 +62,7 @@ export default function KetoneLogModal({
 
               <Text style={styles.label}>Note (optional):</Text>
               <TextInput
-                style={[styles.input, { marginBottom: 12 }]}
+                style={[styles.input, styles.inputSpacing]}
                 placeholder="e.g. after exercise, before meds"
                 value={note}
                 onChangeText={onChangeNote}
@@ -132,6 +132,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
     width: '100%',
   },
+  inputFlexible: {
+    flex: 1,
+    marginRight: 8,
+  },
   unitButton: {
     flex: 0,
     minWidth: 72,
@@ -146,6 +150,9 @@ const styles = StyleSheet.create({
   unitButtonActive: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary,
+  },
+  unitButtonSpacing: {
+    marginRight: 4,
   },
   unitText: {
     color: theme.colors.text,
@@ -162,6 +169,12 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginTop: 4,
+  },
+  primaryButtonSpacing: {
+    marginBottom: 12,
+  },
+  inputSpacing: {
+    marginBottom: 12,
   },
   primaryButtonLabel: {
     color: '#fff',

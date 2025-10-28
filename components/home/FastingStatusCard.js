@@ -13,10 +13,10 @@ export default function FastingStatusCard({ unifiedRec }) {
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
     >
-      <View style={{ alignItems: 'center', width: '100%' }}>
+      <View style={styles.cardContent}>
         <Text style={styles.cellEmoji} accessibilityLabel="Cell illustration">🦠</Text>
         <Text style={styles.title}>Fasting Challenge</Text>
-        <Text style={styles.challengeText}>Next: <Text style={{ fontWeight: 'bold' }}>{unifiedRec.recommendedProgram?.duration}h Fast</Text></Text>
+        <Text style={styles.challengeText}>Next: <Text style={styles.inlineBold}>{unifiedRec.recommendedProgram?.duration}h Fast</Text></Text>
         <Text style={styles.statusText}>{unifiedRec.reason}</Text>
         <Pressable
           style={styles.learnMoreBtn}
@@ -26,11 +26,11 @@ export default function FastingStatusCard({ unifiedRec }) {
           <Text style={styles.learnMoreText}>{expanded ? 'Hide details' : 'Learn more'}</Text>
         </Pressable>
         {expanded && (
-          <View style={{ marginTop: 8, width: '100%' }}>
-            <Text style={styles.detailText}><Text style={{ fontWeight: 'bold' }}>Benefits:</Text> {unifiedRec.benefits}</Text>
-            <Text style={styles.detailText}><Text style={{ fontWeight: 'bold' }}>What to expect:</Text> {unifiedRec.whatToExpect}</Text>
-            {unifiedRec.challengeMsg && <Text style={[styles.detailText, { color: theme.colors.accent }]}>{unifiedRec.challengeMsg}</Text>}
-            {unifiedRec.caution && <Text style={[styles.detailText, { color: '#e74c3c', fontWeight: 'bold' }]}>Caution: Consider a shorter fast first.</Text>}
+          <View style={styles.expandedContent}>
+            <Text style={styles.detailText}><Text style={styles.inlineBold}>Benefits:</Text> {unifiedRec.benefits}</Text>
+            <Text style={styles.detailText}><Text style={styles.inlineBold}>What to expect:</Text> {unifiedRec.whatToExpect}</Text>
+            {unifiedRec.challengeMsg && <Text style={[styles.detailText, styles.detailAccent]}>{unifiedRec.challengeMsg}</Text>}
+            {unifiedRec.caution && <Text style={[styles.detailText, styles.detailCaution]}>Caution: Consider a shorter fast first.</Text>}
           </View>
         )}
       </View>
@@ -87,10 +87,28 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
   },
+  cardContent: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  inlineBold: {
+    fontWeight: 'bold',
+  },
+  expandedContent: {
+    marginTop: 8,
+    width: '100%',
+  },
   detailText: {
     color: theme.colors.text,
     fontSize: theme.fontSizes.regular,
     marginBottom: 4,
     textAlign: 'center',
+  },
+  detailAccent: {
+    color: theme.colors.accent,
+  },
+  detailCaution: {
+    color: '#e74c3c',
+    fontWeight: 'bold',
   },
 });

@@ -11,19 +11,27 @@ export default function QuickActionFAB({
   mealAnim,
   symptomAnim,
 }) {
+  const symptomAnimatedStyle = React.useMemo(() => ({
+    opacity: symptomAnim,
+    transform: [
+      { translateX: symptomAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -36] }) },
+      { translateY: symptomAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -36] }) },
+      { scale: symptomAnim },
+    ],
+  }), [symptomAnim]);
+
+  const mealAnimatedStyle = React.useMemo(() => ({
+    opacity: mealAnim,
+    transform: [
+      { translateY: mealAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -48] }) },
+      { scale: mealAnim },
+    ],
+  }), [mealAnim]);
+
   return (
     <View style={styles.container} pointerEvents="box-none">
       <Animated.View
-        style={[styles.miniWrapper, {
-          right: 36,
-          bottom: 0,
-          opacity: symptomAnim,
-          transform: [
-            { translateX: symptomAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -36] }) },
-            { translateY: symptomAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -36] }) },
-            { scale: symptomAnim },
-          ],
-        }]}
+        style={[styles.miniWrapper, styles.symptomMiniWrapper, symptomAnimatedStyle]}
         pointerEvents={open ? 'auto' : 'none'}
       >
         <Pressable
@@ -37,15 +45,7 @@ export default function QuickActionFAB({
       </Animated.View>
 
       <Animated.View
-        style={[styles.miniWrapper, {
-          right: 0,
-          bottom: 48,
-          opacity: mealAnim,
-          transform: [
-            { translateY: mealAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -48] }) },
-            { scale: mealAnim },
-          ],
-        }]}
+        style={[styles.miniWrapper, styles.mealMiniWrapper, mealAnimatedStyle]}
         pointerEvents={open ? 'auto' : 'none'}
       >
         <Pressable
@@ -63,7 +63,7 @@ export default function QuickActionFAB({
         onPress={onToggle}
         accessibilityLabel={open ? 'Close menu' : 'Add log entry'}
       >
-        <Animated.View style={{ transform: [{ rotate: open ? '45deg' : '0deg' }] }}>
+        <Animated.View style={open ? styles.fabIconOpen : styles.fabIcon}>
           <Ionicons name="add" size={36} color="#fff" />
         </Animated.View>
       </Pressable>
@@ -83,6 +83,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     alignItems: 'center',
     zIndex: 101,
+  },
+  symptomMiniWrapper: {
+    right: 36,
+    bottom: 0,
+  },
+  mealMiniWrapper: {
+    right: 0,
+    bottom: 48,
   },
   fab: {
     backgroundColor: theme.colors.primary,
@@ -113,5 +121,11 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  fabIcon: {
+    transform: [{ rotate: '0deg' }],
+  },
+  fabIconOpen: {
+    transform: [{ rotate: '45deg' }],
   },
 });

@@ -95,9 +95,9 @@ export default function FastingProgramsScreen() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Schedule Fast</Text>
             <Text style={styles.modalDesc}>Would you like to start your {selectedProgram?.label} now or schedule it for later?</Text>
-            <View style={{ flexDirection: 'row', marginTop: 16 }}>
+            <View style={styles.modalActionRow}>
               <Button title="Start Now" onPress={handleStartNow} />
-              <View style={{ width: 16 }} />
+              <View style={styles.modalActionSpacer} />
               <Button title="Schedule for Later" onPress={handleSchedule} />
             </View>
             <Button title="Cancel" onPress={() => setModalVisible(false)} color="#888" />
@@ -167,4 +167,11 @@ const styles = StyleSheet.create({
   },
   modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12, color: '#2d4d4d' },
   modalDesc: { fontSize: 16, color: '#4d6d6d', marginBottom: 20, textAlign: 'center' },
+  modalActionRow: {
+    flexDirection: 'row',
+    marginTop: 16,
+  },
+  modalActionSpacer: {
+    width: 16,
+  },
 });

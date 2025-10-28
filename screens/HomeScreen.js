@@ -350,12 +350,12 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.screen}>
       <LinearGradient
         colors={bgColors}
         style={StyleSheet.absoluteFill}
       />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Dashboard</Text>
         <StatusOverview statuses={statusOverviewItems} />
         <FastingSummaryCard
@@ -431,6 +431,16 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
   title: {
     fontSize: theme.fontSizes.xlarge,
     fontWeight: 'bold',

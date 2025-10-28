@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -47,7 +47,7 @@ function Root() {
   const { user, loading } = useUser();
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.loadingContainer}>
         <Text>Loading...</Text>
       </View>
     );
@@ -72,7 +72,7 @@ export default function App() {
         <ModalActionProvider>
           <LogsProvider>
             <NavigationContainer>
-              <SafeAreaView style={{ flex: 1 }}>
+              <SafeAreaView style={styles.safeArea}>
                 <Root />
               </SafeAreaView>
             </NavigationContainer>
@@ -82,3 +82,14 @@ export default function App() {
     </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  safeArea: {
+    flex: 1,
+  },
+});

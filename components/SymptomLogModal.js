@@ -63,7 +63,7 @@ export default function SymptomLogModal({
 
               <Text style={styles.label}>Note (optional):</Text>
               <TextInput
-                style={[styles.input, { marginBottom: 16 }]}
+                style={[styles.input, styles.inputSpacing]}
                 numberOfLines={1}
                 onChangeText={onChangeNote}
                 value={note}
@@ -73,7 +73,7 @@ export default function SymptomLogModal({
 
               <Text style={styles.label}>Time:</Text>
               <Pressable
-                style={[styles.primaryButton, { marginBottom: 12 }]}
+                style={[styles.primaryButton, styles.primaryButtonSpacing]}
                 onPress={onOpenTimePicker}
                 accessibilityLabel="Edit date and time"
               >
@@ -206,6 +206,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
     width: '100%',
   },
+  inputSpacing: {
+    marginBottom: 16,
+  },
   primaryButton: {
     backgroundColor: theme.colors.primary,
     borderRadius: theme.borderRadius.regular,
@@ -214,6 +217,9 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginTop: 4,
+  },
+  primaryButtonSpacing: {
+    marginBottom: 12,
   },
   primaryLabel: {
     color: '#fff',

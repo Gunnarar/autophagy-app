@@ -64,16 +64,16 @@ export default function SymptomsScreen() {
   const todaysEntries = symptomLog.filter(e => e.time.slice(0, 10) === today);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.screen}>
       <LinearGradient
         colors={['#101c23', '#182c34']}
         style={StyleSheet.absoluteFill}
       />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: theme.spacing.regular, paddingBottom: 40 }}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.title}>Symptoms</Text>
         <View style={styles.card}>
-          <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setModalVisible(true)}>
-            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Symptom</Text>
+          <Pressable style={[styles.modalButton, styles.modalButtonSpacing]} onPress={() => setModalVisible(true)}>
+            <Text style={styles.modalButtonPrimaryText}>Add Symptom</Text>
           </Pressable>
           {todaysEntries.length === 0 ? (
             <Text style={styles.cardText}>No symptoms logged today.</Text>
@@ -85,10 +85,10 @@ export default function SymptomsScreen() {
                   key={entry.id}
                   onPress={() => handleEdit(symptomLog.findIndex(e => e.id === entry.id))}
                   onLongPress={() => handleDelete(symptomLog.findIndex(e => e.id === entry.id))}
-                  style={{ paddingVertical: 6 }}
+                  style={styles.entryPressable}
                   accessibilityLabel={`Edit or delete symptom entry: ${typeObj ? typeObj.label : entry.type} at ${new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
                 >
-                  <View style={{ marginBottom: 2, alignItems: 'center' }}>
+                  <View style={styles.entryContent}>
                     <Text style={styles.symptomLogEmoji}>
                       {typeObj ? typeObj.emoji : ''}
                     </Text>
@@ -139,11 +139,11 @@ export default function SymptomsScreen() {
                     ))}
                   </View>
                   <Pressable
-                    style={[styles.modalButton, { marginBottom: 12 }]}
+                    style={[styles.modalButton, styles.modalButtonSpacing]}
                     onPress={() => setPickerMode(true)}
                     accessibilityLabel="Edit time"
                   >
-                    <Text style={{ color: '#fff' }}>Time: {symptomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                    <Text style={styles.modalButtonPrimaryText}>Time: {symptomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
                   </Pressable>
                   <DateTimePickerModal
                     isVisible={pickerMode}
@@ -153,8 +153,8 @@ export default function SymptomsScreen() {
                     onCancel={() => setPickerMode(false)}
                     is24Hour={true}
                   />
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: theme.colors.textSecondary }}>Note (optional):</Text>
-                  <View style={{ width: '100%', marginBottom: 16 }}>
+                  <Text style={styles.noteLabel}>Note (optional):</Text>
+                  <View style={styles.fullWidthSection}>
                     <TextInput
                       style={styles.noteInput}
                       numberOfLines={1}
@@ -165,10 +165,10 @@ export default function SymptomsScreen() {
                     />
                   </View>
                   <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save symptom entry">
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                    <Text style={styles.modalButtonPrimaryText}>Save</Text>
                   </Pressable>
-                  <Pressable style={[styles.modalButton, { backgroundColor: theme.colors.disabled, marginTop: 8 }]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={{ color: theme.colors.text, fontWeight: 'bold' }}>Cancel</Text>
+                  <Pressable style={[styles.modalButton, styles.modalButtonDisabled, styles.modalButtonTopMargin]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
+                    <Text style={styles.modalButtonDisabledText}>Cancel</Text>
                   </Pressable>
                 </View>
               </TouchableWithoutFeedback>
@@ -181,6 +181,16 @@ export default function SymptomsScreen() {
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: theme.spacing.regular,
+    paddingBottom: 40,
+  },
   title: {
     fontSize: theme.fontSizes.xlarge,
     fontWeight: 'bold',
@@ -232,6 +242,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  modalButtonSpacing: {
+    marginBottom: 12,
+  },
+  modalButtonPrimaryText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   emojiRowImproved: {
     flexDirection: 'row',
@@ -298,6 +315,22 @@ const styles = StyleSheet.create({
   severityPillTextActive: {
     color: '#fff',
   },
+  entryPressable: {
+    paddingVertical: 6,
+  },
+  entryContent: {
+    marginBottom: 2,
+    alignItems: 'center',
+  },
+  noteLabel: {
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    color: theme.colors.textSecondary,
+  },
+  fullWidthSection: {
+    width: '100%',
+    marginBottom: 16,
+  },
   noteInput: {
     borderColor: theme.colors.border,
     borderWidth: 1,
@@ -325,5 +358,15 @@ const styles = StyleSheet.create({
     marginBottom: 2,
     maxWidth: 180,
     textAlign: 'center',
+  },
+  modalButtonDisabled: {
+    backgroundColor: theme.colors.disabled,
+  },
+  modalButtonTopMargin: {
+    marginTop: 8,
+  },
+  modalButtonDisabledText: {
+    color: theme.colors.text,
+    fontWeight: 'bold',
   },
 });

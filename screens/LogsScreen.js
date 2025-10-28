@@ -21,13 +21,6 @@ export default function LogsScreen() {
   const [editSymptomType, setEditSymptomType] = useState('tremor');
   const [editSeverity, setEditSeverity] = useState('mild');
   const [showEditTimePicker, setShowEditTimePicker] = useState(false);
-  const [editFastModalVisible, setEditFastModalVisible] = useState(false);
-  const [editFast, setEditFast] = useState(null);
-  const [editFastStart, setEditFastStart] = useState(new Date());
-  const [editFastEnd, setEditFastEnd] = useState(new Date());
-  const [editFastNote, setEditFastNote] = useState('');
-  const [showEditFastStartPicker, setShowEditFastStartPicker] = useState(false);
-  const [showEditFastEndPicker, setShowEditFastEndPicker] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [exportTimeRange, setExportTimeRange] = useState('week');
 
@@ -48,14 +41,17 @@ export default function LogsScreen() {
 
   // Time range filtering
   const now = new Date();
-  let rangeStart = new Date();
-  if (timeRange === 'week') {rangeStart.setDate(now.getDate() - 6);}
-  else if (timeRange === 'month') {rangeStart.setMonth(now.getMonth() - 1);}
-  else if (timeRange === '3m') {rangeStart.setMonth(now.getMonth() - 3);}
-  else if (timeRange === '6m') {rangeStart.setMonth(now.getMonth() - 6);}
-  else if (timeRange === 'year') {rangeStart.setFullYear(now.getFullYear() - 1);}
-  rangeStart.setHours(0,0,0,0);
-  const inRange = d => new Date(d) >= rangeStart && new Date(d) <= now;
+  let filterRangeStart = new Date();
+  if (timeRange === 'week') {filterRangeStart.setDate(now.getDate() - 6);}
+  else if (timeRange === 'month') {filterRangeStart.setMonth(now.getMonth() - 1);}
+  else if (timeRange === '3m') {filterRangeStart.setMonth(now.getMonth() - 3);}
+  else if (timeRange === '6m') {filterRangeStart.setMonth(now.getMonth() - 6);}
+  else if (timeRange === 'year') {filterRangeStart.setFullYear(now.getFullYear() - 1);}
+  filterRangeStart.setHours(0, 0, 0, 0);
+  const inRange = d => {
+    const timestamp = new Date(d);
+    return timestamp >= filterRangeStart && timestamp <= now;
+  };
   const logs = allLogs.filter(e => {
     if (filterType !== 'all' && e.logType !== filterType) {return false;}
     const dateStr = e.time;
@@ -99,37 +95,40 @@ export default function LogsScreen() {
 
   // Helper: get date range for export
   function getExportRange(rangeKey) {
-    const now = new Date();
-    let start = new Date();
-    if (rangeKey === 'week') {start.setDate(now.getDate() - 6);}
-    else if (rangeKey === 'month') {start.setMonth(now.getMonth() - 1);}
-    else if (rangeKey === '3m') {start.setMonth(now.getMonth() - 3);}
-    else if (rangeKey === '6m') {start.setMonth(now.getMonth() - 6);}
-    else if (rangeKey === 'year') {start.setFullYear(now.getFullYear() - 1);}
-    start.setHours(0,0,0,0);
-    return { start, end: now };
+    const rangeEnd = new Date();
+    let rangeStart = new Date();
+    if (rangeKey === 'week') {rangeStart.setDate(rangeEnd.getDate() - 6);}
+    else if (rangeKey === 'month') {rangeStart.setMonth(rangeEnd.getMonth() - 1);}
+    else if (rangeKey === '3m') {rangeStart.setMonth(rangeEnd.getMonth() - 3);}
+    else if (rangeKey === '6m') {rangeStart.setMonth(rangeEnd.getMonth() - 6);}
+    else if (rangeKey === 'year') {rangeStart.setFullYear(rangeEnd.getFullYear() - 1);}
+    rangeStart.setHours(0, 0, 0, 0);
+    return { start: rangeStart, end: rangeEnd };
   }
 
   async function handleExportCSV() {
     try {
       const { start, end } = getExportRange(exportTimeRange);
-      const inRange = d => new Date(d) >= start && new Date(d) <= end;
+      const isWithinRange = dateValue => {
+        const timestamp = new Date(dateValue);
+        return timestamp >= start && timestamp <= end;
+      };
       // Filter logs
-      const food = foodLog.filter(e => e.time && inRange(e.time));
-      const symptoms = symptomLog.filter(e => e.time && inRange(e.time));
-      const fasts = fastLog.filter(f => f.start && f.end && inRange(f.end));
+      const food = foodLog.filter(e => e.time && isWithinRange(e.time));
+      const symptoms = symptomLog.filter(e => e.time && isWithinRange(e.time));
+      const fasts = fastLog.filter(f => f.start && f.end && isWithinRange(f.end));
       // Summary
-      const meatPounds = food.filter(e => e.type === 'animalMeat' && e.pounds).reduce((sum, e) => sum + parseFloat(e.pounds), 0);
-      const prolongedFasts = fasts.filter(f => {
-        const start = new Date(f.start);
-        const end = new Date(f.end);
-        const duration = (end - start) / 3600000;
+      const meatPoundsExport = food.filter(e => e.type === 'animalMeat' && e.pounds).reduce((sum, e) => sum + parseFloat(e.pounds), 0);
+      const prolongedFastCount = fasts.filter(f => {
+        const fastStart = new Date(f.start);
+        const fastEnd = new Date(f.end);
+        const duration = (fastEnd - fastStart) / 3600000;
         return duration >= 24;
       }).length;
-      const symptomCount = symptoms.length;
+      const symptomCountExport = symptoms.length;
       // CSV header
       let csv = `Genesis4PD Log Export\nTime Range: ${exportTimeRange}\nExported: ${new Date().toLocaleString()}\n\n`;
-      csv += `Summary\n"Total Meat (lbs)","Prolonged Fasts (>=24h)","Symptoms"\n"${meatPounds.toFixed(1)}","${prolongedFasts}","${symptomCount}"\n\n`;
+      csv += `Summary\n"Total Meat (lbs)","Prolonged Fasts (>=24h)","Symptoms"\n"${meatPoundsExport.toFixed(1)}","${prolongedFastCount}","${symptomCountExport}"\n\n`;
       // Logs header
       csv += 'Type,Time,Details\n';
       // Combine all logs
@@ -153,13 +152,13 @@ export default function LogsScreen() {
           ].filter(Boolean).join('; '),
         })),
         ...fasts.map(f => {
-          const start = new Date(f.start);
-          const end = new Date(f.end);
-          const duration = ((end - start) / 3600000).toFixed(1);
+          const fastStart = new Date(f.start);
+          const fastEnd = new Date(f.end);
+          const duration = ((fastEnd - fastStart) / 3600000).toFixed(1);
           return {
             type: 'Fast',
             time: f.end,
-            details: `Start: ${start.toLocaleString()}, End: ${end.toLocaleString()}, Duration: ${duration}h${f.note ? `, Note: ${f.note}` : ''}`,
+            details: `Start: ${fastStart.toLocaleString()}, End: ${fastEnd.toLocaleString()}, Duration: ${duration}h${f.note ? `, Note: ${f.note}` : ''}`,
           };
         }),
       ];
@@ -178,14 +177,14 @@ export default function LogsScreen() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <LinearGradient
         colors={['#101c23', '#182c34']}
         style={StyleSheet.absoluteFill}
       />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-        <Text style={styles.title}>Logs</Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.headerRow}>
+          <Text style={styles.title}>Logs</Text>
           <Button title="Export" onPress={() => setExportModalVisible(true)} />
         </View>
         {/* Export Time Range Modal */}
@@ -195,8 +194,8 @@ export default function LogsScreen() {
               <TouchableWithoutFeedback onPress={() => {}}>
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>Export Logs</Text>
-                  <Text style={{ marginBottom: 12, color: '#4d6d6d' }}>Select time range for export:</Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginBottom: 16 }}>
+                  <Text style={styles.modalDescription}>Select time range for export:</Text>
+                  <View style={styles.pillRow}>
                     {[
                       { key: 'week', label: 'Week' },
                       { key: 'month', label: 'Month' },
@@ -207,17 +206,19 @@ export default function LogsScreen() {
                       <Pressable
                         key={opt.key}
                         onPress={() => setExportTimeRange(opt.key)}
-                        style={{
-                          backgroundColor: exportTimeRange === opt.key ? '#6bb3b6' : '#eaf6f6',
-                          borderColor: '#6bb3b6',
-                          borderWidth: 1,
-                          borderRadius: 20,
-                          paddingVertical: 6,
-                          paddingHorizontal: 16,
-                          margin: 4,
-                        }}
+                        style={[
+                          styles.pill,
+                          styles.exportPill,
+                          exportTimeRange === opt.key && styles.pillActive,
+                        ]}
                       >
-                        <Text style={{ color: exportTimeRange === opt.key ? '#fff' : '#6bb3b6', fontWeight: 'bold' }}>{opt.label}</Text>
+                        <Text style={[
+                          styles.pillLabel,
+                          exportTimeRange === opt.key && styles.pillLabelActive,
+                        ]}
+                        >
+                          {opt.label}
+                        </Text>
                       </Pressable>
                     ))}
                   </View>
@@ -229,7 +230,7 @@ export default function LogsScreen() {
           </TouchableWithoutFeedback>
         </Modal>
         {/* Time Range Picker */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16 }}>
+        <View style={styles.pillRowCentered}>
           {[
             { key: 'week', label: 'Week' },
             { key: 'month', label: 'Month' },
@@ -240,229 +241,240 @@ export default function LogsScreen() {
             <Pressable
               key={opt.key}
               onPress={() => setTimeRange(opt.key)}
-              style={{
-                backgroundColor: timeRange === opt.key ? '#6bb3b6' : '#eaf6f6',
-                borderColor: '#6bb3b6',
-                borderWidth: 1,
-                borderRadius: 20,
-                paddingVertical: 6,
-                paddingHorizontal: 16,
-                marginHorizontal: 4,
-              }}
+              style={[
+                styles.pill,
+                styles.timeRangePill,
+                timeRange === opt.key && styles.pillActive,
+              ]}
             >
-              <Text style={{ color: timeRange === opt.key ? '#fff' : '#6bb3b6', fontWeight: 'bold' }}>{opt.label}</Text>
+              <Text style={[
+                styles.pillLabel,
+                timeRange === opt.key && styles.pillLabelActive,
+              ]}
+              >
+                {opt.label}
+              </Text>
             </Pressable>
           ))}
         </View>
         {/* Summary Section */}
-        <View style={{ backgroundColor: '#fff', borderRadius: 16, padding: 18, marginBottom: 18, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', elevation: 2 }}>
-          <View style={{ alignItems: 'center', flex: 1 }}>
-            <Text style={{ fontSize: 16, color: '#4d6d6d' }}>Meat (lbs)</Text>
-            <Text style={{ fontWeight: 'bold', color: '#89ce00', fontSize: 20 }}>{meatPounds.toFixed(1)}</Text>
+        <View style={styles.summaryCard}>
+          <View style={styles.summaryMetric}>
+            <Text style={styles.summaryLabel}>Meat (lbs)</Text>
+            <Text style={[styles.summaryValue, styles.summaryValueMeat]}>{meatPounds.toFixed(1)}</Text>
           </View>
-          <View style={{ alignItems: 'center', flex: 1 }}>
-            <Text style={{ fontSize: 16, color: '#4d6d6d' }}>Prolonged Fasts</Text>
-            <Text style={{ fontWeight: 'bold', color: '#6bb3b6', fontSize: 20 }}>{prolongedFasts}</Text>
+          <View style={styles.summaryMetric}>
+            <Text style={styles.summaryLabel}>Prolonged Fasts</Text>
+            <Text style={[styles.summaryValue, styles.summaryValueFasts]}>{prolongedFasts}</Text>
           </View>
-          <View style={{ alignItems: 'center', flex: 1 }}>
-            <Text style={{ fontSize: 16, color: '#4d6d6d' }}>Symptoms</Text>
-            <Text style={{ fontWeight: 'bold', color: '#e74c3c', fontSize: 20 }}>{symptomCount}</Text>
+          <View style={styles.summaryMetric}>
+            <Text style={styles.summaryLabel}>Symptoms</Text>
+            <Text style={[styles.summaryValue, styles.summaryValueSymptoms]}>{symptomCount}</Text>
           </View>
         </View>
         {/* Pill-style filter */}
-        <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: 16 }}>
+        <View style={styles.pillRowCentered}>
           {[
-            { key: 'all', label: 'All', icon: <Ionicons name="list" size={18} color={filterType === 'all' ? '#fff' : '#6bb3b6'} /> },
-            { key: 'food', label: 'Food', icon: <MaterialCommunityIcons name="food" size={18} color={filterType === 'food' ? '#fff' : '#6bb3b6'} /> },
-            { key: 'symptom', label: 'Symptoms', icon: <MaterialCommunityIcons name="stethoscope" size={18} color={filterType === 'symptom' ? '#fff' : '#6bb3b6'} /> },
-            { key: 'ketone', label: 'Ketones', icon: <MaterialCommunityIcons name="water" size={18} color={filterType === 'ketone' ? '#fff' : '#6bb3b6'} /> },
+            { key: 'all', label: 'All', renderIcon: color => <Ionicons name="list" size={18} color={color} /> },
+            { key: 'food', label: 'Food', renderIcon: color => <MaterialCommunityIcons name="food" size={18} color={color} /> },
+            { key: 'symptom', label: 'Symptoms', renderIcon: color => <MaterialCommunityIcons name="stethoscope" size={18} color={color} /> },
+            { key: 'ketone', label: 'Ketones', renderIcon: color => <MaterialCommunityIcons name="water" size={18} color={color} /> },
           ].map(pill => (
             <Pressable
               key={pill.key}
               onPress={() => setFilterType(pill.key)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                backgroundColor: filterType === pill.key ? '#6bb3b6' : '#eaf6f6',
-                borderColor: '#6bb3b6',
-                borderWidth: 1,
-                borderRadius: 20,
-                paddingVertical: 6,
-                paddingHorizontal: 16,
-                marginHorizontal: 4,
-                shadowColor: filterType === pill.key ? '#6bb3b6' : undefined,
-                shadowOpacity: filterType === pill.key ? 0.15 : 0,
-                shadowRadius: filterType === pill.key ? 6 : 0,
-                elevation: filterType === pill.key ? 2 : 0,
-              }}
+              style={[
+                styles.pill,
+                styles.filterPill,
+                filterType === pill.key && styles.pillActive,
+                filterType === pill.key && styles.filterPillActive,
+              ]}
             >
-              {pill.icon}
-              <Text style={{ color: filterType === pill.key ? '#fff' : '#6bb3b6', fontWeight: 'bold', marginLeft: 6 }}>{pill.label}</Text>
+              {pill.renderIcon(filterType === pill.key ? '#fff' : '#6bb3b6')}
+              <Text style={[
+                styles.pillLabel,
+                styles.filterPillLabel,
+                filterType === pill.key && styles.pillLabelActive,
+              ]}
+              >
+                {pill.label}
+              </Text>
             </Pressable>
           ))}
         </View>
         {/* Empty state for no logs */}
         {logs.length === 0 && (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ color: '#6bb3b6', fontSize: 18, fontWeight: 'bold' }}>No logs yet</Text>
-            <Text style={{ color: '#4d6d6d', fontSize: 16, marginTop: 8 }}>Tap + to add your first log!</Text>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateTitle}>No logs yet</Text>
+            <Text style={styles.emptyStateSubtitle}>Tap + to add your first log!</Text>
           </View>
         )}
         {/* Log list */}
-        {logs.map((entry, idx) => (
-              <View
-            key={entry.id}
-            style={{
-              ...styles.card,
-              borderLeftWidth: 6,
-              borderLeftColor:
-                filterType === 'all'
-                  ? '#6bb3b6'
-                  : filterType === entry.logType
-                  ? '#89ce00'
-                  : '#eaf6f6',
-              backgroundColor:
-                filterType === 'all'
-                  ? '#fff'
-                  : filterType === entry.logType
-                  ? '#eaf6f6'
-                  : '#fff',
-            }}
-          >
-                  <Text style={styles.cardTitle}>
-              {entry.logType === 'food' ? 'Meal' : entry.logType === 'symptom' ? (SYMPTOM_TYPES[entry.type] || entry.type) : 'Ketone'}
-              {'  '}
-              <Text style={{ color: '#4d6d6d', fontWeight: 'normal', fontSize: 14 }}>
-                {new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
-                  </Text>
-              {/* Fat red X for carb meals */}
-              {entry.logType === 'food' && entry.isCarb ? (
-                <MaterialCommunityIcons name="close-circle" size={22} color="#e74c3c" style={{ marginLeft: 8, marginBottom: -4 }} />
+        {logs.map((entry, _index) => {
+          const isFilterAll = filterType === 'all';
+          const matchesFilter = filterType === entry.logType;
+          const cardDynamicStyle = {
+            borderLeftColor: isFilterAll
+              ? '#6bb3b6'
+              : matchesFilter
+              ? '#89ce00'
+              : '#eaf6f6',
+            backgroundColor: isFilterAll
+              ? '#fff'
+              : matchesFilter
+              ? '#eaf6f6'
+              : '#fff',
+          };
+          return (
+            <View
+              key={entry.id}
+              style={[styles.card, styles.logCard, cardDynamicStyle]}
+            >
+              <Text style={styles.cardTitle}>
+                {entry.logType === 'food' ? 'Meal' : entry.logType === 'symptom' ? (SYMPTOM_TYPES[entry.type] || entry.type) : 'Ketone'}
+                {'  '}
+                <Text style={styles.cardTimestamp}>
+                  {new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                </Text>
+                {/* Fat red X for carb meals */}
+                {entry.logType === 'food' && entry.isCarb ? (
+                  <MaterialCommunityIcons name="close-circle" size={22} color="#e74c3c" style={styles.carbIcon} />
+                ) : null}
+              </Text>
+              {/* Show pounds of meat if present */}
+              {entry.pounds ? (
+                <Text style={styles.cardText}>Pounds of Meat: {entry.pounds}</Text>
               ) : null}
-                        </Text>
-            {/* Show pounds of meat if present */}
-            {entry.pounds ? (
-              <Text style={styles.cardText}>Pounds of Meat: {entry.pounds}</Text>
-            ) : null}
-            {/* Show general note if present */}
-            {entry.note ? (
-              <Text style={styles.cardText}>Note: {entry.note}</Text>
-            ) : null}
-            {entry.logType === 'symptom' && (
-              <Text style={styles.cardText}>Severity: {SEVERITIES[entry.severity] || entry.severity}</Text>
-            )}
-            {/* Show ketone value/unit if ketone log */}
-            {entry.logType === 'ketone' && (
-              <Text style={styles.cardText}>Ketone: {entry.value} {entry.unit}</Text>
-            )}
-            <View style={{ flexDirection: 'row', marginTop: 8 }}>
-              <Pressable onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }} style={[styles.modalButton, { marginRight: 8 }]} accessibilityLabel="Edit log">
-                <Text style={{ color: '#fff', fontWeight: 'bold' }}>Edit</Text>
-                        </Pressable>
-              <Pressable onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }} style={[styles.modalButton, { backgroundColor: '#ccc' }]} accessibilityLabel="Delete log">
-                          <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
-                        </Pressable>
+              {/* Show general note if present */}
+              {entry.note ? (
+                <Text style={styles.cardText}>Note: {entry.note}</Text>
+              ) : null}
+              {entry.logType === 'symptom' && (
+                <Text style={styles.cardText}>Severity: {SEVERITIES[entry.severity] || entry.severity}</Text>
+              )}
+              {/* Show ketone value/unit if ketone log */}
+              {entry.logType === 'ketone' && (
+                <Text style={styles.cardText}>Ketone: {entry.value} {entry.unit}</Text>
+              )}
+              <View style={styles.logActions}>
+                <Pressable
+                  onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }}
+                  style={[styles.modalButton, styles.modalButtonSpacingRight]}
+                  accessibilityLabel="Edit log"
+                >
+                  <Text style={styles.modalButtonPrimaryText}>Edit</Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }}
+                  style={[styles.modalButton, styles.modalButtonNeutral]}
+                  accessibilityLabel="Delete log"
+                >
+                  <Text style={styles.modalButtonNeutralText}>Delete</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        ))}
+          );
+        })}
         {/* Empty state for no symptoms (if filter is symptom) */}
         {filterType === 'symptom' && logs.length === 0 && (
-          <View style={{ alignItems: 'center', marginTop: 40 }}>
-            <Text style={{ color: '#6bb3b6', fontSize: 18, fontWeight: 'bold' }}>No symptoms logged yet</Text>
-            <Text style={{ color: '#4d6d6d', fontSize: 16, marginTop: 8 }}>Tap + to add your first symptom!</Text>
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyStateTitle}>No symptoms logged yet</Text>
+            <Text style={styles.emptyStateSubtitle}>Tap + to add your first symptom!</Text>
           </View>
         )}
       </ScrollView>
-        <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={() => setEditModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={() => setEditModalVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Edit {editLogType === 'food' ? 'Food' : 'Symptom'} Log</Text>
-                  {editLogType === 'food' ? (
-                    <>
-                      <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Type:</Text>
-                      <View style={{ flexDirection: 'row', marginBottom: 16 }}>
-                        <Pressable style={[styles.foodTypeButton, editFoodType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setEditFoodType('meal')} accessibilityLabel="Meal">
-                          <Text style={{ fontSize: 20 }}>🍽️ Meal</Text>
+      <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={() => setEditModalVisible(false)}>
+        <TouchableWithoutFeedback onPress={() => setEditModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <View style={styles.modalContent}>
+                <Text style={styles.modalTitle}>Edit {editLogType === 'food' ? 'Food' : 'Symptom'} Log</Text>
+                {editLogType === 'food' ? (
+                  <>
+                    <Text style={styles.fieldLabel}>Type:</Text>
+                    <View style={styles.foodTypeRow}>
+                      <Pressable style={[styles.foodTypeButton, editFoodType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setEditFoodType('meal')} accessibilityLabel="Meal">
+                        <Text style={styles.foodTypeEmoji}>🍽️ Meal</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.fieldLabel}>Symptom:</Text>
+                    <View style={styles.symptomTypeRow}>
+                      {SYMPTOM_TYPES.map(t => (
+                        <Pressable
+                          key={t.key}
+                          style={[
+                            styles.foodTypeButton,
+                            editSymptomType === t.key && styles.foodTypeButtonActive,
+                          ]}
+                          onPress={() => setEditSymptomType(t.key)}
+                          accessibilityLabel={t.label}
+                        >
+                          <Text style={styles.foodTypeEmoji}>{t.emoji}</Text>
                         </Pressable>
-                      </View>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Symptom:</Text>
-                      <View style={{ flexDirection: 'row', marginBottom: 8 }}>
-                        {SYMPTOM_TYPES.map(t => (
-                          <Pressable
-                            key={t.key}
-                            style={[
-                              styles.foodTypeButton,
-                              editSymptomType === t.key && styles.foodTypeButtonActive,
-                            ]}
-                            onPress={() => setEditSymptomType(t.key)}
-                            accessibilityLabel={t.label}
-                          >
-                            <Text style={{ fontSize: 20 }}>{t.emoji}</Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                      <Text style={{ textAlign: 'center', fontSize: 16, color: '#2d4d4d', marginBottom: 12 }}>
-                        {SYMPTOM_TYPES.find(t => t.key === editSymptomType)?.label}
-                      </Text>
-                      <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Severity:</Text>
-                      <View style={{ flexDirection: 'row', marginBottom: 12 }}>
-                        {SEVERITIES.map(s => (
-                          <Pressable
-                            key={s.key}
-                            style={[styles.foodTypeButton, editSeverity === s.key && styles.foodTypeButtonActive]}
-                            onPress={() => setEditSeverity(s.key)}
-                            accessibilityLabel={s.label}
-                          >
-                            <Text style={{ fontSize: 16 }}>{s.label}</Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                    </>
-                  )}
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Time:</Text>
-                  <Pressable style={[styles.modalButton, { marginBottom: 12 }]} onPress={() => setShowEditTimePicker(true)}>
-                    <Text style={{ color: '#fff' }}>{editTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                  </Pressable>
-                  <DateTimePickerModal
-                    isVisible={showEditTimePicker}
-                    mode="datetime"
-                    date={editTime}
+                      ))}
+                    </View>
+                    <Text style={styles.symptomLabel}>
+                      {SYMPTOM_TYPES.find(t => t.key === editSymptomType)?.label}
+                    </Text>
+                    <Text style={styles.fieldLabel}>Severity:</Text>
+                    <View style={styles.severityRow}>
+                      {SEVERITIES.map(s => (
+                        <Pressable
+                          key={s.key}
+                          style={[styles.foodTypeButton, editSeverity === s.key && styles.foodTypeButtonActive]}
+                          onPress={() => setEditSeverity(s.key)}
+                          accessibilityLabel={s.label}
+                        >
+                          <Text style={styles.severityLabel}>{s.label}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  </>
+                )}
+                <Text style={styles.fieldLabel}>Time:</Text>
+                <Pressable style={[styles.modalButton, styles.modalButtonBottomSpacing]} onPress={() => setShowEditTimePicker(true)}>
+                  <Text style={styles.modalButtonPrimaryText}>
+                    {editTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                  </Text>
+                </Pressable>
+                <DateTimePickerModal
+                  isVisible={showEditTimePicker}
+                  mode="datetime"
+                  date={editTime}
                     onConfirm={date => { setEditTime(date); setShowEditTimePicker(false); }}
-                    onCancel={() => setShowEditTimePicker(false)}
-                    is24Hour={true}
+                  onCancel={() => setShowEditTimePicker(false)}
+                  is24Hour={true}
+                />
+                <Text style={styles.fieldLabel}>Note (optional):</Text>
+                <View style={styles.inputWrapper}>
+                  <TextInput
+                    style={styles.noteInput}
+                    numberOfLines={1}
+                    onChangeText={setEditNote}
+                    value={editNote}
+                    placeholder="e.g. high carb, before meds, etc."
+                    accessibilityLabel="Log note input"
                   />
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                  <View style={{ width: '100%', marginBottom: 16 }}>
-                    <TextInput
-                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
-                      numberOfLines={1}
-                      onChangeText={setEditNote}
-                      value={editNote}
-                      placeholder="e.g. high carb, before meds, etc."
-                      accessibilityLabel="Log note input"
-                    />
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-                    <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => {
-                      // Delete log
-                      if (editLogType === 'food') {
-                        setFoodLog(foodLog.filter(e => e.id !== editLog.id));
-                      } else {
-                        setSymptomLog(symptomLog.filter(e => e.id !== editLog.id));
-                      }
-                      setEditModalVisible(false);
-                    }} accessibilityLabel="Delete">
-                      <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
-                    </Pressable>
-                    <Pressable style={styles.modalButton} onPress={() => {
-                      // Save changes
-                      if (editLogType === 'food') {
-                        setFoodLog(foodLog.map(e => e.id === editLog.id ? {
+                </View>
+                <View style={styles.modalFooter}>
+                  <Pressable style={[styles.modalButton, styles.modalButtonNeutral]} onPress={() => {
+                    // Delete log
+                    if (editLogType === 'food') {
+                      setFoodLog(foodLog.filter(e => e.id !== editLog.id));
+                    } else {
+                      setSymptomLog(symptomLog.filter(e => e.id !== editLog.id));
+                    }
+                    setEditModalVisible(false);
+                  }} accessibilityLabel="Delete">
+                    <Text style={styles.modalButtonNeutralText}>Delete</Text>
+                  </Pressable>
+                  <Pressable style={styles.modalButton} onPress={() => {
+                    // Save changes
+                    if (editLogType === 'food') {
+                      setFoodLog(foodLog.map(e => e.id === editLog.id ? {
                           ...e,
                           type: editFoodType,
                           time: editTime.toISOString(),
@@ -479,93 +491,17 @@ export default function LogsScreen() {
                       }
                       setEditModalVisible(false);
                     }} accessibilityLabel="Save">
-                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                    </Pressable>
-                  </View>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setEditModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
+                    <Text style={styles.modalButtonPrimaryText}>Save</Text>
                   </Pressable>
                 </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-        <Modal visible={editFastModalVisible} transparent animationType="fade" onRequestClose={() => setEditFastModalVisible(false)}>
-          <TouchableWithoutFeedback onPress={() => setEditFastModalVisible(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Edit Fast</Text>
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Start Time:</Text>
-                  <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setShowEditFastStartPicker(true)}>
-                    <Text style={{ color: '#fff' }}>{editFastStart.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                  </Pressable>
-                  <DateTimePickerModal
-                    isVisible={showEditFastStartPicker}
-                    mode="datetime"
-                    date={editFastStart}
-                    onConfirm={date => { setEditFastStart(date); setShowEditFastStartPicker(false); }}
-                    onCancel={() => setShowEditFastStartPicker(false)}
-                    is24Hour={true}
-                  />
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>End Time:</Text>
-                  <Pressable style={[styles.modalButton, { marginBottom: 8 }]} onPress={() => setShowEditFastEndPicker(true)}>
-                    <Text style={{ color: '#fff' }}>{editFastEnd.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</Text>
-                  </Pressable>
-                  <DateTimePickerModal
-                    isVisible={showEditFastEndPicker}
-                    mode="datetime"
-                    date={editFastEnd}
-                    onConfirm={date => { setEditFastEnd(date); setShowEditFastEndPicker(false); }}
-                    onCancel={() => setShowEditFastEndPicker(false)}
-                    is24Hour={true}
-                  />
-                  <Text style={{ alignSelf: 'flex-start', marginBottom: 4, color: '#4d6d6d' }}>Note (optional):</Text>
-                  <View style={{ width: '100%', marginBottom: 16 }}>
-                    <TextInput
-                      style={{ borderColor: '#e0e0e0', borderWidth: 1, borderRadius: 8, padding: 8, fontSize: 16, color: '#2d4d4d', backgroundColor: '#f8f8f8', minHeight: 40 }}
-                      numberOfLines={1}
-                      onChangeText={setEditFastNote}
-                      value={editFastNote}
-                      placeholder="e.g. completed, interrupted, etc."
-                      accessibilityLabel="Fast note input"
-                    />
-                  </View>
-                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 16 }}>
-                    <Pressable style={[styles.modalButton, { backgroundColor: '#ccc' }]} onPress={() => {
-                      // Delete fast
-                      if (editFast && editFast.endFood) {
-                        // Remove fast by matching end time
-                        setFoodLog(foodLog.filter(e => e.id !== editFast.endFood.id));
-                      }
-                      setEditFastModalVisible(false);
-                    }} accessibilityLabel="Delete fast">
-                      <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Delete</Text>
-                    </Pressable>
-                    <Pressable style={styles.modalButton} onPress={() => {
-                      // Save changes
-                      if (editFast && editFast.endFood) {
-                        // Update food entry
-                        setFoodLog(foodLog.map(e => e.id === editFast.endFood.id ? {
-                          ...e,
-                          time: editFastEnd.toISOString(),
-                          note: editFastNote,
-                        } : e));
-                      }
-                      // No explicit fastLog, so just update foodLog
-                      setEditFastModalVisible(false);
-                    }} accessibilityLabel="Save fast">
-                      <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
-                    </Pressable>
-                  </View>
-                  <Pressable style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setEditFastModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>Cancel</Text>
-                  </Pressable>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
+                <Pressable style={[styles.modalButton, styles.modalButtonNeutral, styles.modalButtonTopMargin]} onPress={() => setEditModalVisible(false)} accessibilityLabel="Cancel">
+                  <Text style={styles.modalButtonNeutralText}>Cancel</Text>
+                </Pressable>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </View>
   );
 }
@@ -576,11 +512,74 @@ const styles = StyleSheet.create({
     backgroundColor: '#eaf6f6',
     padding: 20,
   },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
     color: '#2d4d4d',
+  },
+  modalDescription: {
+    marginBottom: 12,
+    color: '#4d6d6d',
+    textAlign: 'center',
+  },
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  pillRowCentered: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  pill: {
+    backgroundColor: '#eaf6f6',
+    borderColor: '#6bb3b6',
+    borderWidth: 1,
+    borderRadius: 20,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+  },
+  exportPill: {
+    margin: 4,
+  },
+  timeRangePill: {
+    marginHorizontal: 4,
+  },
+  pillActive: {
+    backgroundColor: '#6bb3b6',
+  },
+  pillLabel: {
+    color: '#6bb3b6',
+    fontWeight: 'bold',
+  },
+  pillLabelActive: {
+    color: '#fff',
+  },
+  filterPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 4,
+    shadowColor: '#6bb3b6',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+  },
+  filterPillActive: {
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  filterPillLabel: {
+    marginLeft: 6,
   },
   card: {
     backgroundColor: '#fff',
@@ -596,6 +595,92 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4d6d6d',
     marginBottom: 4,
+  },
+  logCard: {
+    borderLeftWidth: 6,
+  },
+  cardTimestamp: {
+    color: '#4d6d6d',
+    fontWeight: 'normal',
+    fontSize: 14,
+  },
+  carbIcon: {
+    marginLeft: 8,
+    marginBottom: -4,
+  },
+  logActions: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  modalButtonSpacingRight: {
+    marginRight: 8,
+  },
+  modalButtonPrimaryText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  modalButtonNeutral: {
+    backgroundColor: '#ccc',
+  },
+  modalButtonNeutralText: {
+    color: '#2d4d4d',
+    fontWeight: 'bold',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 16,
+  },
+  modalButtonTopMargin: {
+    marginTop: 8,
+  },
+  inputWrapper: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  noteInput: {
+    borderColor: '#e0e0e0',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 8,
+    fontSize: 16,
+    color: '#2d4d4d',
+    backgroundColor: '#f8f8f8',
+    minHeight: 40,
+  },
+  summaryCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 18,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  summaryMetric: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  summaryLabel: {
+    fontSize: 16,
+    color: '#4d6d6d',
+  },
+  summaryValue: {
+    fontWeight: 'bold',
+    fontSize: 20,
+  },
+  summaryValueMeat: {
+    color: '#89ce00',
+  },
+  summaryValueFasts: {
+    color: '#6bb3b6',
+  },
+  summaryValueSymptoms: {
+    color: '#e74c3c',
   },
   modalOverlay: {
     flex: 1,
@@ -620,11 +705,19 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     color: '#2d4d4d',
   },
+  fieldLabel: {
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    color: '#4d6d6d',
+  },
   modalButton: {
     backgroundColor: '#6bb3b6',
     borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 24,
+  },
+  modalButtonBottomSpacing: {
+    marginBottom: 12,
   },
   foodTypeButton: {
     flex: 1,
@@ -638,6 +731,30 @@ const styles = StyleSheet.create({
   },
   foodTypeButtonActive: {
     backgroundColor: '#6bb3b6',
+  },
+  foodTypeRow: {
+    flexDirection: 'row',
+    marginBottom: 16,
+  },
+  foodTypeEmoji: {
+    fontSize: 20,
+  },
+  symptomTypeRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  symptomLabel: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#2d4d4d',
+    marginBottom: 12,
+  },
+  severityRow: {
+    flexDirection: 'row',
+    marginBottom: 12,
+  },
+  severityLabel: {
+    fontSize: 16,
   },
   symptomLogEmoji: {
     fontSize: 24,
@@ -676,5 +793,19 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 8,
     color: '#2d4d4d',
+  },
+  emptyState: {
+    alignItems: 'center',
+    marginTop: 40,
+  },
+  emptyStateTitle: {
+    color: '#6bb3b6',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  emptyStateSubtitle: {
+    color: '#4d6d6d',
+    fontSize: 16,
+    marginTop: 8,
   },
 });

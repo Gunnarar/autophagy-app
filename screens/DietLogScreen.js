@@ -130,8 +130,12 @@ export default function DietLogScreen() {
       </View>
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>This Week's Summary</Text>
-        <Text style={styles.summaryText}>Total Animal Meat: <Text style={{ color: '#89ce00', fontWeight: 'bold' }}>{totalMeat} lbs</Text></Text>
-        <Text style={styles.summaryText}>Carb Meals: <Text style={{ color: '#b3c7f7', fontWeight: 'bold' }}>{carbCount}</Text></Text>
+        <Text style={styles.summaryText}>
+          Total Animal Meat: <Text style={styles.summaryHighlightMeat}>{totalMeat} lbs</Text>
+        </Text>
+        <Text style={styles.summaryText}>
+          Carb Meals: <Text style={styles.summaryHighlightCarb}>{carbCount}</Text>
+        </Text>
       </View>
     </ScrollView>
   );
@@ -161,4 +165,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center' },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, fontSize: 16, marginRight: 8, flex: 1, backgroundColor: '#fff' },
   summaryText: { fontSize: 16, color: '#2d4d4d', marginTop: 4 },
+  summaryHighlightMeat: { color: '#89ce00', fontWeight: 'bold' },
+  summaryHighlightCarb: { color: '#b3c7f7', fontWeight: 'bold' },
 });

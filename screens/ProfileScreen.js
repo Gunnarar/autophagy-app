@@ -22,14 +22,14 @@ export default function ProfileScreen({ navigation }) {
         style={styles.sectionButton}
         onPress={() => navigation.navigate('ProfileDetails')}
       >
-        <Ionicons name="person" size={24} color="#8babf1" style={{ marginRight: 12 }} />
+        <Ionicons name="person" size={24} color="#8babf1" style={styles.sectionIcon} />
         <Text style={styles.buttonText}>Profile Details</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.sectionButton}
         onPress={() => navigation.navigate('FastingPrograms')}
       >
-        <MaterialCommunityIcons name="timer-sand" size={24} color="#89ce00" style={{ marginRight: 12 }} />
+        <MaterialCommunityIcons name="timer-sand" size={24} color="#89ce00" style={styles.sectionIcon} />
         <Text style={styles.buttonText}>Fasting Programs</Text>
       </TouchableOpacity>
       </ScrollView>
@@ -55,6 +55,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
     elevation: 2,
+  },
+  sectionIcon: {
+    marginRight: 12,
   },
   buttonText: { fontSize: 18, fontWeight: '600', color: '#2d4d4d' },
 });

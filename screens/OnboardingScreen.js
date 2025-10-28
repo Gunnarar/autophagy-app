@@ -79,7 +79,7 @@ export default function OnboardingScreen({ navigation }) {
         </>
       ) : (
         <TextInput
-          style={[styles.input, multiline && { height: 80 }]}
+          style={[styles.input, multiline && styles.inputMultiline]}
           value={form[key] || ''}
           onChangeText={v => handleChange(key, v)}
           keyboardType={keyboardType || 'default'}
@@ -97,6 +97,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 24 },
   label: { fontSize: 18, marginBottom: 8 },
   input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, width: '100%', marginBottom: 16 },
+  inputMultiline: { height: 80 },
   dateButton: { borderWidth: 1, borderColor: '#6bb3b6', borderRadius: 8, padding: 16, width: '100%', alignItems: 'center', marginBottom: 16 },
   dateButtonText: { fontSize: 16, color: '#2d4d4d' },
 });

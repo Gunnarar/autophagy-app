@@ -112,11 +112,11 @@ export default function LogEntryModal({
               )}
               <Text style={styles.sectionTitle}>Time</Text>
               <Pressable
-                style={[styles.modalButton, { marginBottom: 12 }]}
+                style={[styles.modalButton, styles.modalButtonSpacing]}
                 onPress={() => setPickerMode(true)}
                 accessibilityLabel="Edit time"
               >
-                <Text style={{ color: '#fff' }}>Time: {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                <Text style={styles.modalButtonPrimaryText}>Time: {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
               </Pressable>
               <DateTimePickerModal
                 isVisible={pickerMode}
@@ -127,7 +127,7 @@ export default function LogEntryModal({
                 is24Hour={true}
               />
               <Text style={styles.sectionTitle}>Note (optional)</Text>
-              <View style={{ width: '100%', marginBottom: 16 }}>
+              <View style={styles.fullWidthSection}>
                 <TextInput
                   style={styles.noteInput}
                   numberOfLines={1}
@@ -137,12 +137,12 @@ export default function LogEntryModal({
                   accessibilityLabel="Log note input"
                 />
               </View>
-              <View style={{ flexDirection: 'row', width: '100%', justifyContent: 'space-between' }}>
-                <Pressable style={[styles.modalButton, { backgroundColor: theme.colors.disabled, flex: 1, marginRight: 8 }]} onPress={onCancel} accessibilityLabel="Cancel">
-                  <Text style={{ color: theme.colors.text, fontWeight: 'bold' }}>Cancel</Text>
+              <View style={styles.modalActions}>
+                <Pressable style={[styles.modalButton, styles.modalButtonDisabled, styles.modalButtonRightSpacing]} onPress={onCancel} accessibilityLabel="Cancel">
+                  <Text style={styles.modalButtonDisabledText}>Cancel</Text>
                 </Pressable>
-                <Pressable style={[styles.modalButton, { flex: 1, marginLeft: 8 }]} onPress={handleSave} accessibilityLabel="Save log entry">
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>Save</Text>
+                <Pressable style={[styles.modalButton, styles.modalButtonLeftSpacing]} onPress={handleSave} accessibilityLabel="Save log entry">
+                  <Text style={styles.modalButtonPrimaryText}>Save</Text>
                 </Pressable>
               </View>
             </View>
@@ -183,6 +183,13 @@ const styles = {
     marginBottom: 8,
     color: theme.colors.text,
     alignSelf: 'flex-start',
+  },
+  modalButtonSpacing: {
+    marginBottom: 12,
+  },
+  modalButtonPrimaryText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   dietTypeRow: { flexDirection: 'row', marginBottom: 8 },
   dietTypeButton: {
@@ -270,6 +277,30 @@ const styles = {
     backgroundColor: '#f8f8f8',
     minHeight: 40,
     width: '100%',
+  },
+  fullWidthSection: {
+    width: '100%',
+    marginBottom: 16,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    width: '100%',
+    justifyContent: 'space-between',
+  },
+  modalButtonDisabled: {
+    backgroundColor: theme.colors.disabled,
+    flex: 1,
+  },
+  modalButtonRightSpacing: {
+    marginRight: 8,
+  },
+  modalButtonLeftSpacing: {
+    flex: 1,
+    marginLeft: 8,
+  },
+  modalButtonDisabledText: {
+    color: theme.colors.text,
+    fontWeight: 'bold',
   },
   modalButton: {
     backgroundColor: theme.colors.primary,

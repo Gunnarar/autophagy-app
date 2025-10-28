@@ -34,6 +34,18 @@ export default function FastingSummaryCard({
 
   const handlePrimary = hasOngoingFast ? onStopFast : onStartFast;
   const primaryLabel = hasOngoingFast ? 'Stop Fast' : 'Start Fast';
+  const progressFillStyle = useMemo(
+    () => [styles.progressFill, { width: `${progressPercent}%` }],
+    [progressPercent],
+  );
+  const feedbackStyle = useMemo(
+    () => [styles.feedback, { color: goalReached ? theme.colors.accent : theme.colors.primary }],
+    [goalReached],
+  );
+  const primaryButtonStyle = useMemo(
+    () => [styles.primaryButton, { backgroundColor: hasOngoingFast ? theme.colors.accent : theme.colors.primary }],
+    [hasOngoingFast],
+  );
 
   return (
     <View style={styles.card}>
@@ -42,18 +54,18 @@ export default function FastingSummaryCard({
         <Text style={styles.elapsedText}>{formatTimeHM(fastingElapsedSeconds)}</Text>
         <Text style={styles.caption}>Elapsed</Text>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
+          <View style={progressFillStyle} />
         </View>
         <Text style={styles.caption}>
-          {goalReached ? <Text style={styles.goalReached}><Text style={{ fontSize: 18 }}>🎉</Text> Goal reached!</Text> : `${remainingLabel} remaining`}
+          {goalReached ? <Text style={styles.goalReached}><Text style={styles.goalIcon}>🎉</Text> Goal reached!</Text> : `${remainingLabel} remaining`}
         </Text>
-        <Text style={[styles.feedback, { color: goalReached ? theme.colors.accent : theme.colors.primary }]}>
+        <Text style={feedbackStyle}>
           {goalReached ? 'You did it!' : 'Keep going!'}
         </Text>
         {handlePrimary && (
           <Pressable
             onPress={handlePrimary}
-            style={[styles.primaryButton, { backgroundColor: hasOngoingFast ? theme.colors.accent : theme.colors.primary }]}
+            style={primaryButtonStyle}
             accessibilityLabel={primaryLabel}
           >
             <Text style={styles.primaryLabel}>{primaryLabel}</Text>
@@ -130,6 +142,9 @@ const styles = StyleSheet.create({
   goalReached: {
     color: theme.colors.accent,
     fontWeight: 'bold',
+  },
+  goalIcon: {
+    fontSize: 18,
   },
   feedback: {
     fontSize: 16,
