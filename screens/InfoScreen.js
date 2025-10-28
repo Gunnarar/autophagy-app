@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useLogs } from '../contexts/LogsContext';
 import { useModalAction } from '../contexts/ModalActionContext';
 import { loadString, saveString } from '../utils/storage';
+import NotificationList from '../components/NotificationList';
 
 export default function InfoScreen({ navigation }) {
   const { foodLog, symptomLog, fastLog, useAutophagyStatus, useUnifiedFastRecommendation } = useLogs();
@@ -248,109 +248,17 @@ export default function InfoScreen({ navigation }) {
           <Text style={styles.welcome}>Welcome to Genesis4PD!</Text>
           <Text style={styles.desc}>Track your progress, learn about fasting, and get the most out of your program.</Text>
         </View>
-        {notifications.map(n => (
-          <View key={n.key} style={[styles.notification, { borderLeftColor: n.color }]}> 
-            <MaterialCommunityIcons name={n.icon} size={32} color={n.color} style={{ marginRight: 12 }} />
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.notificationTitle, { color: n.color }]}>{n.title}</Text>
-              <Text style={styles.notificationDesc}>{n.desc}</Text>
-              {n.key === 'unified-fast-recommendation' && (
-                <>
-                  <Text style={{ color: '#2d4d4d', fontSize: 15, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>Benefits:</Text> {n.benefits}</Text>
-                  <Text style={{ color: '#4d6d6d', fontSize: 14, marginBottom: 4 }}><Text style={{ fontWeight: 'bold' }}>What to expect:</Text> {n.whatToExpect}</Text>
-                  {n.challengeMsg && <Text style={{ color: '#89ce00', fontSize: 14, marginBottom: 4 }}>{n.challengeMsg}</Text>}
-                </>
-              )}
-              {n.action && n.actionLabel && (
-                <Pressable style={[styles.actionButton, { backgroundColor: n.color }]} onPress={n.action} accessibilityLabel={n.actionLabel}>
-                  <Text style={{ color: '#fff', fontWeight: 'bold' }}>{n.actionLabel}</Text>
-                </Pressable>
-              )}
-              {n.secondaryAction && n.secondaryLabel && (
-                <Pressable style={[styles.actionButton, { backgroundColor: '#ccc', marginTop: 6 }]} onPress={n.secondaryAction} accessibilityLabel={n.secondaryLabel}>
-                  <Text style={{ color: '#2d4d4d', fontWeight: 'bold' }}>{n.secondaryLabel}</Text>
-                </Pressable>
-              )}
-            </View>
-            {n.dismissible && (
-              <Pressable onPress={handleDismissFastRec} style={{ marginLeft: 12, padding: 4 }} accessibilityLabel="Dismiss recommendation">
-                <MaterialCommunityIcons name="close" size={22} color="#888" />
-              </Pressable>
-            )}
-          </View>
-        ))}
+        <NotificationList
+          notifications={notifications}
+          onDismiss={handleDismissFastRec}
+        />
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexGrow: 1, backgroundColor: '#d9e4ff', padding: 24 },
   headerBox: { alignItems: 'center', marginBottom: 24 },
   welcome: { fontSize: 24, fontWeight: 'bold', color: '#2d4d4d', marginBottom: 4 },
   desc: { fontSize: 16, color: '#4d6d6d', textAlign: 'center' },
-  infoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    marginBottom: 24,
-    width: '100%',
-    shadowColor: '#b3c7f7',
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  infoButtonText: { fontSize: 18, fontWeight: '600', color: '#2d4d4d' },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#2d4d4d',
-  },
-  notification: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-    borderLeftWidth: 6,
-    borderLeftColor: '#6bb3b6',
-  },
-  notificationTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  notificationDesc: {
-    fontSize: 15,
-    color: '#4d6d6d',
-    marginBottom: 8,
-  },
-  actionButton: {
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    alignSelf: 'flex-start',
-    marginTop: 4,
-  },
-  statusCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-}); 
+});
