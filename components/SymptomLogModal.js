@@ -1,8 +1,11 @@
 import React from 'react';
-import { Modal, View, Text, TextInput, Pressable, TouchableWithoutFeedback, StyleSheet } from 'react-native';
+import { Modal, View, Text, TextInput, TouchableWithoutFeedback, StyleSheet } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { theme } from '../utils/theme';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
+import { Card } from './ui/Card';
+import { Button } from './ui/Button';
+import { Chip } from './ui/Chip';
 
 export default function SymptomLogModal({
   visible,
@@ -25,82 +28,89 @@ export default function SymptomLogModal({
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.overlay}>
           <TouchableWithoutFeedback onPress={() => {}}>
-            <View style={styles.content}>
-              <Text style={styles.title}>Add Symptom</Text>
+            <Card variant="outline" style={styles.content}>
+              <Text style={styles.title}>Log symptom</Text>
+              <Text style={styles.subtitle}>Track how you feel to spot patterns with fasting and meals.</Text>
 
-              <Text style={styles.label}>Symptom:</Text>
-              <View style={styles.symptomGrid}>
-                {SYMPTOM_TYPES.map(type => (
-                  <Pressable
-                    key={type.key}
-                    style={[styles.symptomButton, symptomType === type.key && styles.symptomButtonActive]}
-                    onPress={() => onSelectSymptom?.(type.key)}
-                    accessibilityLabel={type.label}
-                  >
-                    <Text style={styles.symptomEmoji}>{type.emoji}</Text>
-                  </Pressable>
-                ))}
-              </View>
-              <Text style={styles.selectedLabel}>
-                {SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}
-              </Text>
-
-              <Text style={styles.label}>Severity:</Text>
-              <View style={styles.severityRow}>
-                {SEVERITIES.map(level => (
-                  <Pressable
-                    key={level.key}
-                    style={[styles.severityButton, severity === level.key && styles.severityButtonActive]}
-                    onPress={() => onSelectSeverity?.(level.key)}
-                    accessibilityLabel={level.label}
-                  >
-                    <Text style={[styles.severityText, severity === level.key && styles.severityTextActive]}>
-                      {level.label}
-                    </Text>
-                  </Pressable>
-                ))}
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Symptom</Text>
+                <View style={styles.selectorRow}>
+                  {SYMPTOM_TYPES.map(type => {
+                    const isActive = symptomType === type.key;
+                    return (
+                      <Chip
+                        key={type.key}
+                        label={type.label}
+                        icon={<Text style={styles.selectorEmoji}>{type.emoji}</Text>}
+                        size="lg"
+                        active={isActive}
+                        onPress={() => onSelectSymptom?.(type.key)}
+                        accessibilityLabel={type.label}
+                        style={styles.selectorChip}
+                        textStyle={styles.selectorLabel}
+                        contentStyle={styles.selectorContentStacked}
+                      />
+                    );
+                  })}
+                </View>
               </View>
 
-              <Text style={styles.label}>Note (optional):</Text>
-              <TextInput
-                style={[styles.input, styles.inputSpacing]}
-                numberOfLines={1}
-                onChangeText={onChangeNote}
-                value={note}
-                placeholder="e.g. after exercise, before meds"
-                accessibilityLabel="Symptom note input"
-              />
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Severity</Text>
+                <View style={styles.selectorRow}>
+                  {SEVERITIES.map(level => {
+                    const isActive = severity === level.key;
+                    return (
+                      <Chip
+                        key={level.key}
+                        label={level.label}
+                        size="lg"
+                        active={isActive}
+                        onPress={() => onSelectSeverity?.(level.key)}
+                        accessibilityLabel={level.label}
+                        style={styles.selectorChip}
+                        textStyle={styles.selectorLabel}
+                      />
+                    );
+                  })}
+                </View>
+              </View>
 
-              <Text style={styles.label}>Time:</Text>
-              <Pressable
-                style={[styles.primaryButton, styles.primaryButtonSpacing]}
-                onPress={onOpenTimePicker}
-                accessibilityLabel="Edit date and time"
-              >
-                <Text style={styles.primaryLabel}>
-                  {time.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}
-                </Text>
-              </Pressable>
-              <DateTimePickerModal
-                isVisible={isTimePickerVisible}
-                mode="datetime"
-                date={time}
-                onConfirm={date => onConfirmTime?.(date)}
-                onCancel={onCloseTimePicker}
-                is24Hour={true}
-              />
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Time</Text>
+                <Button
+                  label={time.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}
+                  variant="secondary"
+                  onPress={onOpenTimePicker}
+                  style={styles.fullWidthButton}
+                />
+                <DateTimePickerModal
+                  isVisible={isTimePickerVisible}
+                  mode="datetime"
+                  date={time}
+                  onConfirm={date => onConfirmTime?.(date)}
+                  onCancel={onCloseTimePicker}
+                  is24Hour={true}
+                />
+              </View>
 
-              <Pressable style={styles.primaryButton} onPress={onSave} accessibilityLabel="Save symptom entry">
-                <Text style={styles.primaryLabel}>Save</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.primaryButton, styles.cancelButton]}
-                onPress={onCancel}
-                accessibilityLabel="Cancel"
-              >
-                <Text style={[styles.primaryLabel, styles.cancelLabel]}>Cancel</Text>
-              </Pressable>
-            </View>
+              <View style={styles.section}>
+                <Text style={styles.sectionLabel}>Note (optional)</Text>
+                <TextInput
+                  style={styles.noteInput}
+                  onChangeText={onChangeNote}
+                  value={note}
+                  placeholder="e.g. after exercise, before meds"
+                  accessibilityLabel="Symptom note input"
+                  multiline
+                />
+              </View>
+
+              <View style={styles.actions}>
+                <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.actionButton} />
+                <Button label="Save" onPress={onSave} style={styles.actionButton} />
+              </View>
+            </Card>
           </TouchableWithoutFeedback>
         </View>
       </TouchableWithoutFeedback>
@@ -111,125 +121,82 @@ export default function SymptomLogModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: theme.overlay.scrim,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: theme.spacing.lg,
   },
   content: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.large,
-    padding: 24,
-    width: 340,
-    alignItems: 'center',
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    width: '100%',
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: theme.colors.text,
+    fontSize: theme.typography.sizes.headline,
+    fontWeight: theme.typography.weights.bold,
+    marginBottom: theme.spacing.xs,
+    color: theme.colors.textPrimary,
   },
-  label: {
+  subtitle: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.sm,
+  },
+  section: {
+    marginBottom: theme.spacing.md,
+  },
+  sectionLabel: {
     alignSelf: 'flex-start',
-    marginBottom: 4,
-    color: '#4d6d6d',
+    marginBottom: theme.spacing.xs,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.sizes.caption,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
-  symptomGrid: {
+  selectorRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-    marginBottom: 8,
-    width: '100%',
-    paddingHorizontal: 8,
-  },
-  symptomButton: {
-    borderRadius: 18,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
     justifyContent: 'center',
-    margin: 4,
+    gap: theme.spacing.xs,
+    marginHorizontal: -theme.spacing.tiny / 2,
   },
-  symptomButtonActive: {
-    backgroundColor: '#eaf6f6',
-    borderWidth: 2,
-    borderColor: '#6bb3b6',
+  selectorChip: {
+    flexBasis: 150,
+    flexGrow: 1,
   },
-  symptomEmoji: {
-    fontSize: 20,
+  selectorLabel: {
     textAlign: 'center',
   },
-  selectedLabel: {
+  selectorEmoji: {
+    fontSize: 24,
+    lineHeight: 28,
     textAlign: 'center',
-    fontSize: 16,
-    color: '#2d4d4d',
-    marginBottom: 12,
   },
-  severityRow: {
+  selectorContentStacked: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: theme.spacing.tiny,
+  },
+  noteInput: {
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.sm,
+    padding: theme.spacing.sm,
+    fontSize: theme.typography.sizes.body,
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surfacePrimary,
+    minHeight: 80,
+    textAlignVertical: 'top',
+  },
+  fullWidthButton: {
+    alignSelf: 'flex-start',
+  },
+  actions: {
     flexDirection: 'row',
-    marginBottom: 12,
-    width: '100%',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
+    marginTop: theme.spacing.md,
   },
-  severityButton: {
-    flex: 1,
-    marginHorizontal: 4,
-    paddingVertical: 10,
-    borderRadius: theme.borderRadius.regular,
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.background,
-    alignItems: 'center',
-  },
-  severityButtonActive: {
-    backgroundColor: theme.colors.primary,
-  },
-  severityText: {
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  severityTextActive: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  input: {
-    borderColor: '#e0e0e0',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 16,
-    color: '#2d4d4d',
-    backgroundColor: '#f8f8f8',
-    width: '100%',
-  },
-  inputSpacing: {
-    marginBottom: 16,
-  },
-  primaryButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.regular,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    width: '100%',
-    alignItems: 'center',
-    marginTop: 4,
-  },
-  primaryButtonSpacing: {
-    marginBottom: 12,
-  },
-  primaryLabel: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cancelButton: {
-    backgroundColor: '#ccc',
-    marginTop: 8,
-  },
-  cancelLabel: {
-    color: '#2d4d4d',
+  actionButton: {
+    marginLeft: theme.spacing.xs,
   },
 });

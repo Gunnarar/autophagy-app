@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '../utils/theme';
 import { formatTimeHM } from '../utils/constants';
+import { Card } from './ui/Card';
 
 export default function FastingSummaryCard({
   fastingElapsedSeconds = 0,
@@ -12,9 +13,6 @@ export default function FastingSummaryCard({
   challengeMsg,
   caution,
   planNextMsg,
-  hasOngoingFast = false,
-  onStartFast,
-  onStopFast,
 }) {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -32,23 +30,17 @@ export default function FastingSummaryCard({
     };
   }, [fastingElapsedSeconds, recommendedProgram]);
 
-  const handlePrimary = hasOngoingFast ? onStopFast : onStartFast;
-  const primaryLabel = hasOngoingFast ? 'Stop Fast' : 'Start Fast';
   const progressFillStyle = useMemo(
     () => [styles.progressFill, { width: `${progressPercent}%` }],
     [progressPercent],
   );
   const feedbackStyle = useMemo(
-    () => [styles.feedback, { color: goalReached ? theme.colors.accent : theme.colors.primary }],
+    () => [styles.feedback, { color: goalReached ? theme.colors.success : theme.colors.brandPrimary }],
     [goalReached],
-  );
-  const primaryButtonStyle = useMemo(
-    () => [styles.primaryButton, { backgroundColor: hasOngoingFast ? theme.colors.accent : theme.colors.primary }],
-    [hasOngoingFast],
   );
 
   return (
-    <View style={styles.card}>
+    <Card style={styles.card}>
       <Text style={styles.title}>Fasting</Text>
       <View style={styles.centerBlock}>
         <Text style={styles.elapsedText}>{formatTimeHM(fastingElapsedSeconds)}</Text>
@@ -62,19 +54,9 @@ export default function FastingSummaryCard({
         <Text style={feedbackStyle}>
           {goalReached ? 'You did it!' : 'Keep going!'}
         </Text>
-        {handlePrimary && (
-          <Pressable
-            onPress={handlePrimary}
-            style={primaryButtonStyle}
-            accessibilityLabel={primaryLabel}
-          >
-            <Text style={styles.primaryLabel}>{primaryLabel}</Text>
-          </Pressable>
-        )}
       </View>
       <View style={styles.centerBlock}>
         <Text style={styles.challengeText}>Next Challenge: <Text style={styles.challengeHighlight}>{durationLabel}</Text></Text>
-        {!!reason && <Text style={styles.reason}>{reason}</Text>}
       </View>
       <Pressable
         onPress={() => setShowDetails(prev => !prev)}
@@ -85,6 +67,7 @@ export default function FastingSummaryCard({
       </Pressable>
       {showDetails && (
         <View style={styles.details}>
+          {!!reason && <Text style={styles.detailLine}><Text style={styles.detailLabel}>Recommendation:</Text> {reason}</Text>}
           {!!benefits && <Text style={styles.detailLine}><Text style={styles.detailLabel}>Benefits:</Text> {benefits}</Text>}
           {!!whatToExpect && <Text style={styles.detailLine}><Text style={styles.detailLabel}>What to expect:</Text> {whatToExpect}</Text>}
           {!!planNextMsg && <Text style={styles.detailLine}>{planNextMsg}</Text>}
@@ -92,35 +75,28 @@ export default function FastingSummaryCard({
           {caution && <Text style={[styles.detailLine, styles.caution]}>Caution: Consider a shorter fast first.</Text>}
         </View>
       )}
-    </View>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.large,
-    padding: theme.spacing.regular,
-    marginBottom: theme.spacing.regular,
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    marginBottom: theme.spacing.lg,
   },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: theme.colors.text,
-    marginBottom: theme.spacing.small,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.sm,
   },
   centerBlock: {
     alignItems: 'center',
-    marginBottom: theme.spacing.small,
+    marginBottom: theme.spacing.sm,
   },
   elapsedText: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: theme.colors.brandPrimary,
   },
   caption: {
     fontSize: 14,
@@ -132,15 +108,15 @@ const styles = StyleSheet.create({
     height: 18,
     backgroundColor: theme.colors.border,
     borderRadius: 9,
-    marginVertical: theme.spacing.small,
+    marginVertical: theme.spacing.sm,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: theme.colors.primary,
+    backgroundColor: theme.colors.brandPrimary,
   },
   goalReached: {
-    color: theme.colors.accent,
+    color: theme.colors.success,
     fontWeight: 'bold',
   },
   goalIcon: {
@@ -150,24 +126,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  primaryButton: {
-    borderRadius: theme.borderRadius.regular,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    marginTop: 12,
-  },
-  primaryLabel: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
   challengeText: {
     fontSize: 16,
-    color: theme.colors.text,
+    color: theme.colors.textPrimary,
     textAlign: 'center',
   },
   challengeHighlight: {
     fontWeight: 'bold',
-    color: theme.colors.primary,
+    color: theme.colors.brandPrimary,
   },
   reason: {
     fontSize: 14,
@@ -176,18 +142,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   learnMore: {
-    backgroundColor: '#e5f1f1',
+    backgroundColor: theme.colors.surfaceMuted,
     paddingVertical: 8,
     paddingHorizontal: 16,
-    borderRadius: theme.borderRadius.regular,
+    borderRadius: theme.radius.sm,
     alignSelf: 'center',
   },
   learnMoreText: {
-    color: theme.colors.primary,
+    color: theme.colors.brandSecondary,
     fontWeight: '600',
   },
   details: {
-    marginTop: theme.spacing.small,
+    marginTop: theme.spacing.sm,
   },
   detailLine: {
     fontSize: 14,
@@ -196,13 +162,13 @@ const styles = StyleSheet.create({
   },
   detailLabel: {
     fontWeight: 'bold',
-    color: theme.colors.text,
+    color: theme.colors.textPrimary,
   },
   challengeNote: {
-    color: theme.colors.accent,
+    color: theme.colors.brandHighlight,
   },
   caution: {
-    color: '#e74c3c',
+    color: theme.colors.error,
     fontWeight: 'bold',
   },
 });

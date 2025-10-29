@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Button } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { FASTING_PROGRAMS } from '../utils/constants';
+import { theme } from '../utils/theme';
 import { useUser } from '../contexts/UserContext';
+import { useLogs } from '../contexts/LogsContext';
 
 // For now, assume user.completedFasts is an array of completed program keys
 function getStatus(program, completedFasts) {
@@ -14,6 +16,7 @@ function getStatus(program, completedFasts) {
 
 export default function FastingProgramsScreen() {
   const { user, saveUser } = useUser();
+  const { setFastLog } = useLogs();
   const completedFasts = user?.completedFasts || [];
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState(null);
@@ -27,12 +30,30 @@ export default function FastingProgramsScreen() {
   };
 
   const handleStartNow = async () => {
+    if (!selectedProgram) {return;}
+    const startTime = new Date().toISOString();
+    setFastLog(current => {
+      if (current.some(fast => !fast.end)) {
+        return current;
+      }
+      return [
+        {
+          id: `program-${selectedProgram.key}-${Date.now()}`,
+          start: startTime,
+          method: 'program',
+          programKey: selectedProgram.key,
+          targetHours: selectedProgram.duration,
+          note: '',
+        },
+        ...current,
+      ];
+    });
+
+    const baseUser = user || {};
     await saveUser({
-      ...user,
-      scheduledFast: {
-        programKey: selectedProgram.key,
-        startTime: new Date().toISOString(),
-      },
+      ...baseUser,
+      scheduledFast: null,
+      selectedFastingProgram: selectedProgram.key,
     });
     setModalVisible(false);
   };
@@ -42,12 +63,19 @@ export default function FastingProgramsScreen() {
   };
 
   const handleDatePicked = async (date) => {
+    if (!selectedProgram) {
+      setShowDatePicker(false);
+      setModalVisible(false);
+      return;
+    }
+    const baseUser = user || {};
     await saveUser({
-      ...user,
+      ...baseUser,
       scheduledFast: {
         programKey: selectedProgram.key,
         startTime: date.toISOString(),
       },
+      selectedFastingProgram: selectedProgram.key,
     });
     setShowDatePicker(false);
     setModalVisible(false);
@@ -150,7 +178,7 @@ const styles = StyleSheet.create({
   status: { fontSize: 14, color: '#6bb3b6', fontWeight: 'bold' },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: theme.overlay.scrim,
     justifyContent: 'center',
     alignItems: 'center',
   },

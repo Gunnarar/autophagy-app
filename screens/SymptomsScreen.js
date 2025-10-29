@@ -5,6 +5,7 @@ import { useLogs } from '../contexts/LogsContext';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../utils/theme';
+import { Chip } from '../components/ui/Chip';
 
 export default function SymptomsScreen() {
   const { symptomLog, setSymptomLog } = useLogs();
@@ -109,33 +110,36 @@ export default function SymptomsScreen() {
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Symptom' : 'Add Symptom'}</Text>
                   <Text style={styles.sectionTitle}>Symptom</Text>
-                  <View style={styles.emojiRowImproved}>
+                  <View style={styles.selectorRow}>
                     {SYMPTOM_TYPES.map(t => (
-                      <Pressable
+                      <Chip
                         key={t.key}
-                        style={[
-                          styles.emojiCircle,
-                          symptomType === t.key && styles.emojiCircleActive,
-                        ]}
+                        label={t.label}
+                        icon={<Text style={styles.selectorEmoji}>{t.emoji}</Text>}
+                        size="lg"
+                        active={symptomType === t.key}
                         onPress={() => setSymptomType(t.key)}
                         accessibilityLabel={t.label}
-                      >
-                        <Text style={styles.emoji}>{t.emoji}</Text>
-                      </Pressable>
+                        style={styles.selectorChip}
+                        contentStyle={styles.selectorContentStacked}
+                        textStyle={styles.selectorLabel}
+                      />
                     ))}
                   </View>
                   <Text style={styles.selectedLabel}>{SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}</Text>
                   <Text style={styles.sectionTitle}>Severity</Text>
-                  <View style={styles.severityRowImproved}>
+                  <View style={styles.selectorRow}>
                     {SEVERITIES.map(s => (
-                      <Pressable
+                      <Chip
                         key={s.key}
-                        style={[styles.severityPill, severity === s.key && styles.severityPillActive]}
+                        label={s.label}
+                        size="lg"
+                        active={severity === s.key}
                         onPress={() => setSeverity(s.key)}
                         accessibilityLabel={s.label}
-                      >
-                        <Text style={[styles.severityPillText, severity === s.key && styles.severityPillTextActive]}>{s.label}</Text>
-                      </Pressable>
+                        style={styles.selectorChip}
+                        textStyle={styles.selectorLabel}
+                      />
                     ))}
                   </View>
                   <Pressable
@@ -214,7 +218,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: theme.overlay.scrim,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -250,32 +254,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  emojiRowImproved: {
-    flexDirection: 'row',
-    justifyContent: 'space-evenly',
-    alignItems: 'center',
-    marginBottom: 8,
-    width: '100%',
-    paddingHorizontal: 8,
-  },
-  emojiCircle: {
-    borderRadius: 18,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-  },
-  emojiCircleActive: {
-    backgroundColor: theme.colors.background,
-    borderWidth: 2,
-    borderColor: theme.colors.primary,
-  },
-  emoji: {
-    fontSize: 20,
-    textAlign: 'center',
-  },
   selectedLabel: {
     fontSize: 16,
     fontWeight: 'bold',
@@ -288,32 +266,29 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: theme.colors.text,
   },
-  severityRowImproved: {
+  selectorRow: {
     flexDirection: 'row',
-    marginBottom: 12,
-    width: '100%',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.md,
   },
-  severityPill: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.regular,
-    padding: 12,
-    marginHorizontal: 4,
+  selectorChip: {
+    flexBasis: 150,
+    flexGrow: 1,
+  },
+  selectorLabel: {
+    textAlign: 'center',
+  },
+  selectorEmoji: {
+    fontSize: 26,
+    lineHeight: 30,
+    textAlign: 'center',
+  },
+  selectorContentStacked: {
+    flexDirection: 'column',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: theme.colors.primary,
-  },
-  severityPillActive: {
-    backgroundColor: theme.colors.primary,
-  },
-  severityPillText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-  },
-  severityPillTextActive: {
-    color: '#fff',
+    gap: theme.spacing.tiny,
   },
   entryPressable: {
     paddingVertical: 6,

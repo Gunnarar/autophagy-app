@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { theme } from '../utils/theme';
 
 // status: 'good' | 'warning' | 'bad'
 // value: 0-1 (for gauge)
@@ -92,7 +93,7 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: theme.overlay.scrimLight,
     justifyContent: 'center',
     alignItems: 'center',
   },

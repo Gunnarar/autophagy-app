@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SEVERITIES } from '../utils/constants';
 import { useLogs } from '../contexts/LogsContext';
 import { useModalAction } from '../contexts/ModalActionContext';
 import { theme } from '../utils/theme';
@@ -9,41 +10,31 @@ import FastingSummaryCard from '../components/FastingSummaryCard';
 import AutophagyKetoneCard from '../components/AutophagyKetoneCard';
 import KetoneLogModal from '../components/KetoneLogModal';
 import SymptomLogModal from '../components/SymptomLogModal';
-import StatusOverview from '../components/StatusOverview';
 import QuickActionFAB from '../components/QuickActionFAB';
-import { loadString } from '../utils/storage';
+import InsightChart from '../components/InsightChart';
+import { useUser } from '../contexts/UserContext';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 
 export default function HomeScreen() {
   const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useUnifiedFastRecommendation, ketoneLog, setKetoneLog } = useLogs();
+  const { user } = useUser();
   const [symptomModalVisible, setSymptomModalVisible] = useState(false);
   const [symptomType, setSymptomType] = useState('tremor');
   const [severity, setSeverity] = useState('mild');
   const [symptomNote, setSymptomNote] = useState('');
   const [addTime, setAddTime] = useState(new Date());
   const [showAddTimePicker, setShowAddTimePicker] = useState(false);
-  const scale = useRef(new Animated.Value(1)).current;
   const { setModalActionHandler } = useModalAction();
-  const [fastingGoalHours, setFastingGoalHours] = useState(16);
-  const [lastMealTime, setLastMealTime] = useState(null);
   const [fastingStreak, setFastingStreak] = useState(0);
-  const [fastingPlan, setFastingPlan] = useState({ hours: 16, label: '16:8' });
-  const [dietPreference, setDietPreference] = useState('Standard');
   const today = new Date().toISOString().slice(0, 10);
   const unifiedRec = useUnifiedFastRecommendation();
+  const fastingGoalHours = unifiedRec?.recommendedProgram?.duration || 16;
   const [fabOpen, setFabOpen] = useState(false);
   const mealAnim = useRef(new Animated.Value(0)).current;
   const symptomAnim = useRef(new Animated.Value(0)).current;
   const [logModal, setLogModal] = useState(null);
 
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(scale, { toValue: 1.08, duration: 1200, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 1, duration: 1200, useNativeDriver: true }),
-      ])
-    ).start();
-  }, [scale]);
 
   useEffect(() => {
     const handler = (action) => {
@@ -54,27 +45,6 @@ export default function HomeScreen() {
     setModalActionHandler(handler);
     return () => setModalActionHandler(null);
   }, [setModalActionHandler]);
-
-  useEffect(() => {
-    (async () => {
-      const stored = await loadString('fastingSchedule');
-      let hours = 16, label = '16:8';
-      if (stored && stored.match(/^(\d+):(\d+)/)) {
-        hours = parseInt(stored.split(':')[0], 10);
-        label = stored;
-      }
-      setFastingPlan({ hours, label });
-      setFastingGoalHours(hours);
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (foodLog.length > 0) {
-      setLastMealTime(new Date(foodLog[0].time));
-    } else {
-      setLastMealTime(null);
-    }
-  }, [foodLog]);
 
   useEffect(() => {
     let streak = 0;
@@ -111,89 +81,8 @@ export default function HomeScreen() {
   const mealTypes = ['meal', 'animalMeat', 'carbMeal'];
   const todaysMeals = foodLog.filter(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
-  const allKetoOrCarnivore = todaysMeals.length > 0 && todaysMeals.every(e => e.dietType === 'Keto' || e.dietType === 'Carnivore');
 
-  const fastingGoal = fastingPlan.hours;
-  const dietRelax = (dietPreference === 'Keto' || dietPreference === 'Carnivore' || allKetoOrCarnivore) ? 4 : 0;
-  const autophagyThreshold = Math.max(16, fastingGoal - dietRelax);
-  const ketoneThreshold = Math.max(12, fastingGoal - 4 - dietRelax);
-
-  let fastingStatus = 'bad';
-  if (fastingElapsed >= fastingGoal * 3600) {
-    fastingStatus = 'good';
-  } else if (lastMealTime) {
-    const sinceMeal = (Date.now() - lastMealTime.getTime()) / 3600000;
-    if (fastingStreak >= 3 && sinceMeal < 6) {
-      fastingStatus = 'warning';
-    } else if (sinceMeal < 1) {
-      fastingStatus = 'warning';
-    } else {
-      fastingStatus = 'bad';
-    }
-  } else {
-    fastingStatus = 'warning';
-  }
-
-  let ketoneStatus = 'bad';
-  if (fastingElapsed >= ketoneThreshold * 3600) {
-    ketoneStatus = 'good';
-  } else if (fastingElapsed >= (ketoneThreshold - 4) * 3600) {
-    ketoneStatus = 'warning';
-  } else {
-    ketoneStatus = 'bad';
-  }
-
-  let autophagyStatus = 'bad';
-  if (fastingElapsed >= autophagyThreshold * 3600) {
-    autophagyStatus = 'good';
-  } else if (fastingElapsed >= (autophagyThreshold - 4) * 3600) {
-    autophagyStatus = 'warning';
-  } else {
-    autophagyStatus = 'bad';
-  }
-
-  const statusOverviewItems = [
-    {
-      key: 'fasting',
-      label: 'Fasting',
-      status: fastingStatus,
-      icon: 'timer',
-    },
-    {
-      key: 'meals',
-      label: 'Meals',
-      status: todaysMeals.length > 0 ? 'good' : 'warning',
-      icon: 'food',
-    },
-    {
-      key: 'ketone',
-      label: 'Ketones',
-      status: ketoneStatus,
-      icon: 'test-tube',
-    },
-    {
-      key: 'autophagy',
-      label: 'Autophagy',
-      status: autophagyStatus,
-      icon: 'bacteria',
-    },
-    {
-      key: 'symptoms',
-      label: 'Symptoms',
-      status: todaysSymptoms.length === 0 ? 'good' : 'warning',
-      icon: 'stethoscope',
-    },
-  ];
-
-  let bgColors;
-  const statusLevels = statusOverviewItems.map(item => item.status);
-  if (statusLevels.includes('bad')) {
-    bgColors = ['#ffeaea', '#ffd6d6'];
-  } else if (statusLevels.includes('warning')) {
-    bgColors = ['#fffbe5', '#fff3c4'];
-  } else {
-    bgColors = ['#eaf6f6', '#b3c7f7'];
-  }
+  // Legacy status pills removed; keep supporting calculations inline.
 
   const handleSaveSymptomWithTime = () => {
     const entry = {
@@ -210,14 +99,6 @@ export default function HomeScreen() {
     setSymptomNote('');
     setAddTime(new Date());
   };
-
-  useEffect(() => {
-    (async () => {
-      const storedDiet = await loadString('dietPreference');
-      if (storedDiet) {setDietPreference(storedDiet);}
-    })();
-  }, []);
-
 
   useEffect(() => {
     if (fabOpen) {
@@ -331,6 +212,66 @@ export default function HomeScreen() {
   const [ketoneTime, setKetoneTime] = useState(new Date());
   const [ketoneNote, setKetoneNote] = useState('');
 
+  const hasOngoingFast = Boolean(ongoingFast);
+  const fastingHours = fastingElapsed / 3600;
+  const formattedFastingHours = fastingHours > 0 ? fastingHours.toFixed(1) : '0.0';
+  const greetingName = user?.name?.split(' ')[0] || 'there';
+  const nextProgram = unifiedRec?.recommendedProgram;
+  const heroSubtitle = hasOngoingFast
+    ? `Current fast · ${formattedFastingHours}h elapsed`
+    : nextProgram
+    ? `Next goal · ${nextProgram.duration}h fast`
+    : 'Plan your next fast to stay on track';
+  const heroDetail = unifiedRec?.challengeMsg
+    || unifiedRec?.planNextMsg
+    || 'Track meals, symptoms, and ketones to understand your day.';
+  const latestKetoneValue = latestKetone ? latestKetone.value.toFixed(1) : '—';
+  const latestKetoneUnit = latestKetone?.unit || 'mmol/L';
+  const todaysMeat = todaysMeals
+    .filter(entry => entry.type === 'animalMeat' && entry.pounds)
+    .reduce((sum, entry) => sum + parseFloat(entry.pounds), 0);
+  const todaysMeatLabel = `${todaysMeat > 0 ? todaysMeat.toFixed(1) : '0'} lbs`;
+  const mealsLabel = `${todaysMeals.length} ${todaysMeals.length === 1 ? 'meal' : 'meals'}`;
+  const symptomsLabel = `${todaysSymptoms.length} ${todaysSymptoms.length === 1 ? 'log' : 'logs'}`;
+  const heroPrimaryAction = hasOngoingFast ? handleStopFast : handleStartFast;
+  const heroPrimaryLabel = hasOngoingFast ? 'Stop fast' : 'Start fast';
+
+  const trendData = React.useMemo(() => {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const day = new Date();
+      day.setHours(0, 0, 0, 0);
+      day.setDate(day.getDate() - i);
+      const dayKey = day.toISOString().slice(0, 10);
+
+      const ketonesForDay = sortedKetones.filter(entry => entry.time && entry.time.slice(0, 10) === dayKey);
+      const avgKetone = ketonesForDay.length
+        ? ketonesForDay.reduce((sum, entry) => sum + entry.value, 0) / ketonesForDay.length
+        : null;
+
+      const symptomsForDay = symptomLog.filter(entry => entry.time && entry.time.slice(0, 10) === dayKey);
+      const avgSeverity = symptomsForDay.length
+        ? symptomsForDay.reduce((sum, entry) => {
+            if (entry.severity && typeof entry.severity === 'number') {return sum + entry.severity;}
+            const severityIndex = SEVERITIES.findIndex(s => s.key === entry.severity);
+            return severityIndex >= 0 ? sum + severityIndex : sum;
+          }, 0) / symptomsForDay.length
+        : null;
+
+      const meatForDay = foodLog
+        .filter(entry => entry.type === 'animalMeat' && entry.time && entry.time.slice(0, 10) === dayKey && entry.pounds)
+        .reduce((sum, entry) => sum + parseFloat(entry.pounds), 0);
+
+      days.push({
+        date: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        ketones: avgKetone,
+        symptoms: avgSeverity,
+        redMeat: meatForDay,
+      });
+    }
+    return days;
+  }, [sortedKetones, symptomLog, foodLog]);
+
   function handleSaveKetone() {
     if (!ketoneValue) {return;}
     setKetoneLog([
@@ -351,13 +292,75 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.screen}>
-      <LinearGradient
-        colors={bgColors}
-        style={StyleSheet.absoluteFill}
-      />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.title}>Dashboard</Text>
-        <StatusOverview statuses={statusOverviewItems} />
+        <View style={styles.heroWrapper}>
+          <LinearGradient
+            colors={[theme.colors.brandPrimary, theme.colors.brandPrimaryDark]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
+            <Text style={styles.heroOverline}>Daily snapshot</Text>
+            <Text style={styles.heroTitle}>Welcome back, {greetingName}</Text>
+            <Text style={styles.heroSubtitle}>{heroSubtitle}</Text>
+            <Text style={styles.heroCaption}>{heroDetail}</Text>
+            <View style={styles.heroActions}>
+              <Button
+                label={heroPrimaryLabel}
+                variant={hasOngoingFast ? 'danger' : 'primary'}
+                size="md"
+                onPress={heroPrimaryAction}
+                style={styles.heroActionPrimary}
+              />
+              <Button
+                label="Log meal"
+                variant="secondary"
+                size="md"
+                onPress={handleAddMeal}
+                style={styles.heroActionSecondary}
+              />
+            </View>
+          </LinearGradient>
+        </View>
+
+        <View style={styles.statsGrid}>
+          <Card variant="outline" style={styles.statCard}>
+            <Text style={styles.statLabel}>Meals today</Text>
+            <Text style={styles.statValue}>{todaysMeals.length}</Text>
+            <Text style={styles.statMeta}>{mealsLabel}</Text>
+            <Text style={styles.statMetaAccent}>Animal meat · {todaysMeatLabel}</Text>
+          </Card>
+          <Card variant="outline" style={styles.statCard}>
+            <Text style={styles.statLabel}>Symptoms logged</Text>
+            <Text style={styles.statValue}>{todaysSymptoms.length}</Text>
+            <Text style={styles.statMeta}>{symptomsLabel}</Text>
+            <Text style={styles.statMetaMuted}>Keep tracking trends to spot improvements.</Text>
+          </Card>
+          <Card variant="outline" style={styles.statCard}>
+            <Text style={styles.statLabel}>Ketone level</Text>
+            <Text style={styles.statValue}>{latestKetoneValue}</Text>
+            <Text style={styles.statMeta}>{latestKetoneValue === '—' ? 'No data yet' : latestKetoneUnit}</Text>
+            <Button
+              label="Log ketone"
+              variant="ghost"
+              size="sm"
+              onPress={() => setKetoneModalVisible(true)}
+              style={styles.statButton}
+            />
+          </Card>
+          <Card variant="outline" style={styles.statCard}>
+            <Text style={styles.statLabel}>Fasting streak</Text>
+            <Text style={styles.statValue}>{fastingStreak}</Text>
+            <Text style={styles.statMeta}>{fastingStreak === 1 ? 'day completed' : 'days completed'}</Text>
+            <Text style={styles.statMetaMuted}>Consistent streaks boost progress.</Text>
+          </Card>
+        </View>
+
+        <Card variant="outline" style={styles.insightCard}>
+          <Text style={styles.sectionLabel}>7-day trend</Text>
+          <InsightChart data={trendData} />
+        </Card>
+
         <FastingSummaryCard
           fastingElapsedSeconds={fastingElapsed}
           recommendedProgram={unifiedRec.recommendedProgram}
@@ -367,13 +370,10 @@ export default function HomeScreen() {
           challengeMsg={unifiedRec.challengeMsg}
           caution={unifiedRec.caution}
           planNextMsg={unifiedRec.planNextMsg}
-          hasOngoingFast={Boolean(ongoingFast)}
-          onStartFast={handleStartFast}
-          onStopFast={handleStopFast}
         />
         <AutophagyKetoneCard
           autophagyDays={autophagyDays}
-          hasOngoingFast={Boolean(ongoingFast)}
+          hasOngoingFast={hasOngoingFast}
           fastingTimerLabel={fastTimer}
           latestKetone={latestKetone}
           ketoneInKetosis={ketoneInKetosis}
@@ -433,239 +433,112 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
+    backgroundColor: theme.colors.backgroundPrimary,
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+    paddingTop: theme.spacing.lg,
   },
-  title: {
-    fontSize: theme.fontSizes.xlarge,
-    fontWeight: 'bold',
-    marginBottom: theme.spacing.medium,
-    color: theme.colors.text,
+  heroWrapper: {
+    marginBottom: theme.spacing.lg,
   },
-  card: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.large,
-    padding: theme.spacing.regular,
-    marginBottom: theme.spacing.regular,
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+  heroCard: {
+    borderRadius: theme.radius.xl,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
   },
-  cardTitle: {
-    fontSize: theme.fontSizes.medium,
-    fontWeight: '600',
-    marginBottom: theme.spacing.xsmall,
-    color: theme.colors.text,
+  heroOverline: {
+    color: theme.colors.textOnPrimary,
+    opacity: 0.85,
+    fontSize: theme.typography.sizes.caption,
+    marginBottom: theme.spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 1.1,
   },
-  cardText: {
-    fontSize: theme.fontSizes.regular,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.tiny,
+  heroTitle: {
+    color: theme.colors.textOnPrimary,
+    fontSize: theme.typography.sizes.display,
+    fontWeight: theme.typography.weights.bold,
+    marginBottom: theme.spacing.xs,
   },
-  fastingTime: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.xsmall,
+  heroSubtitle: {
+    color: theme.colors.textOnPrimary,
+    fontSize: theme.typography.sizes.body,
+    marginBottom: theme.spacing.xs,
   },
-  progressBarBg: {
-    width: '100%',
-    height: 18,
-    backgroundColor: theme.colors.border,
-    borderRadius: 9,
-    marginVertical: theme.spacing.small,
-    overflow: 'hidden',
+  heroCaption: {
+    color: theme.colors.textOnPrimary,
+    opacity: 0.85,
+    fontSize: theme.typography.sizes.caption,
+    marginBottom: theme.spacing.sm,
   },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 9,
-  },
-  challengeText: {
-    fontSize: theme.fontSizes.regular,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.tiny,
-  },
-  statusText: {
-    fontSize: theme.fontSizes.regular,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.tiny,
-  },
-  learnMoreBtn: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.regular,
-    padding: 10,
+  heroActions: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
   },
-  learnMoreText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  heroActionPrimary: {
+    marginRight: theme.spacing.xs,
+    minWidth: 140,
   },
-  detailText: {
-    fontSize: theme.fontSizes.regular,
+  heroActionSecondary: {},
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing.lg,
+  },
+  statCard: {
+    width: '48%',
+    marginBottom: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+  },
+  statLabel: {
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.tiny,
+    marginBottom: theme.spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  modalButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.regular,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
+  statValue: {
+    fontSize: theme.typography.sizes.title,
+    color: theme.colors.textPrimary,
+    fontWeight: theme.typography.weights.bold,
   },
-  quickActionButton: {
-    flex: 1,
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.medium,
-    padding: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
+  statMeta: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.xs,
   },
-  quickActionText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
+  statMetaAccent: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.brandSecondary,
+    marginTop: theme.spacing.tiny,
   },
-  headerRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: theme.spacing.regular },
-  dietTypeRow: { flexDirection: 'row', marginBottom: 8 },
-  dietTypeText: { color: theme.colors.textSecondary, fontWeight: 'bold' },
-  dietTypeTextActive: { color: '#fff', fontWeight: 'bold' },
-  row: { flexDirection: 'row', alignItems: 'center' },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 10, fontSize: 16, marginRight: 8, flex: 1, backgroundColor: '#fff' },
-  section: { width: '100%', marginBottom: theme.spacing.large },
-  sectionTitle: { fontSize: theme.fontSizes.medium, fontWeight: 'bold', color: theme.colors.textSecondary, marginBottom: theme.spacing.xsmall },
-  summaryText: { fontSize: theme.fontSizes.regular, color: theme.colors.text, marginTop: 4 },
+  statMetaMuted: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textMuted,
+    marginTop: theme.spacing.tiny,
+  },
+  statButton: {
+    marginTop: theme.spacing.sm,
+    alignSelf: 'flex-start',
+  },
+  sectionLabel: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  insightCard: {
+    marginBottom: theme.spacing.lg,
+  },
   statusCard: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.medium,
-    padding: theme.spacing.regular,
-    marginBottom: theme.spacing.regular,
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  fastingCard: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.large,
-    padding: theme.spacing.regular,
-    marginBottom: theme.spacing.regular,
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  progressBarBgPolished: {
-    width: '100%',
-    height: 18,
-    backgroundColor: theme.colors.border,
-    borderRadius: 9,
-    marginVertical: theme.spacing.small,
-    overflow: 'hidden',
-  },
-  progressBarFillPolished: {
-    height: '100%',
-    backgroundColor: theme.colors.primary,
-    borderRadius: 9,
-  },
-  goalReached: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: theme.colors.accent,
-    marginBottom: theme.spacing.tiny,
-  },
-  feedbackText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.tiny,
-  },
-  learnMoreBtnPolished: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.regular,
-    padding: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  learnMoreTextPolished: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  emojiRowImproved: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  emojiCircle: {
-    borderRadius: 18,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#ccc',
-  },
-  emojiCircleActive: {
-    borderColor: theme.colors.primary,
-  },
-  emoji: {
-    fontSize: 20,
-    textAlign: 'center',
-  },
-  selectedLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginBottom: 12,
-  },
-  severityRowImproved: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  severityPill: {
-    backgroundColor: 'transparent',
-    borderRadius: 18,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#ccc',
-  },
-  severityPillActive: {
-    borderColor: theme.colors.primary,
-  },
-  severityPillText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-  },
-  severityPillTextActive: {
-    color: theme.colors.primary,
-  },
-  noteInput: {
-    borderColor: '#e0e0e0',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 8,
-    fontSize: 16,
-    color: '#2d4d4d',
-    backgroundColor: '#f8f8f8',
-    minHeight: 40,
+    marginBottom: theme.spacing.lg,
   },
 });

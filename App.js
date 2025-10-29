@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
-import { createMaterialTopTabNavigator } from '@react-navigation/material-top-tabs';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { LogsProvider } from './contexts/LogsContext';
 import { ModalActionProvider } from './contexts/ModalActionContext';
@@ -19,26 +20,50 @@ import FastingProgramsScreen from './screens/FastingProgramsScreen';
 import ProfileDetailsScreen from './screens/ProfileDetailsScreen';
 import DietLogScreen from './screens/DietLogScreen';
 
-const Tab = createMaterialTopTabNavigator();
+const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+function renderTabIcon(routeName, focused, color, size) {
+  switch (routeName) {
+    case 'Home':
+      return <MaterialCommunityIcons name={focused ? 'home-variant' : 'home-variant-outline'} size={size} color={color} />;
+    case 'Logs':
+      return <MaterialCommunityIcons name={focused ? 'notebook' : 'notebook-outline'} size={size} color={color} />;
+    case 'Info':
+      return <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={size} color={color} />;
+    case 'Profile':
+      return <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={size} color={color} />;
+    default:
+      return null;
+  }
+}
 
 function MainTabs() {
   return (
     <Tab.Navigator
       initialRouteName="Home"
-      screenOptions={() => ({
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: '#888',
-        tabBarStyle: { backgroundColor: '#fff' },
-        tabBarIndicatorStyle: { backgroundColor: theme.colors.primary },
-        tabBarLabelStyle: { fontWeight: 'bold', fontSize: 14 },
-        tabBarShowIcon: false,
+      screenOptions={({ route }) => ({
+        tabBarActiveTintColor: theme.colors.brandPrimary,
+        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: theme.colors.surfacePrimary,
+          borderTopColor: theme.colors.border,
+          borderTopWidth: StyleSheet.hairlineWidth * 2,
+          height: 64,
+          paddingVertical: theme.spacing.tiny,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: theme.typography.weights.medium,
+        },
+        tabBarIcon: ({ focused, color, size }) => renderTabIcon(route.name, focused, color, size),
+        headerShown: false,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
       <Tab.Screen name="Logs" component={LogsScreen} />
+      <Tab.Screen name="Info" component={InfoScreen} options={{ title: 'Insights' }} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
-      <Tab.Screen name="Info" component={InfoScreen} />
     </Tab.Navigator>
   );
 }

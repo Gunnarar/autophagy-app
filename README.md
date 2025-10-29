@@ -1,6 +1,6 @@
 # autophagy-app
 
-## 🚦 Current Status (June 2024)
+## 🚦 Current Status (October 2025)
 
 **Genesis4PD Autophagy App** is a robust, user-friendly health-tracking app for Parkinson's Disease, focused on fasting, diet, and symptom logging. The MVP is complete and ready for final QA and user testing. All core flows are unified, accessible, and polished. See below for details.
 
@@ -11,9 +11,10 @@
 - **Symptom Logging**: Log symptoms with type, severity, time, notes. Associate with fasting periods. Filter/review history. Friendly empty states.
 - **Logs & Filtering**: Unified, time-ordered log view with pill-style filters (All, Food, Symptoms, Fasting). Summary section tallies meat, fasts, symptoms.
 - **Export**: Export logs as CSV (with summary) for any time range (week, month, 3m, 6m, year). Uses expo-file-system and expo-sharing.
-- **Accessibility & Feedback**: Large fonts, high contrast, big touch targets, screen reader support. All actions show user feedback. Error handling and empty states reviewed.
-- **Data Persistence**: All logs and user data are persisted with AsyncStorage. Race conditions fixed.
+- **Accessibility & Feedback**: Large fonts, high contrast, big touch targets, screen reader support. All actions show user feedback. Error handling and empty states reviewed. Runtime import checks backed by Jest smoke tests.
+- **Data Persistence**: All logs and user data are persisted with AsyncStorage. Race conditions fixed. Export/download flows hardened with error messaging.
 - **Data Visualization**: Simple bar chart for weekly animal meat and carb meals. Streaks, milestones, badges.
+- **Developer Tooling**: ESLint with `react-native/no-inline-styles` enforced, Jest smoke tests for render/runtime regressions, and automated CI covering lint + tests.
 
 ### 🛣️ Roadmap Progress
 
@@ -24,12 +25,15 @@
 - [x] **Symptom Logging**
 - [x] **Logs & Filtering**
 - [x] **Feedback & Guidance**
+- [x] **Developer Quality Gates** (lint + smoke tests)
 
 #### High Value (User Engagement & Medical Relevance)
-- [ ] **Reminders & Notifications** _(Deferred: requires on-device QA)_
+- [ ] **Reminders & Notifications** _(Deferred: requires on-device QA & dismissal persistence)_
 - [x] **Data Visualization** _(basic charts/streaks done)_
 - [ ] **Personalization** _(dark mode toggle, quick actions: future)_
 - [ ] **Medical Safety** _(medication logging: future)_
+- [ ] **Resilient Storage & Sync** _(better error fallback, corruption handling)_
+- [ ] **Notification State Persistence** _(remember dismissals across sessions)_
 
 #### Advanced/Optional (For Future)
 - [ ] **User Feedback Indicators** _(future)_
@@ -42,7 +46,31 @@
 - Final QA and user testing (see QA checklist in project notes)
 - Polish UI/UX based on user feedback
 - Prepare for deployment (Expo Go, EAS Build, TestFlight/Play Store)
+- Run an accessibility pass on the chip-driven entry modals (Home/Symptoms) to confirm VoiceOver/TalkBack announce emoji labels and selection state correctly.
+- Adopt the refreshed Figma design system: new tokens, shared UI primitives, and updated screen layouts
+- Persist notification snoozes/dismissals and harden AsyncStorage fallback paths
 - Plan for reminders/notifications and advanced features
+
+### 🎨 Visual Refresh (Figma Alignment)
+- Introduce the Figma-derived design tokens (carnivore red palette, deep navy neutrals) in `utils/theme.js`
+- Build shared React Native primitives (`components/ui`) for Card, Button, and Chip (logs filters and modals now rely on them); extend the library with checklist/toggle primitives for upcoming settings work.
+- Restructure Home, Logs, and Profile screens to mirror the new hero sections, stat grids, and insights cards
+- Add trend visualizations (ketone/symptom correlation, weekly summaries) using reusable chart wrappers
+- Modernize modals and forms with dialog-style layouts, icon-backed selectors, and consistent spacing
+
+### 🌙 Dark Mode Prep
+- Split `theme` into light/dark palettes that share spacing/typography tokens; derive colors from the Figma night variant.
+- Add a `ThemeProvider` wrapper that persists the chosen mode (system/default toggle via AsyncStorage) and exposes a `useThemeMode` hook.
+- Audit components that still rely on literal hex values (e.g. `components/KetoneLogModal.js`, `components/SymptomLogModal.js`, `components/LogEntryModal.js`) and swap them to the semantic tokens before enabling the toggle.
+- Provide light/dark values for `theme.overlay.scrim`/`scrimLight` once the theme provider lands so modal scrims adapt automatically.
+- Extend smoke tests to render the app in both modes once the theme provider exists to guard against missing token references.
+
+### ♿ Manual Accessibility QA
+Use these quick checks whenever we touch chip selectors, modals, or other interactive primitives:
+- **VoiceOver (iOS):** Enable the Screen Reader, focus the Home/Symptom modal chips, and verify it announces "`<label>`, button, selected`" (or `"not selected"`). Confirm emoji labels are read aloud (e.g., “Tremor” instead of the emoji glyph). Toggle selection and ensure state updates.
+- **TalkBack (Android):** Repeat the same checks, paying attention to double-tap activation and swipe navigation order. The chip should respond to double-tap and expose “Selected” in its state announcement.
+- **Keyboard / Switch Control:** On devices with external keyboards or switch control, ensure focus order follows the visual layout and chips respond to Enter/Space.
+- Record any variance (e.g., emoji-only labels) in the PR and update `components/ui/Chip.js` with fallback `accessibilityLabel` props as needed.
 
 ---
 

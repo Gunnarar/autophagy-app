@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, Alert, ScrollView, Button } from 'react-native';
+import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, Alert, ScrollView } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { Chip } from '../components/ui/Chip';
+import { theme } from '../utils/theme';
 
 export default function LogsScreen() {
   const [filterType, setFilterType] = useState('all');
@@ -178,14 +181,18 @@ export default function LogsScreen() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={['#101c23', '#182c34']}
-        style={StyleSheet.absoluteFill}
-      />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>Logs</Text>
-          <Button title="Export" onPress={() => setExportModalVisible(true)} />
+          <View>
+            <Text style={styles.title}>Logs &amp; insights</Text>
+            <Text style={styles.subtitle}>Review meals, symptoms, and fasts</Text>
+          </View>
+          <Button
+            label="Export"
+            variant="secondary"
+            size="sm"
+            onPress={() => setExportModalVisible(true)}
+          />
         </View>
         {/* Export Time Range Modal */}
         <Modal visible={exportModalVisible} transparent animationType="fade" onRequestClose={() => setExportModalVisible(false)}>
@@ -195,7 +202,7 @@ export default function LogsScreen() {
                 <View style={styles.modalContent}>
                   <Text style={styles.modalTitle}>Export Logs</Text>
                   <Text style={styles.modalDescription}>Select time range for export:</Text>
-                  <View style={styles.pillRow}>
+                  <View style={[styles.chipRow, styles.modalChipRow]}>
                     {[
                       { key: 'week', label: 'Week' },
                       { key: 'month', label: 'Month' },
@@ -203,62 +210,48 @@ export default function LogsScreen() {
                       { key: '6m', label: '6 Months' },
                       { key: 'year', label: 'Year' },
                     ].map(opt => (
-                      <Pressable
+                      <Chip
                         key={opt.key}
+                        label={opt.label}
+                        size="sm"
+                        active={exportTimeRange === opt.key}
                         onPress={() => setExportTimeRange(opt.key)}
-                        style={[
-                          styles.pill,
-                          styles.exportPill,
-                          exportTimeRange === opt.key && styles.pillActive,
-                        ]}
-                      >
-                        <Text style={[
-                          styles.pillLabel,
-                          exportTimeRange === opt.key && styles.pillLabelActive,
-                        ]}
-                        >
-                          {opt.label}
-                        </Text>
-                      </Pressable>
+                      />
                     ))}
                   </View>
-                  <Button title="Export as CSV" onPress={handleExportCSV} />
-                  <Button title="Cancel" onPress={() => setExportModalVisible(false)} color="#888" />
+                  <Button label="Export CSV" onPress={handleExportCSV} style={styles.modalPrimaryAction} />
+                  <Button
+                    label="Cancel"
+                    variant="secondary"
+                    onPress={() => setExportModalVisible(false)}
+                    style={styles.modalSecondaryAction}
+                  />
                 </View>
               </TouchableWithoutFeedback>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
-        {/* Time Range Picker */}
-        <View style={styles.pillRowCentered}>
-          {[
-            { key: 'week', label: 'Week' },
-            { key: 'month', label: 'Month' },
-            { key: '3m', label: '3 Months' },
-            { key: '6m', label: '6 Months' },
-            { key: 'year', label: 'Year' },
-          ].map(opt => (
-            <Pressable
-              key={opt.key}
-              onPress={() => setTimeRange(opt.key)}
-              style={[
-                styles.pill,
-                styles.timeRangePill,
-                timeRange === opt.key && styles.pillActive,
-              ]}
-            >
-              <Text style={[
-                styles.pillLabel,
-                timeRange === opt.key && styles.pillLabelActive,
-              ]}
-              >
-                {opt.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-        {/* Summary Section */}
-        <View style={styles.summaryCard}>
+        <Card variant="tinted" style={styles.rangeCard}>
+          <Text style={styles.sectionLabel}>Time range</Text>
+          <View style={styles.chipRow}>
+            {[
+              { key: 'week', label: 'Week' },
+              { key: 'month', label: 'Month' },
+              { key: '3m', label: '3 Months' },
+              { key: '6m', label: '6 Months' },
+              { key: 'year', label: 'Year' },
+            ].map(opt => (
+              <Chip
+                key={opt.key}
+                label={opt.label}
+                active={timeRange === opt.key}
+                onPress={() => setTimeRange(opt.key)}
+              />
+            ))}
+          </View>
+        </Card>
+
+        <Card variant="outline" style={styles.summaryCard}>
           <View style={styles.summaryMetric}>
             <Text style={styles.summaryLabel}>Meat (lbs)</Text>
             <Text style={[styles.summaryValue, styles.summaryValueMeat]}>{meatPounds.toFixed(1)}</Text>
@@ -271,37 +264,34 @@ export default function LogsScreen() {
             <Text style={styles.summaryLabel}>Symptoms</Text>
             <Text style={[styles.summaryValue, styles.summaryValueSymptoms]}>{symptomCount}</Text>
           </View>
-        </View>
-        {/* Pill-style filter */}
-        <View style={styles.pillRowCentered}>
-          {[
-            { key: 'all', label: 'All', renderIcon: color => <Ionicons name="list" size={18} color={color} /> },
-            { key: 'food', label: 'Food', renderIcon: color => <MaterialCommunityIcons name="food" size={18} color={color} /> },
-            { key: 'symptom', label: 'Symptoms', renderIcon: color => <MaterialCommunityIcons name="stethoscope" size={18} color={color} /> },
-            { key: 'ketone', label: 'Ketones', renderIcon: color => <MaterialCommunityIcons name="water" size={18} color={color} /> },
-          ].map(pill => (
-            <Pressable
-              key={pill.key}
-              onPress={() => setFilterType(pill.key)}
-              style={[
-                styles.pill,
-                styles.filterPill,
-                filterType === pill.key && styles.pillActive,
-                filterType === pill.key && styles.filterPillActive,
-              ]}
-            >
-              {pill.renderIcon(filterType === pill.key ? '#fff' : '#6bb3b6')}
-              <Text style={[
-                styles.pillLabel,
-                styles.filterPillLabel,
-                filterType === pill.key && styles.pillLabelActive,
-              ]}
-              >
-                {pill.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        </Card>
+
+        <Card variant="tinted" style={styles.filterCard}>
+          <Text style={styles.sectionLabel}>Filter by</Text>
+          <View style={styles.chipRow}>
+            {[
+              { key: 'all', label: 'All', icon: 'list' },
+              { key: 'food', label: 'Food', icon: 'food' },
+              { key: 'symptom', label: 'Symptoms', icon: 'stethoscope' },
+              { key: 'ketone', label: 'Ketones', icon: 'water' },
+            ].map(pill => {
+              const isActive = filterType === pill.key;
+              const iconColor = isActive ? theme.colors.textOnPrimary : theme.colors.brandSecondary;
+              const iconElement = pill.icon === 'list'
+                ? <Ionicons name="list" size={18} color={iconColor} />
+                : <MaterialCommunityIcons name={pill.icon} size={18} color={iconColor} />;
+              return (
+                <Chip
+                  key={pill.key}
+                  label={pill.label}
+                  icon={iconElement}
+                  active={isActive}
+                  onPress={() => setFilterType(pill.key)}
+                />
+              );
+            })}
+          </View>
+        </Card>
         {/* Empty state for no logs */}
         {logs.length === 0 && (
           <View style={styles.emptyState}>
@@ -313,23 +303,19 @@ export default function LogsScreen() {
         {logs.map((entry, _index) => {
           const isFilterAll = filterType === 'all';
           const matchesFilter = filterType === entry.logType;
+          const accentColor = entry.logType === 'food'
+            ? theme.colors.brandPrimary
+            : entry.logType === 'symptom'
+            ? theme.colors.error
+            : theme.colors.info;
+          const isHighlighted = matchesFilter || isFilterAll;
           const cardDynamicStyle = {
-            borderLeftColor: isFilterAll
-              ? '#6bb3b6'
-              : matchesFilter
-              ? '#89ce00'
-              : '#eaf6f6',
-            backgroundColor: isFilterAll
-              ? '#fff'
-              : matchesFilter
-              ? '#eaf6f6'
-              : '#fff',
+            borderLeftWidth: 4,
+            borderLeftColor: isHighlighted ? accentColor : theme.colors.border,
+            backgroundColor: isHighlighted ? theme.colors.surfaceMuted : theme.colors.surfacePrimary,
           };
           return (
-            <View
-              key={entry.id}
-              style={[styles.card, styles.logCard, cardDynamicStyle]}
-            >
+            <Card variant="outline" key={entry.id} style={[styles.logCard, cardDynamicStyle]}>
               <Text style={styles.cardTitle}>
                 {entry.logType === 'food' ? 'Meal' : entry.logType === 'symptom' ? (SYMPTOM_TYPES[entry.type] || entry.type) : 'Ketone'}
                 {'  '}
@@ -338,7 +324,7 @@ export default function LogsScreen() {
                 </Text>
                 {/* Fat red X for carb meals */}
                 {entry.logType === 'food' && entry.isCarb ? (
-                  <MaterialCommunityIcons name="close-circle" size={22} color="#e74c3c" style={styles.carbIcon} />
+                  <MaterialCommunityIcons name="close-circle" size={22} color={theme.colors.error} style={styles.carbIcon} />
                 ) : null}
               </Text>
               {/* Show pounds of meat if present */}
@@ -372,7 +358,7 @@ export default function LogsScreen() {
                   <Text style={styles.modalButtonNeutralText}>Delete</Text>
                 </Pressable>
               </View>
-            </View>
+            </Card>
           );
         })}
         {/* Empty state for no symptoms (if filter is symptom) */}
@@ -392,44 +378,50 @@ export default function LogsScreen() {
                 {editLogType === 'food' ? (
                   <>
                     <Text style={styles.fieldLabel}>Type:</Text>
-                    <View style={styles.foodTypeRow}>
-                      <Pressable style={[styles.foodTypeButton, editFoodType === 'meal' && styles.foodTypeButtonActive]} onPress={() => setEditFoodType('meal')} accessibilityLabel="Meal">
-                        <Text style={styles.foodTypeEmoji}>🍽️ Meal</Text>
-                      </Pressable>
+                    <View style={styles.selectorRow}>
+                      <Chip
+                        label="🍽️ Meal"
+                        active={editFoodType === 'meal'}
+                        onPress={() => setEditFoodType('meal')}
+                        size="lg"
+                        style={styles.selectorChip}
+                        textStyle={styles.selectorChipLabel}
+                      />
                     </View>
                   </>
                 ) : (
                   <>
                     <Text style={styles.fieldLabel}>Symptom:</Text>
-                    <View style={styles.symptomTypeRow}>
+                    <View style={styles.selectorRow}>
                       {SYMPTOM_TYPES.map(t => (
-                        <Pressable
+                        <Chip
                           key={t.key}
-                          style={[
-                            styles.foodTypeButton,
-                            editSymptomType === t.key && styles.foodTypeButtonActive,
-                          ]}
+                          label={t.emoji}
+                          size="lg"
+                          active={editSymptomType === t.key}
                           onPress={() => setEditSymptomType(t.key)}
                           accessibilityLabel={t.label}
-                        >
-                          <Text style={styles.foodTypeEmoji}>{t.emoji}</Text>
-                        </Pressable>
+                          style={styles.selectorChip}
+                          textStyle={styles.symptomEmoji}
+                        />
                       ))}
                     </View>
                     <Text style={styles.symptomLabel}>
                       {SYMPTOM_TYPES.find(t => t.key === editSymptomType)?.label}
                     </Text>
                     <Text style={styles.fieldLabel}>Severity:</Text>
-                    <View style={styles.severityRow}>
+                    <View style={styles.selectorRow}>
                       {SEVERITIES.map(s => (
-                        <Pressable
+                        <Chip
                           key={s.key}
-                          style={[styles.foodTypeButton, editSeverity === s.key && styles.foodTypeButtonActive]}
+                          label={s.label}
+                          size="lg"
+                          active={editSeverity === s.key}
                           onPress={() => setEditSeverity(s.key)}
                           accessibilityLabel={s.label}
-                        >
-                          <Text style={styles.severityLabel}>{s.label}</Text>
-                        </Pressable>
+                          style={styles.selectorChip}
+                          textStyle={styles.selectorChipLabel}
+                        />
                       ))}
                     </View>
                   </>
@@ -507,305 +499,237 @@ export default function LogsScreen() {
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  container: {
     flex: 1,
-    backgroundColor: '#eaf6f6',
-    padding: 20,
+    backgroundColor: theme.colors.backgroundPrimary,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+    paddingTop: theme.spacing.lg,
   },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: theme.spacing.lg,
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#2d4d4d',
+    fontSize: theme.typography.sizes.headline,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.tiny,
   },
   modalDescription: {
-    marginBottom: 12,
-    color: '#4d6d6d',
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
   },
-  pillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  pillRowCentered: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  pill: {
-    backgroundColor: '#eaf6f6',
-    borderColor: '#6bb3b6',
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-  },
-  exportPill: {
-    margin: 4,
-  },
-  timeRangePill: {
-    marginHorizontal: 4,
-  },
-  pillActive: {
-    backgroundColor: '#6bb3b6',
-  },
-  pillLabel: {
-    color: '#6bb3b6',
-    fontWeight: 'bold',
-  },
-  pillLabelActive: {
-    color: '#fff',
-  },
-  filterPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 4,
-    shadowColor: '#6bb3b6',
-    shadowOpacity: 0,
-    shadowRadius: 0,
-    elevation: 0,
-  },
-  filterPillActive: {
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  filterPillLabel: {
-    marginLeft: 6,
-  },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardText: {
-    fontSize: 16,
-    color: '#4d6d6d',
-    marginBottom: 4,
-  },
-  logCard: {
-    borderLeftWidth: 6,
-  },
-  cardTimestamp: {
-    color: '#4d6d6d',
-    fontWeight: 'normal',
-    fontSize: 14,
-  },
-  carbIcon: {
-    marginLeft: 8,
-    marginBottom: -4,
-  },
-  logActions: {
-    flexDirection: 'row',
-    marginTop: 8,
-  },
-  modalButtonSpacingRight: {
-    marginRight: 8,
-  },
-  modalButtonPrimaryText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  modalButtonNeutral: {
-    backgroundColor: '#ccc',
-  },
-  modalButtonNeutralText: {
-    color: '#2d4d4d',
-    fontWeight: 'bold',
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-  },
-  modalButtonTopMargin: {
-    marginTop: 8,
-  },
-  inputWrapper: {
-    width: '100%',
-    marginBottom: 16,
-  },
-  noteInput: {
-    borderColor: '#e0e0e0',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 8,
-    fontSize: 16,
-    color: '#2d4d4d',
-    backgroundColor: '#f8f8f8',
-    minHeight: 40,
+  rangeCard: {
+    marginBottom: theme.spacing.lg,
   },
   summaryCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 18,
+    marginBottom: theme.spacing.lg,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
   },
   summaryMetric: {
     alignItems: 'center',
     flex: 1,
   },
   summaryLabel: {
-    fontSize: 16,
-    color: '#4d6d6d',
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   summaryValue: {
-    fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: theme.typography.sizes.title,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.textPrimary,
   },
   summaryValueMeat: {
-    color: '#89ce00',
+    color: theme.colors.brandPrimary,
   },
   summaryValueFasts: {
-    color: '#6bb3b6',
+    color: theme.colors.info,
   },
   summaryValueSymptoms: {
-    color: '#e74c3c',
+    color: theme.colors.error,
+  },
+  filterCard: {
+    marginBottom: theme.spacing.lg,
+  },
+  sectionLabel: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -theme.spacing.tiny,
+  },
+  modalChipRow: {
+    justifyContent: 'center',
+  },
+  logCard: {
+    marginBottom: theme.spacing.md,
+  },
+  cardTitle: {
+    fontSize: theme.typography.sizes.body,
+    fontWeight: theme.typography.weights.semibold,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xs,
+  },
+  cardTimestamp: {
+    color: theme.colors.textMuted,
+    fontSize: theme.typography.sizes.caption,
+  },
+  cardText: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.tiny,
+  },
+  carbIcon: {
+    marginLeft: theme.spacing.tiny,
+    marginBottom: -4,
+  },
+  logActions: {
+    flexDirection: 'row',
+    marginTop: theme.spacing.sm,
+  },
+  modalButtonSpacingRight: {
+    marginRight: theme.spacing.xs,
+  },
+  modalButtonPrimaryText: {
+    color: theme.colors.textOnPrimary,
+    fontWeight: theme.typography.weights.semibold,
+  },
+  modalButtonNeutral: {
+    backgroundColor: theme.colors.surfaceMuted,
+  },
+  modalButtonNeutralText: {
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.weights.semibold,
+  },
+  modalPrimaryAction: {
+    alignSelf: 'stretch',
+    marginTop: theme.spacing.sm,
+  },
+  modalSecondaryAction: {
+    alignSelf: 'stretch',
+    marginTop: theme.spacing.xs,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: theme.spacing.md,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: theme.overlay.scrim,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: 300,
+    backgroundColor: theme.colors.surfacePrimary,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.lg,
+    width: 320,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowColor: theme.shadow.medium.color,
+    shadowOffset: theme.shadow.medium.offset,
+    shadowOpacity: theme.shadow.medium.opacity,
+    shadowRadius: theme.shadow.medium.radius,
+    elevation: theme.shadow.medium.elevation,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#2d4d4d',
+    fontSize: theme.typography.sizes.headline,
+    fontWeight: theme.typography.weights.bold,
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.textPrimary,
   },
   fieldLabel: {
     alignSelf: 'flex-start',
-    marginBottom: 4,
-    color: '#4d6d6d',
+    marginBottom: theme.spacing.tiny,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.sizes.caption,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   modalButton: {
-    backgroundColor: '#6bb3b6',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
+    backgroundColor: theme.colors.brandPrimary,
+    borderRadius: theme.radius.sm,
+    paddingVertical: theme.spacing.tiny + 2,
+    paddingHorizontal: theme.spacing.sm,
   },
   modalButtonBottomSpacing: {
-    marginBottom: 12,
+    marginBottom: theme.spacing.sm,
   },
-  foodTypeButton: {
-    flex: 1,
-    backgroundColor: '#eaf6f6',
-    borderRadius: 8,
-    padding: 12,
-    marginHorizontal: 4,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#6bb3b6',
+  modalButtonTopMargin: {
+    marginTop: theme.spacing.xs,
   },
-  foodTypeButtonActive: {
-    backgroundColor: '#6bb3b6',
+  inputWrapper: {
+    width: '100%',
+    marginBottom: theme.spacing.sm,
   },
-  foodTypeRow: {
+  noteInput: {
+    borderColor: theme.colors.border,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderRadius: theme.radius.sm,
+    padding: theme.spacing.xs,
+    fontSize: theme.typography.sizes.body,
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surfacePrimary,
+    minHeight: 40,
+  },
+  selectorRow: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: theme.spacing.sm,
+    flexWrap: 'wrap',
+    justifyContent: 'center',
   },
-  foodTypeEmoji: {
-    fontSize: 20,
+  selectorChip: {
+    flexGrow: 1,
+    flexBasis: 90,
+    alignSelf: 'stretch',
   },
-  symptomTypeRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
+  selectorChipLabel: {
+    textAlign: 'center',
+  },
+  symptomEmoji: {
+    fontSize: 24,
+    textAlign: 'center',
   },
   symptomLabel: {
     textAlign: 'center',
-    fontSize: 16,
-    color: '#2d4d4d',
-    marginBottom: 12,
-  },
-  severityRow: {
-    flexDirection: 'row',
-    marginBottom: 12,
-  },
-  severityLabel: {
-    fontSize: 16,
-  },
-  symptomLogEmoji: {
-    fontSize: 24,
-    marginBottom: 2,
-  },
-  symptomLogTime: {
-    fontSize: 13,
-    color: '#4d6d6d',
-    marginBottom: 2,
-    maxWidth: 180,
-    textAlign: 'center',
-  },
-  symptomLogNote: {
-    fontSize: 13,
-    color: '#6bb3b6',
-    marginBottom: 2,
-    maxWidth: 180,
-    textAlign: 'center',
-  },
-  quickActionButton: {
-    flex: 1,
-    backgroundColor: '#6bb3b6',
-    borderRadius: 12,
-    padding: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  quickActionText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: '#2d4d4d',
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.sm,
   },
   emptyState: {
     alignItems: 'center',
-    marginTop: 40,
+    marginTop: theme.spacing.xl,
   },
   emptyStateTitle: {
-    color: '#6bb3b6',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: theme.colors.brandPrimary,
+    fontSize: theme.typography.sizes.headline,
+    fontWeight: theme.typography.weights.bold,
   },
   emptyStateSubtitle: {
-    color: '#4d6d6d',
-    fontSize: 16,
-    marginTop: 8,
+    color: theme.colors.textSecondary,
+    fontSize: theme.typography.sizes.body,
+    marginTop: theme.spacing.xs,
   },
 });
