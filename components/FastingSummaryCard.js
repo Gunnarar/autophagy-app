@@ -38,6 +38,16 @@ export default function FastingSummaryCard({
     () => [styles.feedback, { color: goalReached ? theme.colors.success : theme.colors.brandPrimary }],
     [goalReached],
   );
+  const hoursElapsed = fastingElapsedSeconds / 3600;
+  const autophagyProgress = Math.min(1, Math.max(0, (hoursElapsed - 16) / 12));
+  const autophagyPercent = Math.round(autophagyProgress * 100);
+  const metabolicState = (() => {
+    if (hoursElapsed < 4) return 'Fed state';
+    if (hoursElapsed < 8) return 'Early fasting';
+    if (hoursElapsed < 12) return 'Fat burning';
+    if (hoursElapsed < 24) return 'Autophagy active';
+    return 'Deep autophagy';
+  })();
 
   return (
     <Card style={styles.card}>
@@ -54,6 +64,22 @@ export default function FastingSummaryCard({
         <Text style={feedbackStyle}>
           {goalReached ? 'You did it!' : 'Keep going!'}
         </Text>
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{metabolicState}</Text>
+        </View>
+        <View style={styles.autophagyBlock}>
+          <Text style={styles.autophagyLabel}>Autophagy activation</Text>
+          <View style={styles.autophagyTrack}>
+            <View style={[styles.autophagyFill, { width: `${autophagyPercent}%` }]} />
+          </View>
+          <Text style={styles.autophagyMeta}>
+            {autophagyPercent >= 100
+              ? 'Deep autophagy engaged'
+              : autophagyPercent > 0
+              ? `${Math.max(0, 28 - hoursElapsed).toFixed(1)}h to full activation`
+              : 'Starts around the 16h mark'}
+          </Text>
+        </View>
       </View>
       <View style={styles.centerBlock}>
         <Text style={styles.challengeText}>Next Challenge: <Text style={styles.challengeHighlight}>{durationLabel}</Text></Text>
@@ -125,6 +151,46 @@ const styles = StyleSheet.create({
   feedback: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  badge: {
+    marginTop: theme.spacing.sm,
+    backgroundColor: theme.colors.surfacePrimary,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.tiny,
+    borderRadius: theme.radius.pill,
+  },
+  badgeText: {
+    fontSize: theme.typography.sizes.caption,
+    fontWeight: theme.typography.weights.semibold,
+    color: theme.colors.brandSecondary,
+  },
+  autophagyBlock: {
+    marginTop: theme.spacing.md,
+    width: '100%',
+    alignItems: 'flex-start',
+    gap: theme.spacing.tiny,
+  },
+  autophagyLabel: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  autophagyTrack: {
+    width: '100%',
+    height: 10,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: theme.radius.pill,
+    overflow: 'hidden',
+  },
+  autophagyFill: {
+    height: '100%',
+    backgroundColor: theme.colors.brandPrimary,
+    borderRadius: theme.radius.pill,
+  },
+  autophagyMeta: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
   },
   challengeText: {
     fontSize: 16,

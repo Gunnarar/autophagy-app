@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Animated } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SEVERITIES } from '../utils/constants';
 import { useLogs } from '../contexts/LogsContext';
 import { useModalAction } from '../contexts/ModalActionContext';
@@ -10,7 +11,6 @@ import FastingSummaryCard from '../components/FastingSummaryCard';
 import AutophagyKetoneCard from '../components/AutophagyKetoneCard';
 import KetoneLogModal from '../components/KetoneLogModal';
 import SymptomLogModal from '../components/SymptomLogModal';
-import QuickActionFAB from '../components/QuickActionFAB';
 import InsightChart from '../components/InsightChart';
 import { useUser } from '../contexts/UserContext';
 import { Card } from '../components/ui/Card';
@@ -30,9 +30,6 @@ export default function HomeScreen() {
   const today = new Date().toISOString().slice(0, 10);
   const unifiedRec = useUnifiedFastRecommendation();
   const fastingGoalHours = unifiedRec?.recommendedProgram?.duration || 16;
-  const [fabOpen, setFabOpen] = useState(false);
-  const mealAnim = useRef(new Animated.Value(0)).current;
-  const symptomAnim = useRef(new Animated.Value(0)).current;
   const [logModal, setLogModal] = useState(null);
 
 
@@ -82,7 +79,66 @@ export default function HomeScreen() {
   const todaysMeals = foodLog.filter(e => mealTypes.includes(e.type) && e.time && e.time.slice(0, 10) === today);
   const todaysSymptoms = symptomLog.filter(e => e.time && e.time.slice(0, 10) === today);
 
-  // Legacy status pills removed; keep supporting calculations inline.
+  const fastingHours = fastingElapsed / 3600;
+  const metabolicState = (() => {
+    if (fastingHours < 4) {
+      return { label: 'Fed state', icon: 'restaurant-outline', color: theme.colors.textSecondary };
+    }
+    if (fastingHours < 8) {
+      return { label: 'Early fasting', icon: 'time-outline', color: theme.colors.info };
+    }
+    if (fastingHours < 12) {
+      return { label: 'Fat burning', icon: 'flame-outline', color: theme.colors.brandHighlight };
+    }
+    if (fastingHours < 24) {
+      return { label: 'Autophagy active', icon: 'shield-checkmark-outline', color: theme.colors.success };
+    }
+    return { label: 'Deep autophagy', icon: 'sparkles-outline', color: theme.colors.brandPrimary };
+  })();
+
+  const todaysMeat = todaysMeals
+    .filter(entry => entry.type === 'animalMeat' && entry.pounds)
+    .reduce((sum, entry) => sum + parseFloat(entry.pounds), 0);
+
+  const statCards = [
+    {
+      key: 'meals',
+      title: 'Meals today',
+      value: todaysMeals.length.toString(),
+      meta: `${todaysMeals.length === 1 ? 'entry' : 'entries'} logged`,
+      footer: `${todaysMeat.toFixed(1)} lbs animal meat`,
+      icon: <MaterialCommunityIcons name="silverware-fork-knife" size={22} color={theme.colors.brandSecondary} />,
+      colors: ['#fef2f2', '#fde68a'],
+    },
+    {
+      key: 'symptoms',
+      title: 'Symptoms logged',
+      value: todaysSymptoms.length.toString(),
+      meta: todaysSymptoms.length === 0 ? 'All clear today' : `${todaysSymptoms.length} noted`,
+      footer: unifiedRec?.challengeMsg ? unifiedRec.challengeMsg : 'Keep tracking changes',
+      icon: <MaterialCommunityIcons name="stethoscope" size={22} color={theme.colors.error} />,
+      colors: ['#fff7ed', '#fed7aa'],
+    },
+    {
+      key: 'ketone',
+      title: 'Latest ketone',
+      value: latestKetoneValue,
+      meta: latestKetoneValue === '—' ? 'No data yet' : latestKetoneUnit,
+      footer: ketoneInKetosis ? 'Optimal ketosis' : 'Log a reading',
+      icon: <MaterialCommunityIcons name="water" size={22} color={theme.colors.info} />,
+      colors: ['#eff6ff', '#bfdbfe'],
+    },
+    {
+      key: 'streak',
+      title: 'Fasting streak',
+      value: fastingStreak.toString(),
+      meta: fastingStreak === 1 ? 'day completed' : 'days completed',
+      footer: unifiedRec?.planNextMsg || 'Consistency drives results',
+      icon: <MaterialCommunityIcons name="calendar-check" size={22} color={theme.colors.brandPrimary} />,
+      colors: ['#ecfdf5', '#a7f3d0'],
+    },
+  ];
+
 
   const handleSaveSymptomWithTime = () => {
     const entry = {
@@ -100,26 +156,10 @@ export default function HomeScreen() {
     setAddTime(new Date());
   };
 
-  useEffect(() => {
-    if (fabOpen) {
-      Animated.stagger(50, [
-        Animated.spring(mealAnim, { toValue: 1, useNativeDriver: true }),
-        Animated.spring(symptomAnim, { toValue: 1, useNativeDriver: true }),
-      ]).start();
-    } else {
-      Animated.stagger(50, [
-        Animated.spring(symptomAnim, { toValue: 0, useNativeDriver: true }),
-        Animated.spring(mealAnim, { toValue: 0, useNativeDriver: true }),
-      ]).start();
-    }
-  }, [fabOpen, mealAnim, symptomAnim]);
-
   function handleAddMeal() {
-    setFabOpen(false);
     setLogModal({ mode: 'meal', visible: true });
   }
   function handleAddSymptom() {
-    setFabOpen(false);
     setLogModal({ mode: 'symptom', visible: true });
   }
   function handleSaveLog(entry) {
@@ -149,11 +189,9 @@ export default function HomeScreen() {
       ]);
     }
     setLogModal(null);
-    setFabOpen(false);
   }
   function handleCancelLog() {
     setLogModal(null);
-    setFabOpen(false);
   }
 
   // Start/Stop Fast logic using fastLog
@@ -213,7 +251,6 @@ export default function HomeScreen() {
   const [ketoneNote, setKetoneNote] = useState('');
 
   const hasOngoingFast = Boolean(ongoingFast);
-  const fastingHours = fastingElapsed / 3600;
   const formattedFastingHours = fastingHours > 0 ? fastingHours.toFixed(1) : '0.0';
   const greetingName = user?.name?.split(' ')[0] || 'there';
   const nextProgram = unifiedRec?.recommendedProgram;
@@ -227,12 +264,6 @@ export default function HomeScreen() {
     || 'Track meals, symptoms, and ketones to understand your day.';
   const latestKetoneValue = latestKetone ? latestKetone.value.toFixed(1) : '—';
   const latestKetoneUnit = latestKetone?.unit || 'mmol/L';
-  const todaysMeat = todaysMeals
-    .filter(entry => entry.type === 'animalMeat' && entry.pounds)
-    .reduce((sum, entry) => sum + parseFloat(entry.pounds), 0);
-  const todaysMeatLabel = `${todaysMeat > 0 ? todaysMeat.toFixed(1) : '0'} lbs`;
-  const mealsLabel = `${todaysMeals.length} ${todaysMeals.length === 1 ? 'meal' : 'meals'}`;
-  const symptomsLabel = `${todaysSymptoms.length} ${todaysSymptoms.length === 1 ? 'log' : 'logs'}`;
   const heroPrimaryAction = hasOngoingFast ? handleStopFast : handleStartFast;
   const heroPrimaryLabel = hasOngoingFast ? 'Stop fast' : 'Start fast';
 
@@ -304,6 +335,12 @@ export default function HomeScreen() {
             <Text style={styles.heroTitle}>Welcome back, {greetingName}</Text>
             <Text style={styles.heroSubtitle}>{heroSubtitle}</Text>
             <Text style={styles.heroCaption}>{heroDetail}</Text>
+            <View style={styles.heroBadge}>
+              <Ionicons name={metabolicState.icon} size={18} color={metabolicState.color} />
+              <Text style={[styles.heroBadgeText, { color: metabolicState.color }]}>
+                {metabolicState.label}
+              </Text>
+            </View>
             <View style={styles.heroActions}>
               <Button
                 label={heroPrimaryLabel}
@@ -312,48 +349,64 @@ export default function HomeScreen() {
                 onPress={heroPrimaryAction}
                 style={styles.heroActionPrimary}
               />
-              <Button
-                label="Log meal"
-                variant="secondary"
-                size="md"
-                onPress={handleAddMeal}
-                style={styles.heroActionSecondary}
-              />
             </View>
           </LinearGradient>
         </View>
 
-        <View style={styles.statsGrid}>
-          <Card variant="outline" style={styles.statCard}>
-            <Text style={styles.statLabel}>Meals today</Text>
-            <Text style={styles.statValue}>{todaysMeals.length}</Text>
-            <Text style={styles.statMeta}>{mealsLabel}</Text>
-            <Text style={styles.statMetaAccent}>Animal meat · {todaysMeatLabel}</Text>
-          </Card>
-          <Card variant="outline" style={styles.statCard}>
-            <Text style={styles.statLabel}>Symptoms logged</Text>
-            <Text style={styles.statValue}>{todaysSymptoms.length}</Text>
-            <Text style={styles.statMeta}>{symptomsLabel}</Text>
-            <Text style={styles.statMetaMuted}>Keep tracking trends to spot improvements.</Text>
-          </Card>
-          <Card variant="outline" style={styles.statCard}>
-            <Text style={styles.statLabel}>Ketone level</Text>
-            <Text style={styles.statValue}>{latestKetoneValue}</Text>
-            <Text style={styles.statMeta}>{latestKetoneValue === '—' ? 'No data yet' : latestKetoneUnit}</Text>
+        <Card variant="outline" style={styles.quickActionsCard}>
+          <Text style={styles.quickActionsTitle}>Quick actions</Text>
+          <View style={styles.quickActionsRow}>
+            <Button
+              label="Log meal"
+              variant="secondary"
+              size="sm"
+              onPress={handleAddMeal}
+              style={styles.quickActionButton}
+            />
+            <Button
+              label="Log symptom"
+              variant="secondary"
+              size="sm"
+              onPress={handleAddSymptom}
+              style={styles.quickActionButton}
+            />
             <Button
               label="Log ketone"
-              variant="ghost"
+              variant="secondary"
               size="sm"
               onPress={() => setKetoneModalVisible(true)}
-              style={styles.statButton}
+              style={styles.quickActionButton}
             />
-          </Card>
-          <Card variant="outline" style={styles.statCard}>
-            <Text style={styles.statLabel}>Fasting streak</Text>
-            <Text style={styles.statValue}>{fastingStreak}</Text>
-            <Text style={styles.statMeta}>{fastingStreak === 1 ? 'day completed' : 'days completed'}</Text>
-            <Text style={styles.statMetaMuted}>Consistent streaks boost progress.</Text>
-          </Card>
+          </View>
+        </Card>
+
+        <View style={styles.statsGrid}>
+          {statCards.map(card => (
+            <LinearGradient
+              key={card.key}
+              colors={card.colors}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.statGradient}
+            >
+              <View style={styles.statHeader}>
+                {card.icon}
+                <Text style={styles.statLabel}>{card.title}</Text>
+              </View>
+              <Text style={styles.statValue}>{card.value}</Text>
+              <Text style={styles.statMeta}>{card.meta}</Text>
+              <Text style={styles.statMetaAccent}>{card.footer}</Text>
+              {card.key === 'ketone' && (
+                <Button
+                  label="Log ketone"
+                  variant="ghost"
+                  size="sm"
+                  onPress={() => setKetoneModalVisible(true)}
+                  style={styles.statButton}
+                />
+              )}
+            </LinearGradient>
+          ))}
         </View>
 
         <Card variant="outline" style={styles.insightCard}>
@@ -418,14 +471,6 @@ export default function HomeScreen() {
           onCancel={handleCancelLog}
         />
       </ScrollView>
-      <QuickActionFAB
-        open={fabOpen}
-        onToggle={() => setFabOpen(open => !open)}
-        onAddMeal={handleAddMeal}
-        onAddSymptom={handleAddSymptom}
-        mealAnim={mealAnim}
-        symptomAnim={symptomAnim}
-      />
     </View>
   );
 }
@@ -476,6 +521,21 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.caption,
     marginBottom: theme.spacing.sm,
   },
+  heroBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.tiny,
+    alignSelf: 'flex-start',
+    backgroundColor: theme.colors.surfacePrimary,
+    borderRadius: theme.radius.pill,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.tiny,
+    marginBottom: theme.spacing.md,
+  },
+  heroBadgeText: {
+    fontSize: theme.typography.sizes.caption,
+    fontWeight: theme.typography.weights.semibold,
+  },
   heroActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -485,17 +545,44 @@ const styles = StyleSheet.create({
     minWidth: 140,
   },
   heroActionSecondary: {},
+  quickActionsCard: {
+    marginBottom: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.md,
+  },
+  quickActionsTitle: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: theme.spacing.xs,
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: theme.spacing.xs,
+  },
+  quickActionButton: {
+    flex: 1,
+  },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: theme.spacing.lg,
   },
-  statCard: {
+  statGradient: {
     width: '48%',
     marginBottom: theme.spacing.sm,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.radius.lg,
+    padding: theme.spacing.md,
+  },
+  statHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.xs,
   },
   statLabel: {
     fontSize: theme.typography.sizes.caption,
@@ -505,7 +592,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   statValue: {
-    fontSize: theme.typography.sizes.title,
+    fontSize: theme.typography.sizes.headline,
     color: theme.colors.textPrimary,
     fontWeight: theme.typography.weights.bold,
   },
@@ -517,11 +604,6 @@ const styles = StyleSheet.create({
   statMetaAccent: {
     fontSize: theme.typography.sizes.caption,
     color: theme.colors.brandSecondary,
-    marginTop: theme.spacing.tiny,
-  },
-  statMetaMuted: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textMuted,
     marginTop: theme.spacing.tiny,
   },
   statButton: {

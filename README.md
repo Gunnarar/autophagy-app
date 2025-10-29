@@ -48,12 +48,14 @@
 - Prepare for deployment (Expo Go, EAS Build, TestFlight/Play Store)
 - Run an accessibility pass on the chip-driven entry modals (Home/Symptoms) to confirm VoiceOver/TalkBack announce emoji labels and selection state correctly.
 - Adopt the refreshed Figma design system: new tokens, shared UI primitives, and updated screen layouts
+- Validate the new bottom navigation + hero metrics flow against the Figma mock (remove the legacy FAB once quick actions move into the tabs)
 - Persist notification snoozes/dismissals and harden AsyncStorage fallback paths
 - Plan for reminders/notifications and advanced features
 
 ### 🎨 Visual Refresh (Figma Alignment)
 - Introduce the Figma-derived design tokens (carnivore red palette, deep navy neutrals) in `utils/theme.js`
 - Build shared React Native primitives (`components/ui`) for Card, Button, and Chip (logs filters and modals now rely on them); extend the library with checklist/toggle primitives for upcoming settings work.
+- Mirror the Figma autophagy ranking in-app (`AutophagyLevelCard`) so the Info screen shows current level, next challenge, and completed tiers.
 - Restructure Home, Logs, and Profile screens to mirror the new hero sections, stat grids, and insights cards
 - Add trend visualizations (ketone/symptom correlation, weekly summaries) using reusable chart wrappers
 - Modernize modals and forms with dialog-style layouts, icon-backed selectors, and consistent spacing
