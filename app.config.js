@@ -19,8 +19,10 @@ module.exports = {
     },
     ios: {
       supportsTablet: true,
+      icon: './assets/icon.png',
     },
     android: {
+      icon: './assets/icon.png',
       adaptiveIcon: {
         foregroundImage: './assets/adaptive-icon.png',
         backgroundColor: '#ffffff',

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card } from './ui/Card';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 
 function formatTimestamp(value) {
   try {
@@ -24,9 +24,12 @@ export default function AutophagyKetoneCard({
   fastingTimerLabel = null,
   latestKetone = null,
   ketoneInKetosis = false,
-  ketoneColor = theme.colors.textSecondary,
+  ketoneColor: ketoneColorProp,
   ketoneHistory = [],
 }) {
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const ketoneColor = ketoneColorProp ?? currentTheme.colors.textSecondary;
   const hasHistory = ketoneHistory.length > 1;
 
   return (
@@ -72,7 +75,7 @@ export default function AutophagyKetoneCard({
               <Text
                 style={[
                   styles.historyValue,
-                  { color: entry.value >= 0.5 ? theme.colors.brandPrimary : theme.colors.textSecondary },
+                  { color: entry.value >= 0.5 ? currentTheme.colors.brandPrimary : currentTheme.colors.textSecondary },
                 ]}
               >
                 {entry.value} {entry.unit}
@@ -87,129 +90,130 @@ export default function AutophagyKetoneCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginBottom: theme.spacing.lg,
-    gap: theme.spacing.md,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.tiny,
-  },
-  autophagyBadge: {
-    alignItems: 'flex-end',
-    backgroundColor: theme.colors.surfaceMuted,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.xs,
-  },
-  autophagyCount: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.brandPrimary,
-  },
-  autophagyMeta: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  fastRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surfaceMuted,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-  },
-  fastLabel: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  fastValue: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.brandSecondary,
-  },
-  ketoneCard: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.surfacePrimary,
-  },
-  ketoneHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  ketoneLabel: {
-    fontSize: theme.typography.sizes.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    color: theme.colors.textSecondary,
-  },
-  ketoneValue: {
-    fontSize: theme.typography.sizes.title,
-    fontWeight: theme.typography.weights.bold,
-  },
-  ketoneTimestamp: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.tiny,
-  },
-  ketoneEmpty: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.tiny,
-  },
-  ketoneState: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.success,
-    marginTop: theme.spacing.tiny,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  history: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.colors.border,
-    paddingTop: theme.spacing.sm,
-    gap: theme.spacing.sm,
-  },
-  historyTitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  historyRow: {
-    borderRadius: theme.radius.sm,
-    backgroundColor: theme.colors.surfaceMuted,
-    padding: theme.spacing.sm,
-  },
-  historyValue: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  historyMeta: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  historyNote: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.tiny,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    card: {
+      marginBottom: currentTheme.spacing.lg,
+      gap: currentTheme.spacing.md,
+    },
+    header: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginTop: currentTheme.spacing.tiny,
+    },
+    autophagyBadge: {
+      alignItems: 'flex-end',
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      borderRadius: currentTheme.radius.md,
+      paddingHorizontal: currentTheme.spacing.sm,
+      paddingVertical: currentTheme.spacing.xs,
+    },
+    autophagyCount: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.brandPrimary,
+    },
+    autophagyMeta: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    fastRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      borderRadius: currentTheme.radius.md,
+      paddingHorizontal: currentTheme.spacing.md,
+      paddingVertical: currentTheme.spacing.sm,
+    },
+    fastLabel: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    fastValue: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.brandSecondary,
+    },
+    ketoneCard: {
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+      borderRadius: currentTheme.radius.lg,
+      paddingHorizontal: currentTheme.spacing.md,
+      paddingVertical: currentTheme.spacing.sm,
+      backgroundColor: currentTheme.colors.surfacePrimary,
+    },
+    ketoneHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    ketoneLabel: {
+      fontSize: currentTheme.typography.sizes.caption,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+      color: currentTheme.colors.textSecondary,
+    },
+    ketoneValue: {
+      fontSize: currentTheme.typography.sizes.title,
+      fontWeight: currentTheme.typography.weights.bold,
+    },
+    ketoneTimestamp: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginTop: currentTheme.spacing.tiny,
+    },
+    ketoneEmpty: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginTop: currentTheme.spacing.tiny,
+    },
+    ketoneState: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.success,
+      marginTop: currentTheme.spacing.tiny,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    history: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: currentTheme.colors.border,
+      paddingTop: currentTheme.spacing.sm,
+      gap: currentTheme.spacing.sm,
+    },
+    historyTitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    historyRow: {
+      borderRadius: currentTheme.radius.sm,
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      padding: currentTheme.spacing.sm,
+    },
+    historyValue: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    historyMeta: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    historyNote: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginTop: currentTheme.spacing.tiny,
+    },
+  });

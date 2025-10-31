@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, useColorScheme } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -9,7 +9,8 @@ import { Home, NotebookPen, Sparkles, UserRound } from 'lucide-react-native';
 import { LogsProvider } from './contexts/LogsContext';
 import { ModalActionProvider } from './contexts/ModalActionContext';
 import { UserProvider, useUser } from './contexts/UserContext';
-import { theme } from './utils/theme';
+import { AVAILABLE_THEME_MODES, ThemeProvider, useTheme } from './utils/theme';
+import { loadString, saveString } from './utils/storage';
 
 import HomeScreen from './screens/HomeScreen';
 import LogsScreen from './screens/LogsScreen';
@@ -22,6 +23,56 @@ import DietLogScreen from './screens/DietLogScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const APPEARANCE_STORAGE_KEY = 'appearance.theme';
+
+function ThemePersistenceProvider({ children }) {
+  const systemMode = useColorScheme();
+  const defaultSystemMode = systemMode === 'dark' ? 'dark' : 'light';
+  const initialMode = AVAILABLE_THEME_MODES.includes(defaultSystemMode)
+    ? defaultSystemMode
+    : AVAILABLE_THEME_MODES[0];
+  const [mode, setModeState] = useState(initialMode);
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      const stored = await loadString(APPEARANCE_STORAGE_KEY);
+      if (!isMounted) {
+        return;
+      }
+      if (stored && AVAILABLE_THEME_MODES.includes(stored)) {
+        setModeState(stored);
+      } else if (systemMode && AVAILABLE_THEME_MODES.includes(systemMode)) {
+        setModeState(systemMode);
+      }
+    })();
+    return () => {
+      isMounted = false;
+    };
+  }, [systemMode]);
+
+  const setMode = useCallback(updater => {
+    setModeState(prev => {
+      const nextValue = typeof updater === 'function' ? updater(prev) : updater;
+      const normalized = AVAILABLE_THEME_MODES.includes(nextValue) ? nextValue : prev;
+      if (AVAILABLE_THEME_MODES.includes(normalized)) {
+        saveString(APPEARANCE_STORAGE_KEY, normalized);
+      }
+      return normalized;
+    });
+  }, []);
+
+  const value = useMemo(
+    () => ({ mode, setMode, availableModes: AVAILABLE_THEME_MODES }),
+    [mode, setMode],
+  );
+
+  return (
+    <ThemeProvider value={value} initialMode={mode}>
+      {children}
+    </ThemeProvider>
+  );
+}
 
 function renderTabIcon(routeName, focused, color, size) {
   const iconProps = {
@@ -45,22 +96,23 @@ function renderTabIcon(routeName, focused, color, size) {
 }
 
 function MainTabs() {
+  const { theme: currentTheme } = useTheme();
   return (
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={({ route }) => ({
-        tabBarActiveTintColor: theme.colors.brandPrimary,
-        tabBarInactiveTintColor: theme.colors.textMuted,
+        tabBarActiveTintColor: currentTheme.colors.brandPrimary,
+        tabBarInactiveTintColor: currentTheme.colors.textMuted,
         tabBarStyle: {
-          backgroundColor: theme.colors.surfacePrimary,
-          borderTopColor: theme.colors.border,
+          backgroundColor: currentTheme.colors.surfacePrimary,
+          borderTopColor: currentTheme.colors.border,
           borderTopWidth: StyleSheet.hairlineWidth * 2,
           height: 64,
-          paddingVertical: theme.spacing.tiny,
+          paddingVertical: currentTheme.spacing.tiny,
         },
         tabBarLabelStyle: {
           fontSize: 12,
-          fontWeight: theme.typography.weights.medium,
+          fontWeight: currentTheme.typography.weights.medium,
         },
         tabBarIcon: ({ focused, color, size }) => renderTabIcon(route.name, focused, color, size),
         headerShown: false,
@@ -75,11 +127,12 @@ function MainTabs() {
 }
 
 function Root() {
+  const { theme: currentTheme } = useTheme();
   const { user, loading } = useUser();
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text>Loading...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: currentTheme.colors.backgroundPrimary }]}>
+        <Text style={[styles.loadingText, { color: currentTheme.colors.textPrimary }]}>Loading...</Text>
       </View>
     );
   }
@@ -96,20 +149,63 @@ function Root() {
   );
 }
 
+function AppNavigation() {
+  const { theme: currentTheme } = useTheme();
+
+  const navigationTheme = useMemo(
+    () => ({
+      dark: currentTheme.isDark,
+      colors: {
+        primary: currentTheme.colors.brandPrimary,
+        background: currentTheme.colors.backgroundPrimary,
+        card: currentTheme.colors.surfacePrimary,
+        text: currentTheme.colors.textPrimary,
+        border: currentTheme.colors.border,
+        notification: currentTheme.colors.brandHighlight,
+      },
+      fonts: {
+        regular: {
+          fontFamily: currentTheme.typography.fontFamily.regular,
+          fontWeight: currentTheme.typography.weights.regular,
+        },
+        medium: {
+          fontFamily: currentTheme.typography.fontFamily.medium,
+          fontWeight: currentTheme.typography.weights.medium,
+        },
+        bold: {
+          fontFamily: currentTheme.typography.fontFamily.bold,
+          fontWeight: currentTheme.typography.weights.bold,
+        },
+        heavy: {
+          fontFamily: currentTheme.typography.fontFamily.bold,
+          fontWeight: currentTheme.typography.weights.bold,
+        },
+      },
+    }),
+    [currentTheme],
+  );
+
+  return (
+    <NavigationContainer theme={navigationTheme}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: currentTheme.colors.backgroundPrimary }]}>
+        <Root />
+      </SafeAreaView>
+    </NavigationContainer>
+  );
+}
+
 export default function App() {
   return (
     <SafeAreaProvider>
-      <UserProvider>
-        <ModalActionProvider>
-          <LogsProvider>
-            <NavigationContainer>
-              <SafeAreaView style={styles.safeArea}>
-                <Root />
-              </SafeAreaView>
-            </NavigationContainer>
-          </LogsProvider>
-        </ModalActionProvider>
-      </UserProvider>
+      <ThemePersistenceProvider>
+        <UserProvider>
+          <ModalActionProvider>
+            <LogsProvider>
+              <AppNavigation />
+            </LogsProvider>
+          </ModalActionProvider>
+        </UserProvider>
+      </ThemePersistenceProvider>
     </SafeAreaProvider>
   );
 }
@@ -119,6 +215,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
   },
   safeArea: {
     flex: 1,

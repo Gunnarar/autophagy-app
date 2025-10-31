@@ -15,7 +15,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 import { Chip } from '../components/ui/Chip';
 import { Card } from '../components/ui/Card';
 
@@ -28,6 +28,8 @@ export default function SymptomsScreen() {
   const [symptomTime, setSymptomTime] = useState(new Date());
   const [symptomNote, setSymptomNote] = useState('');
   const [pickerMode, setPickerMode] = useState(false); // for time picker
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   // Add or edit symptom entry
   const handleSave = () => {
@@ -79,7 +81,7 @@ export default function SymptomsScreen() {
   return (
     <View style={styles.screen}>
       <LinearGradient
-        colors={['#101c23', '#182c34']}
+        colors={currentTheme.gradients.hero}
         style={StyleSheet.absoluteFill}
       />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
@@ -213,171 +215,180 @@ export default function SymptomsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: theme.spacing.regular,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: theme.fontSizes.xlarge,
-    fontWeight: 'bold',
-    marginBottom: theme.spacing.medium,
-    color: theme.colors.text,
-  },
-  card: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.large,
-    padding: theme.spacing.regular,
-    marginBottom: theme.spacing.regular,
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardText: {
-    fontSize: theme.fontSizes.regular,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.tiny,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: theme.overlay.scrim,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  modalAvoider: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '100%',
-    maxHeight: '90%',
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  modalScrollContent: {
-    paddingBottom: theme.spacing.lg,
-    gap: theme.spacing.md,
-    alignItems: 'stretch',
-  },
-  modalTitle: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-  },
-  modalButton: {
-    backgroundColor: theme.colors.brandPrimary,
-    borderRadius: theme.radius.sm,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'stretch',
-  },
-  modalButtonSpacing: {
-    marginBottom: theme.spacing.md,
-  },
-  modalButtonPrimaryText: {
-    color: theme.colors.textOnPrimary,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  selectedLabel: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    marginBottom: theme.spacing.sm,
-    color: theme.colors.textPrimary,
-  },
-  sectionTitle: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    marginBottom: theme.spacing.xs,
-    color: theme.colors.textPrimary,
-  },
-  selectorRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.md,
-  },
-  selectorChip: {
-    flexBasis: 150,
-    flexGrow: 1,
-  },
-  selectorLabel: {
-    textAlign: 'center',
-  },
-  selectorEmoji: {
-    fontSize: 26,
-    lineHeight: 30,
-    textAlign: 'center',
-  },
-  selectorContentStacked: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: theme.spacing.tiny,
-  },
-  entryPressable: {
-    paddingVertical: 6,
-  },
-  entryContent: {
-    marginBottom: 2,
-    alignItems: 'center',
-  },
-  noteLabel: {
-    alignSelf: 'flex-start',
-    marginBottom: theme.spacing.xs,
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-  },
-  fullWidthSection: {
-    width: '100%',
-    marginBottom: theme.spacing.md,
-  },
-  noteInput: {
-    borderColor: theme.colors.border,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.sm,
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surfacePrimary,
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-  symptomLogEmoji: {
-    fontSize: 24,
-    marginBottom: 2,
-  },
-  symptomLogTime: {
-    fontSize: 13,
-    color: theme.colors.textSecondary,
-    marginBottom: 2,
-    maxWidth: 180,
-    textAlign: 'center',
-  },
-  symptomLogNote: {
-    fontSize: 13,
-    color: theme.colors.primary,
-    marginBottom: 2,
-    maxWidth: 180,
-    textAlign: 'center',
-  },
-  modalButtonDisabled: {
-    backgroundColor: theme.colors.surfaceMuted,
-    alignSelf: 'stretch',
-  },
-  modalButtonTopMargin: {
-    marginTop: theme.spacing.xs,
-  },
-  modalButtonDisabledText: {
-    color: theme.colors.textSecondary,
-    fontWeight: theme.typography.weights.semibold,
-  },
-});
+const createStyles = currentTheme => {
+  const isDark = currentTheme.isDark;
+  const mutedText = isDark ? currentTheme.colors.textOnSurfaceMuted : currentTheme.colors.textSecondary;
+  const surfaceElevated = isDark ? currentTheme.colors.surfaceElevated : currentTheme.colors.surfacePrimary;
+
+  return StyleSheet.create({
+    screen: {
+      flex: 1,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      padding: currentTheme.spacing.lg,
+      paddingBottom: currentTheme.spacing.xl,
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      marginBottom: currentTheme.spacing.lg,
+      color: currentTheme.colors.textPrimary,
+    },
+    card: {
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      borderRadius: currentTheme.radius.md,
+      padding: currentTheme.spacing.lg,
+      marginBottom: currentTheme.spacing.lg,
+      shadowColor: currentTheme.shadow.soft.color,
+      shadowOpacity: currentTheme.shadow.soft.opacity,
+      shadowRadius: currentTheme.shadow.soft.radius,
+      shadowOffset: currentTheme.shadow.soft.offset,
+      elevation: currentTheme.shadow.soft.elevation,
+    },
+    cardText: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: mutedText,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: currentTheme.overlay.scrim,
+      paddingHorizontal: currentTheme.spacing.lg,
+    },
+    modalAvoider: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      width: '100%',
+      maxHeight: '90%',
+      paddingVertical: currentTheme.spacing.lg,
+      paddingHorizontal: currentTheme.spacing.lg,
+      backgroundColor: surfaceElevated,
+    },
+    modalScrollContent: {
+      paddingBottom: currentTheme.spacing.lg,
+      gap: currentTheme.spacing.md,
+      alignItems: 'stretch',
+    },
+    modalTitle: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+    },
+    modalButton: {
+      backgroundColor: currentTheme.colors.brandPrimary,
+      borderRadius: currentTheme.radius.sm,
+      paddingVertical: currentTheme.spacing.sm,
+      paddingHorizontal: currentTheme.spacing.lg,
+      alignItems: 'center',
+      justifyContent: 'center',
+      alignSelf: 'stretch',
+    },
+    modalButtonSpacing: {
+      marginBottom: currentTheme.spacing.md,
+    },
+    modalButtonPrimaryText: {
+      color: currentTheme.colors.textOnPrimary,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    selectedLabel: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      marginBottom: currentTheme.spacing.sm,
+      color: currentTheme.colors.textPrimary,
+      textAlign: 'center',
+    },
+    sectionTitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      marginBottom: currentTheme.spacing.xs,
+      color: currentTheme.colors.textPrimary,
+    },
+    selectorRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: currentTheme.spacing.xs,
+      marginBottom: currentTheme.spacing.md,
+    },
+    selectorChip: {
+      flexBasis: 150,
+      flexGrow: 1,
+    },
+    selectorLabel: {
+      textAlign: 'center',
+    },
+    selectorEmoji: {
+      fontSize: 26,
+      lineHeight: 30,
+      textAlign: 'center',
+    },
+    selectorContentStacked: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: currentTheme.spacing.tiny,
+    },
+    entryPressable: {
+      paddingVertical: currentTheme.spacing.tiny,
+    },
+    entryContent: {
+      marginBottom: currentTheme.spacing.tiny,
+      alignItems: 'center',
+    },
+    noteLabel: {
+      alignSelf: 'flex-start',
+      marginBottom: currentTheme.spacing.xs,
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+    },
+    fullWidthSection: {
+      width: '100%',
+      marginBottom: currentTheme.spacing.md,
+    },
+    noteInput: {
+      borderColor: currentTheme.colors.border,
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderRadius: currentTheme.radius.sm,
+      padding: currentTheme.spacing.sm,
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      backgroundColor: currentTheme.isDark ? currentTheme.colors.surfaceMuted : currentTheme.colors.surfacePrimary,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    symptomLogEmoji: {
+      fontSize: 24,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    symptomLogTime: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.tiny,
+      maxWidth: 180,
+      textAlign: 'center',
+    },
+    symptomLogNote: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.brandPrimary,
+      marginBottom: currentTheme.spacing.tiny,
+      maxWidth: 180,
+      textAlign: 'center',
+    },
+    modalButtonDisabled: {
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      alignSelf: 'stretch',
+    },
+    modalButtonTopMargin: {
+      marginTop: currentTheme.spacing.xs,
+    },
+    modalButtonDisabledText: {
+      color: currentTheme.colors.textSecondary,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+  });
+};

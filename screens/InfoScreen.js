@@ -7,7 +7,7 @@ import NotificationList from '../components/NotificationList';
 import AutophagyLevelCard from '../components/AutophagyLevelCard';
 import { createInfoNotifications } from '../utils/notifications';
 import { Card } from '../components/ui/Card';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 
 function resolvePrimaryLabel(action) {
   if (!action) return undefined;
@@ -48,6 +48,8 @@ export default function InfoScreen() {
   const [notificationPrefsHydrated, setNotificationPrefsHydrated] = useState(false);
   const unifiedRec = useUnifiedFastRecommendation();
   const [fastRecDismissed, setFastRecDismissed] = useState(false);
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   useEffect(() => {
     (async () => {
@@ -97,6 +99,7 @@ export default function InfoScreen() {
     fastingDismissedUntil,
     done,
     fastRecDismissed,
+    theme: currentTheme,
   });
 
   const notifications = baseNotifications.map(item => {
@@ -164,63 +167,65 @@ export default function InfoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundPrimary,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-    paddingTop: theme.spacing.lg,
-  },
-  heroCard: {
-    marginBottom: theme.spacing.lg,
-  },
-  overline: {
-    fontSize: theme.typography.sizes.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.tiny,
-  },
-  title: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.xs,
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.md,
-  },
-  heroMeta: {
-    backgroundColor: theme.colors.surfacePrimary,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.md,
-    gap: theme.spacing.tiny,
-  },
-  metaItem: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  metaLabel: {
-    color: theme.colors.textPrimary,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  notificationsCard: {
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.md,
-  },
-  sectionTitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: theme.spacing.xs,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: currentTheme.colors.backgroundPrimary,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: currentTheme.spacing.lg,
+      paddingBottom: currentTheme.spacing.xl,
+      paddingTop: currentTheme.spacing.lg,
+    },
+    heroCard: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    overline: {
+      fontSize: currentTheme.typography.sizes.caption,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+      marginBottom: currentTheme.spacing.xs,
+    },
+    subtitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.md,
+    },
+    heroMeta: {
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      borderRadius: currentTheme.radius.md,
+      padding: currentTheme.spacing.md,
+      gap: currentTheme.spacing.tiny,
+    },
+    metaItem: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    metaLabel: {
+      color: currentTheme.colors.textPrimary,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    notificationsCard: {
+      paddingVertical: currentTheme.spacing.md,
+      paddingHorizontal: currentTheme.spacing.md,
+      marginBottom: currentTheme.spacing.xl,
+    },
+    sectionTitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+      marginBottom: currentTheme.spacing.xs,
+    },
+  });

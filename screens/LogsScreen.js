@@ -21,7 +21,7 @@ import * as Sharing from 'expo-sharing';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Chip } from '../components/ui/Chip';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 
 export default function LogsScreen() {
   const [filterType, setFilterType] = useState('all');
@@ -42,6 +42,8 @@ export default function LogsScreen() {
   const [showFastEndPicker, setShowFastEndPicker] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [exportTimeRange, setExportTimeRange] = useState('week');
+  const { theme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   useEffect(() => {
     if (foodLog.length > 0 && foodLog.some(e => !e.time)) {
@@ -601,6 +603,7 @@ export default function LogsScreen() {
                         multiline
                         onChangeText={setEditNote}
                         value={editNote}
+                        placeholderTextColor={theme.colors.textMuted}
                         placeholder={editLogType === 'fast' ? 'e.g. manual entry, planned extended fast' : 'e.g. high carb, before meds, etc.'}
                         accessibilityLabel="Log note input"
                       />
@@ -667,7 +670,7 @@ export default function LogsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = theme => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: theme.colors.backgroundPrimary,

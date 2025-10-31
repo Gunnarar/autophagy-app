@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Chip } from './ui/Chip';
@@ -32,6 +32,8 @@ export default function LogEntryModal({
   onCancel,
 }) {
   const safeInitialValues = initialValues ?? EMPTY_INITIAL_VALUES;
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   // Shared fields
   const [time, setTime] = useState(safeInitialValues.time || new Date());
   const [note, setNote] = useState(safeInitialValues.note || '');
@@ -236,105 +238,122 @@ export default function LogEntryModal({
   );
 }
 
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: theme.overlay.scrim,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  keyboardAvoider: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    width: '100%',
-    maxHeight: '90%',
-    borderRadius: theme.radius.lg,
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  scrollContent: {
-    paddingBottom: theme.spacing.lg,
-    alignItems: 'stretch',
-  },
-  modalTitle: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.xs,
-  },
-  modalSubtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
-  },
-  section: {
-    marginBottom: theme.spacing.md,
-  },
-  sectionLabel: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  selectorRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.sm,
-  },
-  selectorChip: {
-    flexBasis: 130,
-    flexGrow: 1,
-  },
-  selectorChipLabel: {
-    textAlign: 'center',
-  },
-  selectorContentStacked: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: theme.spacing.tiny,
-  },
-  selectorEmoji: {
-    fontSize: 24,
-    lineHeight: 28,
-    textAlign: 'center',
-  },
-  input: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surfacePrimary,
-  },
-  sectionButton: {
-    alignSelf: 'flex-start',
-  },
-  noteInput: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.sm,
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surfacePrimary,
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: theme.spacing.md,
-    alignSelf: 'stretch',
-    gap: theme.spacing.xs,
-  },
-  modalAction: {
-    marginLeft: theme.spacing.xs,
-  },
-});
+const createStyles = currentTheme => {
+  const isDark = currentTheme.isDark;
+  const mutedText = isDark ? currentTheme.colors.textOnSurfaceMuted : currentTheme.colors.textSecondary;
+  const surfaceColor = isDark ? currentTheme.colors.surfaceElevated : currentTheme.colors.surfacePrimary;
+  const inputBackground = isDark ? currentTheme.colors.surfaceMuted : currentTheme.colors.surfacePrimary;
+
+  return StyleSheet.create({
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: currentTheme.overlay.scrim,
+      paddingHorizontal: currentTheme.spacing.lg,
+    },
+    keyboardAvoider: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    modalContent: {
+      width: '100%',
+      maxHeight: '90%',
+      borderRadius: currentTheme.radius.lg,
+      paddingVertical: currentTheme.spacing.lg,
+      paddingHorizontal: currentTheme.spacing.lg,
+      backgroundColor: surfaceColor,
+    },
+    scrollContent: {
+      paddingBottom: currentTheme.spacing.lg,
+      alignItems: 'stretch',
+      gap: currentTheme.spacing.md,
+    },
+    modalTitle: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+      marginBottom: currentTheme.spacing.xs,
+    },
+    modalSubtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: mutedText,
+      marginBottom: currentTheme.spacing.sm,
+    },
+    section: {
+      marginBottom: currentTheme.spacing.md,
+    },
+    sectionLabel: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: mutedText,
+      marginBottom: currentTheme.spacing.xs,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    selectorRow: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'center',
+      gap: currentTheme.spacing.xs,
+      marginBottom: currentTheme.spacing.sm,
+    },
+    selectorChip: {
+      flexBasis: 130,
+      flexGrow: 1,
+    },
+    selectorChipLabel: {
+      textAlign: 'center',
+    },
+    selectorContentStacked: {
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: currentTheme.spacing.tiny,
+    },
+    selectorEmoji: {
+      fontSize: 24,
+      lineHeight: 28,
+      textAlign: 'center',
+    },
+    input: {
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+      borderRadius: currentTheme.radius.sm,
+      paddingVertical: currentTheme.spacing.xs,
+      paddingHorizontal: currentTheme.spacing.sm,
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      backgroundColor: inputBackground,
+    },
+    sectionButton: {
+      alignSelf: 'flex-start',
+    },
+    noteInput: {
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+      borderRadius: currentTheme.radius.sm,
+      padding: currentTheme.spacing.sm,
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      backgroundColor: inputBackground,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    label: {
+      alignSelf: 'flex-start',
+      marginBottom: currentTheme.spacing.xs,
+      color: mutedText,
+      fontSize: currentTheme.typography.sizes.caption,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    modalActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: currentTheme.spacing.md,
+      alignSelf: 'stretch',
+      gap: currentTheme.spacing.xs,
+    },
+    modalAction: {
+      marginLeft: currentTheme.spacing.xs,
+    },
+  });
+};

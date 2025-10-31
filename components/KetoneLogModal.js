@@ -10,7 +10,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Chip } from './ui/Chip';
@@ -28,6 +28,9 @@ export default function KetoneLogModal({
   onSave,
   onCancel,
 }) {
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>
@@ -111,95 +114,103 @@ export default function KetoneLogModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: theme.overlay.scrim,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  avoider: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  content: {
-    width: '100%',
-    maxHeight: '90%',
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  scrollContent: {
-    paddingBottom: theme.spacing.lg,
-    gap: theme.spacing.md,
-    alignItems: 'stretch',
-  },
-  title: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.xs,
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
-  },
-  section: {
-    marginBottom: theme.spacing.md,
-  },
-  sectionLabel: {
-    alignSelf: 'flex-start',
-    marginBottom: theme.spacing.xs,
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.sizes.caption,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  valueRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  input: {
-    borderColor: theme.colors.border,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderRadius: theme.radius.sm,
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surfacePrimary,
-    width: '100%',
-  },
-  inputFlexible: {
-    flex: 1,
-    marginRight: theme.spacing.xs,
-  },
-  unitChips: {
-    flexDirection: 'row',
-  },
-  noteInput: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.sm,
-    padding: theme.spacing.sm,
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surfacePrimary,
-    minHeight: 72,
-    textAlignVertical: 'top',
-  },
-  fullWidthButton: {
-    alignSelf: 'flex-start',
-  },
-  actions: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: theme.spacing.md,
-    alignSelf: 'stretch',
-    gap: theme.spacing.xs,
-  },
-  actionButton: {
-    marginLeft: theme.spacing.xs,
-  },
-});
+const createStyles = currentTheme => {
+  const isDark = currentTheme.isDark;
+  const mutedText = isDark ? currentTheme.colors.textOnSurfaceMuted : currentTheme.colors.textSecondary;
+  const surfaceColor = isDark ? currentTheme.colors.surfaceElevated : currentTheme.colors.surfacePrimary;
+  const inputBackground = isDark ? currentTheme.colors.surfaceMuted : currentTheme.colors.surfacePrimary;
+
+  return StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: currentTheme.overlay.scrim,
+      paddingHorizontal: currentTheme.spacing.lg,
+    },
+    avoider: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    content: {
+      width: '100%',
+      maxHeight: '90%',
+      paddingVertical: currentTheme.spacing.lg,
+      paddingHorizontal: currentTheme.spacing.lg,
+      backgroundColor: surfaceColor,
+    },
+    scrollContent: {
+      paddingBottom: currentTheme.spacing.lg,
+      gap: currentTheme.spacing.md,
+      alignItems: 'stretch',
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+      marginBottom: currentTheme.spacing.xs,
+    },
+    subtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: mutedText,
+      marginBottom: currentTheme.spacing.sm,
+    },
+    section: {
+      marginBottom: currentTheme.spacing.md,
+    },
+    sectionLabel: {
+      alignSelf: 'flex-start',
+      marginBottom: currentTheme.spacing.xs,
+      color: mutedText,
+      fontSize: currentTheme.typography.sizes.caption,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+    },
+    valueRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      width: '100%',
+    },
+    input: {
+      borderColor: currentTheme.colors.border,
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderRadius: currentTheme.radius.sm,
+      paddingVertical: currentTheme.spacing.xs,
+      paddingHorizontal: currentTheme.spacing.sm,
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      backgroundColor: inputBackground,
+      width: '100%',
+    },
+    inputFlexible: {
+      flex: 1,
+      marginRight: currentTheme.spacing.xs,
+    },
+    unitChips: {
+      flexDirection: 'row',
+    },
+    noteInput: {
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+      borderRadius: currentTheme.radius.sm,
+      padding: currentTheme.spacing.sm,
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      backgroundColor: inputBackground,
+      minHeight: 72,
+      textAlignVertical: 'top',
+    },
+    fullWidthButton: {
+      alignSelf: 'flex-start',
+    },
+    actions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      marginTop: currentTheme.spacing.md,
+      alignSelf: 'stretch',
+      gap: currentTheme.spacing.xs,
+    },
+    actionButton: {
+      marginLeft: currentTheme.spacing.xs,
+    },
+  });
+};

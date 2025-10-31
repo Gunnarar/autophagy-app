@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 import { formatTimeHM } from '../utils/constants';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
@@ -18,6 +18,8 @@ export default function FastingSummaryCard({
   onEditStart,
 }) {
   const [showDetails, setShowDetails] = useState(false);
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const { progressPercent, remainingLabel, goalReached, durationLabel } = useMemo(() => {
     const durationHours = recommendedProgram?.duration ?? 0;
@@ -38,8 +40,8 @@ export default function FastingSummaryCard({
     [progressPercent],
   );
   const feedbackStyle = useMemo(
-    () => [styles.feedback, { color: goalReached ? theme.colors.success : theme.colors.brandPrimary }],
-    [goalReached],
+    () => [styles.feedback, { color: goalReached ? currentTheme.colors.success : currentTheme.colors.brandPrimary }],
+    [goalReached, currentTheme],
   );
   const hoursElapsed = fastingElapsedSeconds / 3600;
   const autophagyProgress = Math.min(1, Math.max(0, (hoursElapsed - 16) / 12));
@@ -117,140 +119,141 @@ export default function FastingSummaryCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginBottom: theme.spacing.lg,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
-  },
-  centerBlock: {
-    alignItems: 'center',
-    marginBottom: theme.spacing.sm,
-  },
-  elapsedText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: theme.colors.brandPrimary,
-  },
-  caption: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.tiny,
-  },
-  progressTrack: {
-    width: '100%',
-    height: 18,
-    backgroundColor: theme.colors.border,
-    borderRadius: 9,
-    marginVertical: theme.spacing.sm,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: theme.colors.brandPrimary,
-  },
-  goalReached: {
-    color: theme.colors.success,
-    fontWeight: 'bold',
-  },
-  goalIcon: {
-    fontSize: 18,
-  },
-  feedback: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  badge: {
-    marginTop: theme.spacing.sm,
-    backgroundColor: theme.colors.surfacePrimary,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.tiny,
-    borderRadius: theme.radius.pill,
-  },
-  badgeText: {
-    fontSize: theme.typography.sizes.caption,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.brandSecondary,
-  },
-  autophagyBlock: {
-    marginTop: theme.spacing.md,
-    width: '100%',
-    alignItems: 'flex-start',
-    gap: theme.spacing.tiny,
-  },
-  autophagyLabel: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  autophagyTrack: {
-    width: '100%',
-    height: 10,
-    backgroundColor: theme.colors.surfaceMuted,
-    borderRadius: theme.radius.pill,
-    overflow: 'hidden',
-  },
-  autophagyFill: {
-    height: '100%',
-    backgroundColor: theme.colors.brandPrimary,
-    borderRadius: theme.radius.pill,
-  },
-  autophagyMeta: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  editStartButton: {
-    alignSelf: 'stretch',
-    marginTop: theme.spacing.sm,
-  },
-  challengeText: {
-    fontSize: 16,
-    color: theme.colors.textPrimary,
-    textAlign: 'center',
-  },
-  challengeHighlight: {
-    fontWeight: 'bold',
-    color: theme.colors.brandPrimary,
-  },
-  reason: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.tiny,
-    textAlign: 'center',
-  },
-  learnMore: {
-    backgroundColor: theme.colors.surfaceMuted,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: theme.radius.sm,
-    alignSelf: 'center',
-  },
-  learnMoreText: {
-    color: theme.colors.brandSecondary,
-    fontWeight: '600',
-  },
-  details: {
-    marginTop: theme.spacing.sm,
-  },
-  detailLine: {
-    fontSize: 14,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.tiny,
-  },
-  detailLabel: {
-    fontWeight: 'bold',
-    color: theme.colors.textPrimary,
-  },
-  challengeNote: {
-    color: theme.colors.brandHighlight,
-  },
-  caution: {
-    color: theme.colors.error,
-    fontWeight: 'bold',
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    card: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    title: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      color: currentTheme.colors.textPrimary,
+      marginBottom: currentTheme.spacing.sm,
+    },
+    centerBlock: {
+      alignItems: 'center',
+      marginBottom: currentTheme.spacing.sm,
+    },
+    elapsedText: {
+      fontSize: 28,
+      fontWeight: 'bold',
+      color: currentTheme.colors.brandPrimary,
+    },
+    caption: {
+      fontSize: 14,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    progressTrack: {
+      width: '100%',
+      height: 18,
+      backgroundColor: currentTheme.colors.border,
+      borderRadius: 9,
+      marginVertical: currentTheme.spacing.sm,
+      overflow: 'hidden',
+    },
+    progressFill: {
+      height: '100%',
+      backgroundColor: currentTheme.colors.brandPrimary,
+    },
+    goalReached: {
+      color: currentTheme.colors.success,
+      fontWeight: 'bold',
+    },
+    goalIcon: {
+      fontSize: 18,
+    },
+    feedback: {
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    badge: {
+      marginTop: currentTheme.spacing.sm,
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      paddingHorizontal: currentTheme.spacing.sm,
+      paddingVertical: currentTheme.spacing.tiny,
+      borderRadius: currentTheme.radius.pill,
+    },
+    badgeText: {
+      fontSize: currentTheme.typography.sizes.caption,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.brandSecondary,
+    },
+    autophagyBlock: {
+      marginTop: currentTheme.spacing.md,
+      width: '100%',
+      alignItems: 'flex-start',
+      gap: currentTheme.spacing.tiny,
+    },
+    autophagyLabel: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    autophagyTrack: {
+      width: '100%',
+      height: 10,
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      borderRadius: currentTheme.radius.pill,
+      overflow: 'hidden',
+    },
+    autophagyFill: {
+      height: '100%',
+      backgroundColor: currentTheme.colors.brandPrimary,
+      borderRadius: currentTheme.radius.pill,
+    },
+    autophagyMeta: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    editStartButton: {
+      alignSelf: 'stretch',
+      marginTop: currentTheme.spacing.sm,
+    },
+    challengeText: {
+      fontSize: 16,
+      color: currentTheme.colors.textPrimary,
+      textAlign: 'center',
+    },
+    challengeHighlight: {
+      fontWeight: 'bold',
+      color: currentTheme.colors.brandPrimary,
+    },
+    reason: {
+      fontSize: 14,
+      color: currentTheme.colors.textSecondary,
+      marginTop: currentTheme.spacing.tiny,
+      textAlign: 'center',
+    },
+    learnMore: {
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: currentTheme.radius.sm,
+      alignSelf: 'center',
+    },
+    learnMoreText: {
+      color: currentTheme.colors.brandSecondary,
+      fontWeight: '600',
+    },
+    details: {
+      marginTop: currentTheme.spacing.sm,
+    },
+    detailLine: {
+      fontSize: 14,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    detailLabel: {
+      fontWeight: 'bold',
+      color: currentTheme.colors.textPrimary,
+    },
+    challengeNote: {
+      color: currentTheme.colors.brandHighlight,
+    },
+    caution: {
+      color: currentTheme.colors.error,
+      fontWeight: 'bold',
+    },
+  });

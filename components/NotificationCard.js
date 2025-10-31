@@ -2,14 +2,17 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card } from './ui/Card';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 
 export default function NotificationCard({ notification, onDismiss }) {
   if (!notification) {return null;}
 
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+
   const {
     icon,
-    color = theme.colors.brandPrimary,
+    color = currentTheme.colors.brandPrimary,
     title,
     desc,
     action,
@@ -74,77 +77,78 @@ export default function NotificationCard({ notification, onDismiss }) {
           style={styles.dismiss}
           accessibilityLabel="Dismiss notification"
         >
-          <MaterialCommunityIcons name="close" size={20} color={theme.colors.textMuted} />
+          <MaterialCommunityIcons name="close" size={20} color={currentTheme.colors.textMuted} />
         </Pressable>
       ) : null}
     </Card>
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderLeftWidth: 6,
-    paddingRight: theme.spacing.md,
-    position: 'relative',
-    gap: theme.spacing.sm,
-  },
-  icon: {
-    marginTop: 2,
-  },
-  content: {
-    flex: 1,
-    gap: theme.spacing.xs,
-  },
-  title: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  desc: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  extraLine: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  extraLabel: {
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.textPrimary,
-  },
-  challenge: {
-    color: theme.colors.success,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  caution: {
-    color: theme.colors.error,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  actions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: theme.spacing.xs,
-    marginTop: theme.spacing.tiny,
-  },
-  actionButton: {
-    borderRadius: theme.radius.sm,
-    paddingVertical: theme.spacing.tiny + 1,
-    paddingHorizontal: theme.spacing.sm,
-  },
-  actionLabel: {
-    color: theme.colors.textOnPrimary,
-    fontWeight: theme.typography.weights.semibold,
-    fontSize: theme.typography.sizes.caption,
-  },
-  secondaryButton: {
-    backgroundColor: theme.colors.surfaceMuted,
-  },
-  secondaryLabel: {
-    color: theme.colors.brandSecondary,
-  },
-  dismiss: {
-    padding: theme.spacing.tiny,
-    marginLeft: theme.spacing.xs,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    card: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      borderLeftWidth: 6,
+      paddingRight: currentTheme.spacing.md,
+      position: 'relative',
+      gap: currentTheme.spacing.sm,
+    },
+    icon: {
+      marginTop: 2,
+    },
+    content: {
+      flex: 1,
+      gap: currentTheme.spacing.xs,
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    desc: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    extraLine: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    extraLabel: {
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.textPrimary,
+    },
+    challenge: {
+      color: currentTheme.colors.success,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    caution: {
+      color: currentTheme.colors.error,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    actions: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: currentTheme.spacing.xs,
+      marginTop: currentTheme.spacing.tiny,
+    },
+    actionButton: {
+      borderRadius: currentTheme.radius.sm,
+      paddingVertical: currentTheme.spacing.tiny + 1,
+      paddingHorizontal: currentTheme.spacing.sm,
+    },
+    actionLabel: {
+      color: currentTheme.colors.textOnPrimary,
+      fontWeight: currentTheme.typography.weights.semibold,
+      fontSize: currentTheme.typography.sizes.caption,
+    },
+    secondaryButton: {
+      backgroundColor: currentTheme.colors.surfaceMuted,
+    },
+    secondaryLabel: {
+      color: currentTheme.colors.brandSecondary,
+    },
+    dismiss: {
+      padding: currentTheme.spacing.tiny,
+      marginLeft: currentTheme.spacing.xs,
+    },
+  });

@@ -1,35 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import { theme } from '../../utils/theme';
+import { useTheme, useThemedStyles } from '../../utils/theme';
 
-const variants = {
-  elevated: createVariant({
-    backgroundColor: theme.colors.surfacePrimary,
-    shadow: theme.shadow.medium,
-  }),
-  outline: createVariant({
-    backgroundColor: theme.colors.surfacePrimary,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    shadow: null,
-  }),
-  tinted: createVariant({
-    backgroundColor: theme.colors.surfaceMuted,
-    shadow: theme.shadow.soft,
-  }),
-  flat: createVariant({
-    backgroundColor: 'transparent',
-    shadow: null,
-  }),
-};
-
-function createVariant({ backgroundColor, borderWidth = 0, borderColor = 'transparent', shadow }) {
+function createVariant(currentTheme, { backgroundColor, borderWidth = 0, borderColor = 'transparent', shadow }) {
   const base = {
     backgroundColor,
-    borderRadius: theme.radius.lg,
+    borderRadius: currentTheme.radius.lg,
     borderWidth,
     borderColor,
-    padding: theme.spacing.md,
+    padding: currentTheme.spacing.md,
   };
 
   if (!shadow) {
@@ -47,6 +26,32 @@ function createVariant({ backgroundColor, borderWidth = 0, borderColor = 'transp
 }
 
 export function Card({ children, variant = 'elevated', style, ...props }) {
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const variants = useMemo(
+    () => ({
+      elevated: createVariant(currentTheme, {
+        backgroundColor: currentTheme.colors.surfacePrimary,
+        shadow: currentTheme.shadow.medium,
+      }),
+      outline: createVariant(currentTheme, {
+        backgroundColor: currentTheme.colors.surfacePrimary,
+        borderWidth: StyleSheet.hairlineWidth * 2,
+        borderColor: currentTheme.colors.border,
+        shadow: null,
+      }),
+      tinted: createVariant(currentTheme, {
+        backgroundColor: currentTheme.colors.surfaceMuted,
+        shadow: currentTheme.shadow.soft,
+      }),
+      flat: createVariant(currentTheme, {
+        backgroundColor: 'transparent',
+        shadow: null,
+      }),
+    }),
+    [currentTheme],
+  );
+
   const variantStyle = variants[variant] ?? variants.elevated;
 
   return (
@@ -56,9 +61,9 @@ export function Card({ children, variant = 'elevated', style, ...props }) {
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: theme.radius.lg,
-  },
-});
-
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    base: {
+      borderRadius: currentTheme.radius.lg,
+    },
+  });

@@ -1,24 +1,24 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Pressable, Text, View, StyleSheet } from 'react-native';
-import { theme } from '../../utils/theme';
+import { useTheme, useThemedStyles } from '../../utils/theme';
 
-const SIZE_PRESETS = {
+const createSizePresets = currentTheme => ({
   sm: {
-    paddingVertical: theme.spacing.tiny,
-    paddingHorizontal: theme.spacing.sm,
-    textSize: theme.typography.sizes.caption,
+    paddingVertical: currentTheme.spacing.tiny,
+    paddingHorizontal: currentTheme.spacing.sm,
+    textSize: currentTheme.typography.sizes.caption,
   },
   md: {
-    paddingVertical: theme.spacing.tiny + 2,
-    paddingHorizontal: theme.spacing.sm + 4,
-    textSize: theme.typography.sizes.caption,
+    paddingVertical: currentTheme.spacing.tiny + 2,
+    paddingHorizontal: currentTheme.spacing.sm + 4,
+    textSize: currentTheme.typography.sizes.caption,
   },
   lg: {
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.md,
-    textSize: theme.typography.sizes.body,
+    paddingVertical: currentTheme.spacing.sm,
+    paddingHorizontal: currentTheme.spacing.md,
+    textSize: currentTheme.typography.sizes.body,
   },
-};
+});
 
 export function Chip({
   label,
@@ -34,7 +34,10 @@ export function Chip({
   accessibilityLabel,
   ...props
 }) {
-  const sizePreset = SIZE_PRESETS[size] || SIZE_PRESETS.md;
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const sizePresets = useMemo(() => createSizePresets(currentTheme), [currentTheme]);
+  const sizePreset = sizePresets[size] || sizePresets.md;
   const containerStyles = [
     styles.base,
     {
@@ -50,7 +53,7 @@ export function Chip({
     styles.label,
     {
       fontSize: sizePreset.textSize,
-      color: active ? theme.colors.textOnPrimary : theme.colors.textSecondary,
+      color: active ? currentTheme.colors.textOnPrimary : currentTheme.colors.textSecondary,
     },
     textStyle,
   ];
@@ -91,42 +94,43 @@ export function Chip({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: theme.radius.pill,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surfacePrimary,
-    marginHorizontal: theme.spacing.tiny,
-    marginBottom: theme.spacing.tiny,
-  },
-  active: {
-    borderColor: theme.colors.brandPrimary,
-    backgroundColor: theme.colors.brandPrimary,
-  },
-  inactive: {},
-  disabled: {
-    opacity: 0.5,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.tiny,
-  },
-  contentReverse: {
-    flexDirection: 'row-reverse',
-  },
-  icon: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  label: {
-    fontFamily: theme.typography.fontFamily.medium,
-    fontWeight: theme.typography.weights.semibold,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    base: {
+      borderRadius: currentTheme.radius.pill,
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      marginHorizontal: currentTheme.spacing.tiny,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    active: {
+      borderColor: currentTheme.colors.brandPrimary,
+      backgroundColor: currentTheme.colors.brandPrimary,
+    },
+    inactive: {},
+    disabled: {
+      opacity: 0.5,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+    content: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: currentTheme.spacing.tiny,
+    },
+    contentReverse: {
+      flexDirection: 'row-reverse',
+    },
+    icon: {
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    label: {
+      fontFamily: currentTheme.typography.fontFamily.medium,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+  });
 
 export default Chip;

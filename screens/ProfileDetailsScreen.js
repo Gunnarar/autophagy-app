@@ -13,7 +13,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useUser } from '../contexts/UserContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 
 const FIELD_CONFIGS = [
   { key: 'name', label: 'Name' },
@@ -36,6 +36,8 @@ export default function ProfileDetailsScreen() {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState(user || {});
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   if (!user) {
     return (
@@ -160,80 +162,81 @@ export default function ProfileDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundPrimary,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textSecondary,
-  },
-  container: {
-    padding: theme.spacing.lg,
-  },
-  card: {
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.md,
-  },
-  title: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  fieldRow: {
-    width: '100%',
-    gap: theme.spacing.xs,
-  },
-  label: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-  },
-  value: {
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-    paddingVertical: theme.spacing.xs,
-  },
-  input: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.sm,
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surfacePrimary,
-  },
-  multilineInput: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  dateButton: {
-    alignSelf: 'flex-start',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.lg,
-  },
-  actionButton: {
-    flex: 1,
-  },
-  fullWidthButton: {
-    marginTop: theme.spacing.lg,
-  },
-});
-
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: currentTheme.colors.backgroundPrimary,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: currentTheme.colors.backgroundPrimary,
+    },
+    loadingText: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textSecondary,
+    },
+    container: {
+      padding: currentTheme.spacing.lg,
+    },
+    card: {
+      paddingVertical: currentTheme.spacing.lg,
+      paddingHorizontal: currentTheme.spacing.lg,
+      gap: currentTheme.spacing.md,
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    fieldRow: {
+      width: '100%',
+      gap: currentTheme.spacing.xs,
+    },
+    label: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+    },
+    value: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      paddingVertical: currentTheme.spacing.xs,
+    },
+    input: {
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+      borderRadius: currentTheme.radius.md,
+      paddingHorizontal: currentTheme.spacing.sm,
+      paddingVertical: currentTheme.spacing.sm,
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      backgroundColor: currentTheme.colors.surfacePrimary,
+    },
+    multilineInput: {
+      minHeight: 100,
+      textAlignVertical: 'top',
+    },
+    dateButton: {
+      alignSelf: 'flex-start',
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      gap: currentTheme.spacing.sm,
+      marginTop: currentTheme.spacing.lg,
+    },
+    actionButton: {
+      flex: 1,
+    },
+    fullWidthButton: {
+      marginTop: currentTheme.spacing.lg,
+    },
+  });

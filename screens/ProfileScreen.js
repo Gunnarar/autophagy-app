@@ -8,7 +8,8 @@ import { useLogs } from '../contexts/LogsContext';
 import { deleteItem } from '../utils/storage';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { theme } from '../utils/theme';
+import { Chip } from '../components/ui/Chip';
+import { useTheme, useThemeMode, useThemedStyles } from '../utils/theme';
 
 const AVATAR_PLACEHOLDER = 'https://ui-avatars.com/api/?name=Genesis+User&background=b3c7f7&color=fff&size=128';
 
@@ -24,6 +25,26 @@ export default function ProfileScreen({ navigation }) {
     setFastLog,
     setKetoneLog,
   } = useLogs();
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const { mode, setMode, availableModes } = useThemeMode();
+  const themeLabels = React.useMemo(
+    () => ({
+      light: 'Light',
+      dark: 'Dark',
+      blue: 'Blue',
+      red: 'Red',
+    }),
+    [],
+  );
+  const themeOptions = React.useMemo(
+    () =>
+      availableModes.map(key => ({
+        key,
+        label: themeLabels[key] || key.charAt(0).toUpperCase() + key.slice(1),
+      })),
+    [availableModes, themeLabels],
+  );
 
   if (!user) {
     return (
@@ -89,36 +110,29 @@ export default function ProfileScreen({ navigation }) {
       symptomCount,
     };
   }, [fastLog, ketoneLog, symptomLog]);
-  const profileActions = [
-    {
-      key: 'profileDetails',
-      title: 'Profile details',
-      subtitle: 'View and update personal information',
-      icon: <Ionicons name="person" size={22} color={theme.colors.brandPrimary} />,
-      onPress: () => navigation.navigate('ProfileDetails'),
-    },
+  const profileActions = React.useMemo(() => [
     {
       key: 'fastingPrograms',
       title: 'Fasting programs',
       subtitle: 'Browse structured plans and challenges',
-      icon: <MaterialCommunityIcons name="timer-sand" size={22} color={theme.colors.info} />,
+      icon: <MaterialCommunityIcons name="timer-sand" size={22} color={currentTheme.colors.info} />,
       onPress: () => navigation.navigate('FastingPrograms'),
     },
-  ];
+  ], [currentTheme, navigation]);
 
   const secondaryActions = [
     {
       key: 'notifications',
       title: 'Notifications & reminders',
       subtitle: 'Plan meal windows, meds, and fast alerts',
-      icon: <Ionicons name="notifications" size={22} color={theme.colors.brandSecondary} />,
+      icon: <Ionicons name="notifications" size={22} color={currentTheme.colors.brandSecondary} />,
       onPress: null,
     },
     {
       key: 'integrations',
       title: 'Integrations',
       subtitle: 'Connect HealthKit, Google Fit, or ketone meters',
-      icon: <MaterialCommunityIcons name="link-variant" size={22} color={theme.colors.brandSecondary} />,
+      icon: <MaterialCommunityIcons name="link-variant" size={22} color={currentTheme.colors.brandSecondary} />,
       onPress: null,
     },
   ];
@@ -127,7 +141,7 @@ export default function ProfileScreen({ navigation }) {
     <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
       <View style={styles.heroWrapper}>
         <LinearGradient
-          colors={[theme.colors.brandPrimary, theme.colors.brandPrimaryDark]}
+          colors={[currentTheme.colors.brandPrimary, currentTheme.colors.brandPrimaryDark]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.heroCard}
@@ -192,7 +206,7 @@ export default function ProfileScreen({ navigation }) {
               <Text style={styles.actionTitle}>{action.title}</Text>
               <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={currentTheme.colors.textMuted} />
           </TouchableOpacity>
         ))}
       </View>
@@ -200,6 +214,25 @@ export default function ProfileScreen({ navigation }) {
       <Card variant="tinted" style={styles.sectionIntroCard}>
         <Text style={styles.sectionTitle}>Personalization & safety</Text>
         <Text style={styles.sectionBody}>Configure reminders, accessibility, and connected services to tailor Genesis4PD to your routine.</Text>
+      </Card>
+
+      <Card variant="outline" style={styles.appearanceCard}>
+        <Text style={styles.sectionTitle}>Appearance</Text>
+        <Text style={styles.preferenceSubtitle}>Choose the theme that feels most comfortable while you track your progress.</Text>
+        <View style={styles.themeSelector}>
+          {themeOptions.map(option => (
+            <Chip
+              key={option.key}
+              label={option.label}
+              size="md"
+              active={mode === option.key}
+              onPress={() => setMode(option.key)}
+              style={styles.themeChip}
+              textStyle={styles.themeChipLabel}
+              accessibilityLabel={`${option.label} theme`}
+            />
+          ))}
+        </View>
       </Card>
 
       <View style={styles.sectionGroup}>
@@ -216,7 +249,7 @@ export default function ProfileScreen({ navigation }) {
               <Text style={styles.actionTitle}>{action.title}</Text>
               <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={theme.colors.textMuted} />
+            <Ionicons name="chevron-forward" size={18} color={currentTheme.colors.textMuted} />
           </TouchableOpacity>
         ))}
       </View>
@@ -234,7 +267,7 @@ export default function ProfileScreen({ navigation }) {
           label="Reset app data"
           variant="danger"
           size="sm"
-          leftIcon={<Trash2 color={theme.colors.textOnPrimary} size={18} strokeWidth={2} />}
+          leftIcon={<Trash2 color={currentTheme.colors.textOnPrimary} size={18} strokeWidth={2} />}
           onPress={handleResetData}
           style={styles.dangerButton}
         />
@@ -243,195 +276,216 @@ export default function ProfileScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundPrimary,
-  },
-  content: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-    paddingTop: theme.spacing.lg,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.backgroundPrimary,
-  },
-  loadingText: {
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.sizes.body,
-  },
-  heroWrapper: {
-    marginBottom: theme.spacing.lg,
-  },
-  heroCard: {
-    borderRadius: theme.radius.xl,
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  heroTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: theme.spacing.md,
-  },
-  avatar: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.surfacePrimary,
-    marginRight: theme.spacing.md,
-  },
-  heroTextBlock: {
-    flex: 1,
-  },
-  heroOverline: {
-    color: theme.colors.textOnPrimary,
-    opacity: 0.75,
-    fontSize: theme.typography.sizes.caption,
-    marginBottom: theme.spacing.tiny,
-    textTransform: 'uppercase',
-    letterSpacing: 1.1,
-  },
-  heroTitle: {
-    color: theme.colors.textOnPrimary,
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    marginBottom: theme.spacing.tiny,
-  },
-  heroSubtitle: {
-    color: theme.colors.textOnPrimary,
-    fontSize: theme.typography.sizes.caption,
-    marginBottom: theme.spacing.tiny,
-  },
-  heroCaption: {
-    color: theme.colors.textOnPrimary,
-    opacity: 0.75,
-    fontSize: theme.typography.sizes.caption,
-  },
-  heroCTA: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  heroPrimaryButton: {
-    marginRight: theme.spacing.xs,
-    minWidth: 140,
-  },
-  summaryCard: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.sm,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  summaryItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  summaryValue: {
-    fontSize: theme.typography.sizes.title,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-  },
-  summaryLabel: {
-    marginTop: theme.spacing.tiny,
-    color: theme.colors.textSecondary,
-    fontSize: theme.typography.sizes.caption,
-    textAlign: 'center',
-  },
-  summaryDivider: {
-    width: StyleSheet.hairlineWidth,
-    height: 46,
-    backgroundColor: theme.colors.border,
-  },
-  sectionGroup: {
-    marginBottom: theme.spacing.lg,
-  },
-  actionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.surfacePrimary,
-    borderRadius: theme.radius.md,
-    paddingVertical: theme.spacing.sm,
-    paddingHorizontal: theme.spacing.sm,
-    marginBottom: theme.spacing.sm,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-  },
-  actionCardDisabled: {
-    opacity: 0.6,
-  },
-  actionIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.spacing.sm,
-  },
-  actionContent: {
-    flex: 1,
-  },
-  actionTitle: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.textPrimary,
-  },
-  actionSubtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.tiny,
-  },
-  sectionIntroCard: {
-    marginBottom: theme.spacing.lg,
-  },
-  sectionBody: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  helpCard: {
-    marginBottom: theme.spacing.xl,
-  },
-  helpTitle: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.xs,
-  },
-  helpSubtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
-  },
-  helpButton: {
-    alignSelf: 'flex-start',
-  },
-  dangerCard: {
-    marginBottom: theme.spacing.xl,
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.sm,
-  },
-  dangerTitle: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.error,
-  },
-  dangerSubtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  dangerButton: {
-    alignSelf: 'flex-start',
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    scroll: {
+      flex: 1,
+      backgroundColor: currentTheme.colors.backgroundPrimary,
+    },
+    content: {
+      paddingHorizontal: currentTheme.spacing.lg,
+      paddingBottom: currentTheme.spacing.xl,
+      paddingTop: currentTheme.spacing.lg,
+    },
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: currentTheme.colors.backgroundPrimary,
+    },
+    loadingText: {
+      color: currentTheme.colors.textSecondary,
+      fontSize: currentTheme.typography.sizes.body,
+    },
+    heroWrapper: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    heroCard: {
+      borderRadius: currentTheme.radius.xl,
+      paddingVertical: currentTheme.spacing.lg,
+      paddingHorizontal: currentTheme.spacing.lg,
+    },
+    heroTopRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: currentTheme.spacing.md,
+    },
+    avatar: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.surfacePrimary,
+      marginRight: currentTheme.spacing.md,
+    },
+    heroTextBlock: {
+      flex: 1,
+    },
+    heroOverline: {
+      color: currentTheme.colors.textOnPrimary,
+      opacity: 0.75,
+      fontSize: currentTheme.typography.sizes.caption,
+      marginBottom: currentTheme.spacing.tiny,
+      textTransform: 'uppercase',
+      letterSpacing: 1.1,
+    },
+    heroTitle: {
+      color: currentTheme.colors.textOnPrimary,
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    heroSubtitle: {
+      color: currentTheme.colors.textOnPrimary,
+      fontSize: currentTheme.typography.sizes.caption,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    heroCaption: {
+      color: currentTheme.colors.textOnPrimary,
+      opacity: 0.75,
+      fontSize: currentTheme.typography.sizes.caption,
+    },
+    heroCTA: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    heroPrimaryButton: {
+      marginRight: currentTheme.spacing.xs,
+      minWidth: 140,
+    },
+    summaryCard: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    sectionTitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.textPrimary,
+      marginBottom: currentTheme.spacing.sm,
+    },
+    summaryRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    summaryItem: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    summaryValue: {
+      fontSize: currentTheme.typography.sizes.title,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+    },
+    summaryLabel: {
+      marginTop: currentTheme.spacing.tiny,
+      color: currentTheme.colors.textSecondary,
+      fontSize: currentTheme.typography.sizes.caption,
+      textAlign: 'center',
+    },
+    summaryDivider: {
+      width: StyleSheet.hairlineWidth,
+      height: 46,
+      backgroundColor: currentTheme.colors.border,
+    },
+    sectionGroup: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    actionCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      borderRadius: currentTheme.radius.md,
+      paddingVertical: currentTheme.spacing.sm,
+      paddingHorizontal: currentTheme.spacing.sm,
+      marginBottom: currentTheme.spacing.sm,
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+    },
+    actionCardDisabled: {
+      opacity: 0.6,
+    },
+    actionIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: currentTheme.spacing.sm,
+    },
+    actionContent: {
+      flex: 1,
+    },
+    actionTitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.textPrimary,
+    },
+    actionSubtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginTop: currentTheme.spacing.tiny,
+    },
+    sectionIntroCard: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    preferenceSubtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    appearanceCard: {
+      marginBottom: currentTheme.spacing.lg,
+      gap: currentTheme.spacing.sm,
+    },
+    themeSelector: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      alignItems: 'center',
+      gap: currentTheme.spacing.sm,
+    },
+    themeChip: {
+      minWidth: 110,
+    },
+    themeChipLabel: {
+      textAlign: 'center',
+    },
+    sectionBody: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    helpCard: {
+      marginBottom: currentTheme.spacing.xl,
+    },
+    helpTitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.textPrimary,
+      marginBottom: currentTheme.spacing.xs,
+    },
+    helpSubtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.sm,
+    },
+    helpButton: {
+      alignSelf: 'flex-start',
+    },
+    dangerCard: {
+      marginBottom: currentTheme.spacing.xl,
+      paddingVertical: currentTheme.spacing.lg,
+      paddingHorizontal: currentTheme.spacing.lg,
+      gap: currentTheme.spacing.sm,
+    },
+    dangerTitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.error,
+    },
+    dangerSubtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    dangerButton: {
+      alignSelf: 'flex-start',
+    },
+  });

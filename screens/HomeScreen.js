@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { SEVERITIES } from '../utils/constants';
 import { useLogs } from '../contexts/LogsContext';
 import { useModalAction } from '../contexts/ModalActionContext';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 import LogEntryModal from '../components/LogEntryModal';
 import FastingSummaryCard from '../components/FastingSummaryCard';
 import AutophagyKetoneCard from '../components/AutophagyKetoneCard';
@@ -19,6 +19,8 @@ import { Button } from '../components/ui/Button';
 
 export default function HomeScreen() {
   const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useUnifiedFastRecommendation, ketoneLog, setKetoneLog } = useLogs();
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { user } = useUser();
   const [symptomModalVisible, setSymptomModalVisible] = useState(false);
   const [symptomType, setSymptomType] = useState('tremor');
@@ -43,8 +45,7 @@ export default function HomeScreen() {
   useEffect(() => {
     const handler = (action) => {
       if (action === 'logSymptom') {
-        setSymptomNote('');
-        setSymptomModalVisible(true);
+        setLogModal({ mode: 'symptom', visible: true });
       }
     };
     setModalActionHandler(handler);
@@ -90,18 +91,18 @@ export default function HomeScreen() {
   const fastingHours = fastingElapsed / 3600;
   const metabolicState = (() => {
     if (fastingHours < 4) {
-      return { label: 'Fed state', icon: 'restaurant-outline', color: theme.colors.textSecondary };
+      return { label: 'Fed state', icon: 'restaurant-outline', color: currentTheme.colors.textSecondary };
     }
     if (fastingHours < 8) {
-      return { label: 'Early fasting', icon: 'time-outline', color: theme.colors.info };
+      return { label: 'Early fasting', icon: 'time-outline', color: currentTheme.colors.info };
     }
     if (fastingHours < 12) {
-      return { label: 'Fat burning', icon: 'flame-outline', color: theme.colors.brandHighlight };
+      return { label: 'Fat burning', icon: 'flame-outline', color: currentTheme.colors.brandHighlight };
     }
     if (fastingHours < 24) {
-      return { label: 'Autophagy active', icon: 'shield-checkmark-outline', color: theme.colors.success };
+      return { label: 'Autophagy active', icon: 'shield-checkmark-outline', color: currentTheme.colors.success };
     }
-    return { label: 'Deep autophagy', icon: 'sparkles-outline', color: theme.colors.brandPrimary };
+    return { label: 'Deep autophagy', icon: 'sparkles-outline', color: currentTheme.colors.brandPrimary };
   })();
 
   const todaysMeat = todaysMeals
@@ -116,51 +117,56 @@ export default function HomeScreen() {
   const latestKetoneValue = latestKetone ? latestKetone.value.toFixed(1) : '—';
   const latestKetoneUnit = latestKetone?.unit || 'mmol/L';
   const ketoneInKetosis = latestKetone ? latestKetone.value >= 0.5 : false;
-  const ketoneColor = ketoneInKetosis ? theme.colors.brandPrimary : theme.colors.textSecondary;
+  const ketoneColor = ketoneInKetosis ? currentTheme.colors.brandPrimary : currentTheme.colors.textSecondary;
   const ketoneHistory = sortedKetones.slice(0, 5);
 
-  const statCards = React.useMemo(() => ([
-    {
-      key: 'meals',
-      title: 'Meals today',
-      value: todaysMeals.length.toString(),
-      meta: `${todaysMeals.length === 1 ? 'entry' : 'entries'} logged`,
-      footer: `${todaysMeat.toFixed(1)} lbs animal meat`,
-      footerColor: theme.colors.brandSecondary,
-      icon: <MaterialCommunityIcons name="silverware-fork-knife" size={22} color={theme.colors.brandSecondary} />,
-      gradient: theme.gradients.statCards.meals,
-    },
-    {
-      key: 'symptoms',
-      title: 'Symptoms logged',
-      value: todaysSymptoms.length.toString(),
-      meta: todaysSymptoms.length === 0 ? 'All clear today' : `${todaysSymptoms.length} noted`,
-      footer: todaysSymptoms.length === 0 ? 'Great job staying mindful' : 'Log notable changes',
-      footerColor: theme.colors.brandHighlight,
-      icon: <MaterialCommunityIcons name="stethoscope" size={22} color={theme.colors.error} />,
-      gradient: theme.gradients.statCards.symptoms,
-    },
-    {
-      key: 'ketone',
-      title: 'Latest ketone',
-      value: latestKetoneValue,
-      meta: latestKetoneValue === '—' ? 'No data yet' : latestKetoneUnit,
-      footer: ketoneInKetosis ? 'Optimal ketosis' : 'Add a reading',
-      footerColor: ketoneInKetosis ? theme.colors.success : theme.colors.textSecondary,
-      icon: <MaterialCommunityIcons name="water" size={22} color={theme.colors.info} />,
-      gradient: theme.gradients.statCards.ketone,
-    },
-    {
-      key: 'streak',
-      title: 'Fasting streak',
-      value: fastingStreak.toString(),
-      meta: fastingStreak === 1 ? 'day completed' : 'days completed',
-      footer: fastingStreak >= 3 ? 'Momentum is building' : 'Stay consistent',
-      footerColor: theme.colors.brandPrimary,
-      icon: <MaterialCommunityIcons name="calendar-check" size={22} color={theme.colors.brandPrimary} />,
-      gradient: theme.gradients.statCards.streak,
-    },
-  ]), [todaysMeals.length, todaysMeat, todaysSymptoms.length, latestKetoneValue, latestKetoneUnit, ketoneInKetosis, fastingStreak]);
+  const statCards = React.useMemo(() => {
+    const isDarkMode = currentTheme.isDark;
+    const mutedText = currentTheme.colors.textOnSurfaceMuted || currentTheme.colors.textSecondary;
+
+    return [
+      {
+        key: 'meals',
+        title: 'Meals today',
+        value: todaysMeals.length.toString(),
+        meta: `${todaysMeals.length === 1 ? 'entry' : 'entries'} logged`,
+        footer: `${todaysMeat.toFixed(1)} lbs animal meat`,
+        footerColor: isDarkMode ? mutedText : currentTheme.colors.brandSecondary,
+        icon: <MaterialCommunityIcons name="silverware-fork-knife" size={22} color={isDarkMode ? mutedText : currentTheme.colors.brandSecondary} />,
+        gradient: currentTheme.gradients.statCards.meals,
+      },
+      {
+        key: 'symptoms',
+        title: 'Symptoms logged',
+        value: todaysSymptoms.length.toString(),
+        meta: todaysSymptoms.length === 0 ? 'All clear today' : `${todaysSymptoms.length} noted`,
+        footer: todaysSymptoms.length === 0 ? 'Great job staying mindful' : 'Log notable changes',
+        footerColor: isDarkMode ? mutedText : currentTheme.colors.brandHighlight,
+        icon: <MaterialCommunityIcons name="stethoscope" size={22} color={isDarkMode ? mutedText : currentTheme.colors.error} />,
+        gradient: currentTheme.gradients.statCards.symptoms,
+      },
+      {
+        key: 'ketone',
+        title: 'Latest ketone',
+        value: latestKetoneValue,
+        meta: latestKetoneValue === '—' ? 'No data yet' : latestKetoneUnit,
+        footer: ketoneInKetosis ? 'Optimal ketosis' : 'Add a reading',
+        footerColor: isDarkMode ? mutedText : (ketoneInKetosis ? currentTheme.colors.success : currentTheme.colors.textSecondary),
+        icon: <MaterialCommunityIcons name="water" size={22} color={isDarkMode ? mutedText : currentTheme.colors.info} />,
+        gradient: currentTheme.gradients.statCards.ketone,
+      },
+      {
+        key: 'streak',
+        title: 'Fasting streak',
+        value: fastingStreak.toString(),
+        meta: fastingStreak === 1 ? 'day completed' : 'days completed',
+        footer: fastingStreak >= 3 ? 'Momentum is building' : 'Stay consistent',
+        footerColor: isDarkMode ? mutedText : currentTheme.colors.brandPrimary,
+        icon: <MaterialCommunityIcons name="calendar-check" size={22} color={isDarkMode ? mutedText : currentTheme.colors.brandPrimary} />,
+        gradient: currentTheme.gradients.statCards.streak,
+      },
+    ];
+  }, [todaysMeals.length, todaysMeat, todaysSymptoms.length, latestKetoneValue, latestKetoneUnit, ketoneInKetosis, fastingStreak, currentTheme]);
 
 
   const handleSaveSymptomWithTime = () => {
@@ -372,7 +378,7 @@ export default function HomeScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroWrapper}>
           <LinearGradient
-            colors={theme.gradients.hero}
+            colors={currentTheme.gradients.hero}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}
@@ -399,59 +405,44 @@ export default function HomeScreen() {
           </LinearGradient>
         </View>
 
-        <Card variant="outline" style={styles.quickActionsCard}>
-          <Text style={styles.quickActionsTitle}>Quick actions</Text>
-          <View style={styles.quickActionsRow}>
-            <Button
-              label="Log meal"
-              variant="secondary"
-              size="sm"
-              onPress={handleAddMeal}
-              style={styles.quickActionButton}
-            />
-            <Button
-              label="Log symptom"
-              variant="secondary"
-              size="sm"
-              onPress={handleAddSymptom}
-              style={styles.quickActionButton}
-            />
-            <Button
-              label="Log ketone"
-              variant="secondary"
-              size="sm"
-              onPress={() => setKetoneModalVisible(true)}
-              style={styles.quickActionButton}
-            />
-          </View>
-        </Card>
 
         <View style={styles.statsGrid}>
           {statCards.map(card => (
-            <LinearGradient
+            <Pressable
               key={card.key}
-              colors={card.gradient}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.statGradient}
+              style={styles.statPressable}
+              android_ripple={{ color: 'rgba(255, 255, 255, 0.08)' }}
+              onPress={() => {
+                if (card.key === 'meals') {
+                  handleAddMeal();
+                } else if (card.key === 'symptoms') {
+                  handleAddSymptom();
+                } else if (card.key === 'ketone') {
+                  setKetoneModalVisible(true);
+                } else if (card.key === 'streak') {
+                  if (hasOngoingFast) {
+                    handleStopFast();
+                  } else {
+                    handleStartFast();
+                  }
+                }
+              }}
             >
-              <View style={styles.statHeader}>
-                {card.icon}
-                <Text style={styles.statLabel}>{card.title}</Text>
-              </View>
-              <Text style={styles.statValue}>{card.value}</Text>
-              <Text style={styles.statMeta}>{card.meta}</Text>
-              <Text style={[styles.statMetaAccent, { color: card.footerColor ?? theme.colors.brandSecondary }]}>{card.footer}</Text>
-              {card.key === 'ketone' && (
-                <Button
-                  label="Log ketone"
-                  variant="ghost"
-                  size="sm"
-                  onPress={() => setKetoneModalVisible(true)}
-                  style={styles.statButton}
-                />
-              )}
-            </LinearGradient>
+              <LinearGradient
+                colors={card.gradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.statGradient}
+              >
+                <View style={styles.statHeader}>
+                  {card.icon}
+                  <Text style={styles.statLabel}>{card.title}</Text>
+                </View>
+                <Text style={styles.statValue}>{card.value}</Text>
+                <Text style={styles.statMeta}>{card.meta}</Text>
+                <Text style={[styles.statMetaAccent, { color: card.footerColor }]}>{card.footer}</Text>
+              </LinearGradient>
+            </Pressable>
           ))}
         </View>
 
@@ -528,152 +519,133 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundPrimary,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: theme.spacing.lg,
-    paddingBottom: theme.spacing.xl,
-    paddingTop: theme.spacing.lg,
-  },
-  heroWrapper: {
-    marginBottom: theme.spacing.lg,
-  },
-  heroCard: {
-    borderRadius: theme.radius.xl,
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-  },
-  heroOverline: {
-    color: theme.colors.textOnPrimary,
-    opacity: 0.85,
-    fontSize: theme.typography.sizes.caption,
-    marginBottom: theme.spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 1.1,
-  },
-  heroTitle: {
-    color: theme.colors.textOnPrimary,
-    fontSize: theme.typography.sizes.display,
-    fontWeight: theme.typography.weights.bold,
-    marginBottom: theme.spacing.xs,
-  },
-  heroSubtitle: {
-    color: theme.colors.textOnPrimary,
-    fontSize: theme.typography.sizes.body,
-    marginBottom: theme.spacing.xs,
-  },
-  heroCaption: {
-    color: theme.colors.textOnPrimary,
-    opacity: 0.85,
-    fontSize: theme.typography.sizes.caption,
-    marginBottom: theme.spacing.sm,
-  },
-  heroBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.tiny,
-    alignSelf: 'flex-start',
-    backgroundColor: theme.colors.surfacePrimary,
-    borderRadius: theme.radius.pill,
-    paddingHorizontal: theme.spacing.sm,
-    paddingVertical: theme.spacing.tiny,
-    marginBottom: theme.spacing.md,
-  },
-  heroBadgeText: {
-    fontSize: theme.typography.sizes.caption,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  heroActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  heroActionPrimary: {
-    marginRight: theme.spacing.xs,
-    minWidth: 140,
-  },
-  quickActionsCard: {
-    marginBottom: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.md,
-  },
-  quickActionsTitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: theme.spacing.xs,
-  },
-  quickActionsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: theme.spacing.xs,
-  },
-  quickActionButton: {
-    flex: 1,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing.lg,
-  },
-  statGradient: {
-    width: '48%',
-    minWidth: 160,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing.md,
-    marginBottom: theme.spacing.sm,
-    overflow: 'hidden',
-  },
-  statHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-    marginBottom: theme.spacing.xs,
-  },
-  statLabel: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  statValue: {
-    fontSize: theme.typography.sizes.headline,
-    color: theme.colors.textPrimary,
-    fontWeight: theme.typography.weights.bold,
-  },
-  statMeta: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginTop: theme.spacing.xs,
-  },
-  statMetaAccent: {
-    fontSize: theme.typography.sizes.caption,
-    marginTop: theme.spacing.tiny,
-  },
-  statButton: {
-    marginTop: theme.spacing.sm,
-    alignSelf: 'flex-start',
-  },
-  sectionLabel: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  insightCard: {
-    marginBottom: theme.spacing.lg,
-  },
-  statusCard: {
-    marginBottom: theme.spacing.lg,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: currentTheme.colors.backgroundPrimary,
+    },
+    scroll: {
+      flex: 1,
+    },
+    scrollContent: {
+      paddingHorizontal: currentTheme.spacing.lg,
+      paddingBottom: currentTheme.spacing.xl,
+      paddingTop: currentTheme.spacing.lg,
+    },
+    heroWrapper: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    heroCard: {
+      borderRadius: currentTheme.radius.xl,
+      paddingVertical: currentTheme.spacing.lg,
+      paddingHorizontal: currentTheme.spacing.lg,
+    },
+    heroOverline: {
+      color: currentTheme.colors.textOnPrimary,
+      opacity: 0.85,
+      fontSize: currentTheme.typography.sizes.caption,
+      marginBottom: currentTheme.spacing.xs,
+      textTransform: 'uppercase',
+      letterSpacing: 1.1,
+    },
+    heroTitle: {
+      color: currentTheme.colors.textOnPrimary,
+      fontSize: currentTheme.typography.sizes.display,
+      fontWeight: currentTheme.typography.weights.bold,
+      marginBottom: currentTheme.spacing.xs,
+    },
+    heroSubtitle: {
+      color: currentTheme.colors.textOnPrimary,
+      fontSize: currentTheme.typography.sizes.body,
+      marginBottom: currentTheme.spacing.xs,
+    },
+    heroCaption: {
+      color: currentTheme.colors.textOnPrimary,
+      opacity: 0.85,
+      fontSize: currentTheme.typography.sizes.caption,
+      marginBottom: currentTheme.spacing.sm,
+    },
+    heroBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: currentTheme.spacing.tiny,
+      alignSelf: 'flex-start',
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      borderRadius: currentTheme.radius.pill,
+      paddingHorizontal: currentTheme.spacing.sm,
+      paddingVertical: currentTheme.spacing.tiny,
+      marginBottom: currentTheme.spacing.md,
+    },
+    heroBadgeText: {
+      fontSize: currentTheme.typography.sizes.caption,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    heroActions: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    heroActionPrimary: {
+      marginRight: currentTheme.spacing.xs,
+      minWidth: 140,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+      marginBottom: currentTheme.spacing.lg,
+    },
+    statPressable: {
+      width: '48%',
+      minWidth: 160,
+      marginBottom: currentTheme.spacing.sm,
+      borderRadius: currentTheme.radius.lg,
+    },
+    statGradient: {
+      flex: 1,
+      borderRadius: currentTheme.radius.lg,
+      padding: currentTheme.spacing.md,
+      overflow: 'hidden',
+    },
+    statHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: currentTheme.spacing.xs,
+      marginBottom: currentTheme.spacing.xs,
+    },
+    statLabel: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.isDark ? currentTheme.colors.textOnSurfaceMuted : currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.xs,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    statValue: {
+      fontSize: currentTheme.typography.sizes.headline,
+      color: currentTheme.isDark ? currentTheme.colors.textOnSurfaceMuted : currentTheme.colors.textPrimary,
+      fontWeight: currentTheme.typography.weights.bold,
+    },
+    statMeta: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.isDark ? currentTheme.colors.textOnSurfaceMuted : currentTheme.colors.textSecondary,
+      marginTop: currentTheme.spacing.xs,
+    },
+    statMetaAccent: {
+      fontSize: currentTheme.typography.sizes.caption,
+      marginTop: currentTheme.spacing.tiny,
+      color: currentTheme.isDark ? currentTheme.colors.textOnSurfaceMuted : undefined,
+    },
+    sectionLabel: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.xs,
+      textTransform: 'uppercase',
+      letterSpacing: 0.5,
+    },
+    insightCard: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    statusCard: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+  });

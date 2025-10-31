@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, Button } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { FASTING_PROGRAMS } from '../utils/constants';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
+import { Button } from '../components/ui/Button';
 import { useUser } from '../contexts/UserContext';
 import { useLogs } from '../contexts/LogsContext';
 
@@ -21,6 +22,8 @@ export default function FastingProgramsScreen() {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const scheduledFast = user?.scheduledFast;
 
@@ -82,7 +85,7 @@ export default function FastingProgramsScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
       <Text style={styles.title}>Fasting Programs</Text>
       {scheduledFast && (
         <View style={styles.scheduledBox}>
@@ -107,7 +110,14 @@ export default function FastingProgramsScreen() {
           >
             <Text style={styles.programLabel}>{program.label}</Text>
             <Text style={styles.programDuration}>{program.duration} hours</Text>
-            <Text style={styles.status}>
+            <Text
+              style={[
+                styles.status,
+                status === 'completed' && styles.statusCompleted,
+                status === 'locked' && styles.statusLocked,
+                isSelected && styles.statusSelected,
+              ]}
+            >
               {status === 'completed' ? '✓ Completed' : status === 'locked' ? '🔒 Locked' : isSelected ? 'Selected' : 'Unlocked'}
             </Text>
           </TouchableOpacity>
@@ -124,11 +134,10 @@ export default function FastingProgramsScreen() {
             <Text style={styles.modalTitle}>Schedule Fast</Text>
             <Text style={styles.modalDesc}>Would you like to start your {selectedProgram?.label} now or schedule it for later?</Text>
             <View style={styles.modalActionRow}>
-              <Button title="Start Now" onPress={handleStartNow} />
-              <View style={styles.modalActionSpacer} />
-              <Button title="Schedule for Later" onPress={handleSchedule} />
+              <Button label="Start now" onPress={handleStartNow} style={styles.modalButton} />
+              <Button label="Schedule later" variant="secondary" onPress={handleSchedule} style={styles.modalButton} />
             </View>
-            <Button title="Cancel" onPress={() => setModalVisible(false)} color="#888" />
+            <Button label="Cancel" variant="ghost" onPress={() => setModalVisible(false)} style={styles.modalButton} textStyle={styles.modalButtonGhostText} />
           </View>
         </View>
       </Modal>
@@ -142,64 +151,129 @@ export default function FastingProgramsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { alignItems: 'center', padding: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 24 },
-  scheduledBox: {
-    backgroundColor: '#b3c7f7',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    width: '100%',
-    alignItems: 'center',
-  },
-  scheduledLabel: { fontSize: 16, color: '#2d4d4d', fontWeight: 'bold' },
-  scheduledText: { fontSize: 16, color: '#2d4d4d', marginTop: 2 },
-  programCard: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#6bb3b6',
-  },
-  locked: {
-    backgroundColor: '#e0e0e0',
-    borderColor: '#aaa',
-  },
-  selected: {
-    borderColor: '#89ce00',
-    backgroundColor: '#d9e4ff',
-  },
-  programLabel: { fontSize: 20, fontWeight: 'bold', marginBottom: 4 },
-  programDuration: { fontSize: 16, color: '#4d6d6d', marginBottom: 8 },
-  status: { fontSize: 14, color: '#6bb3b6', fontWeight: 'bold' },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: theme.overlay.scrim,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: 300,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
-  },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 12, color: '#2d4d4d' },
-  modalDesc: { fontSize: 16, color: '#4d6d6d', marginBottom: 20, textAlign: 'center' },
-  modalActionRow: {
-    flexDirection: 'row',
-    marginTop: 16,
-  },
-  modalActionSpacer: {
-    width: 16,
-  },
-});
+const createStyles = currentTheme => {
+  const isDark = currentTheme.isDark;
+  const mutedText = isDark ? currentTheme.colors.textOnSurfaceMuted : currentTheme.colors.textSecondary;
+  const surfaceElevated = isDark ? currentTheme.colors.surfaceElevated : currentTheme.colors.surfacePrimary;
+
+  return StyleSheet.create({
+    scroll: {
+      flex: 1,
+      backgroundColor: currentTheme.colors.backgroundPrimary,
+    },
+    container: {
+      alignItems: 'center',
+      padding: currentTheme.spacing.lg,
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      marginBottom: currentTheme.spacing.lg,
+      color: currentTheme.colors.textPrimary,
+    },
+    scheduledBox: {
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      borderRadius: currentTheme.radius.md,
+      padding: currentTheme.spacing.md,
+      marginBottom: currentTheme.spacing.lg,
+      width: '100%',
+      alignItems: 'center',
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+    },
+    scheduledLabel: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    scheduledText: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: mutedText,
+      marginTop: currentTheme.spacing.tiny,
+    },
+    programCard: {
+      width: '100%',
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      borderRadius: currentTheme.radius.md,
+      padding: currentTheme.spacing.lg,
+      marginBottom: currentTheme.spacing.md,
+      alignItems: 'center',
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+    },
+    locked: {
+      opacity: 0.6,
+    },
+    selected: {
+      borderColor: currentTheme.colors.brandPrimary,
+      backgroundColor: currentTheme.colors.surfaceMuted,
+    },
+    programLabel: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      marginBottom: currentTheme.spacing.xs,
+      color: currentTheme.colors.textPrimary,
+    },
+    programDuration: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.xs,
+    },
+    status: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: mutedText,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    statusCompleted: {
+      color: currentTheme.colors.success,
+    },
+    statusLocked: {
+      color: currentTheme.colors.textMuted,
+    },
+    statusSelected: {
+      color: currentTheme.colors.brandPrimary,
+    },
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: currentTheme.overlay.scrim,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: currentTheme.spacing.lg,
+    },
+    modalContent: {
+      backgroundColor: surfaceElevated,
+      borderRadius: currentTheme.radius.lg,
+      padding: currentTheme.spacing.lg,
+      width: '100%',
+      maxWidth: 320,
+      alignItems: 'center',
+      gap: currentTheme.spacing.sm,
+      shadowColor: '#000',
+      shadowOpacity: 0.1,
+      shadowRadius: 10,
+      elevation: 5,
+    },
+    modalTitle: {
+      fontSize: currentTheme.typography.sizes.body + 4,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+    },
+    modalDesc: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: mutedText,
+      textAlign: 'center',
+    },
+    modalActionRow: {
+      flexDirection: 'row',
+      marginTop: currentTheme.spacing.md,
+      alignItems: 'center',
+      gap: currentTheme.spacing.sm,
+    },
+    modalButton: {
+      flex: 1,
+    },
+    modalButtonGhostText: {
+      color: mutedText,
+    },
+  });
+};

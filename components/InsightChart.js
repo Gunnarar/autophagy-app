@@ -1,19 +1,10 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Svg, { Line, Polyline, Circle, Text as SvgText } from 'react-native-svg';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 
 const CHART_HEIGHT = 220;
-const CONTAINER_PADDING = theme.spacing.sm * 2; // horizontal padding inside card
-const CHART_WIDTH = Dimensions.get('window').width - theme.spacing.lg * 2 - CONTAINER_PADDING * 2;
 const MARGIN = { top: 16, right: 20, bottom: 32, left: 36 };
-
-const seriesConfig = {
-  ketones: { color: theme.colors.info, label: 'Ketones (mmol)' },
-  symptoms: { color: theme.colors.error, label: 'Symptom severity' },
-  fastDays: { color: theme.colors.success, label: 'Fasting days' },
-  redMeat: { color: theme.colors.brandPrimary, label: 'Red meat servings' },
-};
 
 function buildPoints(values, scaleX, scaleY) {
   return values
@@ -28,6 +19,23 @@ function buildPoints(values, scaleX, scaleY) {
 }
 
 export default function InsightChart({ data = [] }) {
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const containerPadding = useMemo(() => currentTheme.spacing.sm * 2, [currentTheme]);
+  const chartWidth = useMemo(() => {
+    const windowWidth = Dimensions.get('window').width;
+    return windowWidth - currentTheme.spacing.lg * 2 - containerPadding * 2;
+  }, [currentTheme, containerPadding]);
+  const seriesConfig = useMemo(
+    () => ({
+      ketones: { color: currentTheme.colors.chartMeals, label: 'Ketones (mmol)' },
+      symptoms: { color: currentTheme.colors.chartSymptoms, label: 'Symptom severity' },
+      fastDays: { color: currentTheme.colors.chartFasting, label: 'Fasting days' },
+      redMeat: { color: currentTheme.colors.brandPrimary, label: 'Red meat servings' },
+    }),
+    [currentTheme],
+  );
+
   const transformed = useMemo(() => {
     if (!data.length) {
       return null;
@@ -40,7 +48,7 @@ export default function InsightChart({ data = [] }) {
 
     const numericValues = [...ketones, ...symptoms, ...fastDays, ...redMeat].filter(v => typeof v === 'number' && !Number.isNaN(v));
     const maxValue = numericValues.length ? Math.max(...numericValues, 1) : 1;
-    const xStep = data.length > 1 ? (CHART_WIDTH - MARGIN.left - MARGIN.right) / (data.length - 1) : 0;
+    const xStep = data.length > 1 ? (chartWidth - MARGIN.left - MARGIN.right) / (data.length - 1) : 0;
 
     const scaleX = (index) => MARGIN.left + index * xStep;
     const scaleY = (value) => {
@@ -66,7 +74,7 @@ export default function InsightChart({ data = [] }) {
       scaleX,
       scaleY,
     };
-  }, [data]);
+  }, [data, chartWidth]);
 
   if (!transformed) {
     return (
@@ -82,13 +90,13 @@ export default function InsightChart({ data = [] }) {
 
   return (
     <View style={styles.chartWrapper}>
-      <Svg width={CHART_WIDTH} height={CHART_HEIGHT}>
+      <Svg width={chartWidth} height={CHART_HEIGHT}>
         <Line
           x1={MARGIN.left}
           y1={CHART_HEIGHT - MARGIN.bottom}
-          x2={CHART_WIDTH - MARGIN.right}
+          x2={chartWidth - MARGIN.right}
           y2={CHART_HEIGHT - MARGIN.bottom}
-          stroke={theme.colors.border}
+          stroke={currentTheme.colors.chartAxis}
           strokeWidth={1}
         />
         <Line
@@ -96,7 +104,7 @@ export default function InsightChart({ data = [] }) {
           y1={MARGIN.top}
           x2={MARGIN.left}
           y2={CHART_HEIGHT - MARGIN.bottom}
-          stroke={theme.colors.border}
+          stroke={currentTheme.colors.chartAxis}
           strokeWidth={1}
         />
 
@@ -116,7 +124,7 @@ export default function InsightChart({ data = [] }) {
           entries.map((entry, index) =>
             entry ? (
               <Circle key={`${key}-${index}`} cx={entry.x} cy={entry.y} r={3.5} fill={seriesConfig[key].color} />
-            ) : null
+            ) : null,
           )
         ))}
 
@@ -129,7 +137,7 @@ export default function InsightChart({ data = [] }) {
               x={x}
               y={y}
               fontSize={10}
-              fill={theme.colors.textMuted}
+              fill={currentTheme.colors.textMuted}
               textAnchor="middle"
             >
               {label}
@@ -142,9 +150,9 @@ export default function InsightChart({ data = [] }) {
             key={`grid-${idx}`}
             x1={MARGIN.left}
             y1={MARGIN.top + (CHART_HEIGHT - MARGIN.top - MARGIN.bottom) * (1 - ratio)}
-            x2={CHART_WIDTH - MARGIN.right}
+            x2={chartWidth - MARGIN.right}
             y2={MARGIN.top + (CHART_HEIGHT - MARGIN.top - MARGIN.bottom) * (1 - ratio)}
-            stroke={theme.colors.border}
+            stroke={currentTheme.colors.chartGrid}
             strokeDasharray="4 6"
             strokeWidth={0.8}
             opacity={0.5}
@@ -157,7 +165,7 @@ export default function InsightChart({ data = [] }) {
             x={MARGIN.left - 10}
             y={MARGIN.top + (CHART_HEIGHT - MARGIN.top - MARGIN.bottom) * (1 - value / maxValue)}
             fontSize={10}
-            fill={theme.colors.textMuted}
+            fill={currentTheme.colors.textMuted}
             textAnchor="end"
           >
             {value}
@@ -177,44 +185,45 @@ export default function InsightChart({ data = [] }) {
   );
 }
 
-const styles = StyleSheet.create({
-  chartWrapper: {
-    marginBottom: theme.spacing.lg,
-  },
-  placeholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.lg,
-  },
-  placeholderTitle: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.tiny,
-  },
-  placeholderSubtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-  legend: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: theme.spacing.sm,
-    gap: theme.spacing.xs,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginRight: theme.spacing.sm,
-  },
-  legendSwatch: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: theme.spacing.tiny,
-  },
-  legendLabel: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    chartWrapper: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    placeholder: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: currentTheme.spacing.lg,
+    },
+    placeholderTitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.textPrimary,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    placeholderSubtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+    legend: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      marginTop: currentTheme.spacing.sm,
+      gap: currentTheme.spacing.xs,
+    },
+    legendItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginRight: currentTheme.spacing.sm,
+    },
+    legendSwatch: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
+      marginRight: currentTheme.spacing.tiny,
+    },
+    legendLabel: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+  });

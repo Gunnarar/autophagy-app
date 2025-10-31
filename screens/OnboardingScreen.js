@@ -14,7 +14,7 @@ import { useUser } from '../contexts/UserContext';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 
 const steps = [
   { key: 'name', label: 'Name' },
@@ -38,6 +38,8 @@ export default function OnboardingScreen({ navigation }) {
   const [form, setForm] = useState({ startDate: new Date().toISOString() });
   const [step, setStep] = useState(0);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
 
   const handleChange = (key, value) => setForm({ ...form, [key]: value });
 
@@ -150,76 +152,77 @@ export default function OnboardingScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: theme.colors.backgroundPrimary,
-  },
-  container: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    padding: theme.spacing.lg,
-  },
-  card: {
-    paddingVertical: theme.spacing.lg,
-    paddingHorizontal: theme.spacing.lg,
-    gap: theme.spacing.sm,
-    maxHeight: '90%',
-  },
-  cardContent: {
-    gap: theme.spacing.sm,
-    paddingBottom: theme.spacing.lg,
-  },
-  stepLabel: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  title: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textSecondary,
-  },
-  input: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    padding: theme.spacing.sm,
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-    backgroundColor: theme.colors.surfacePrimary,
-    marginTop: theme.spacing.sm,
-  },
-  inputMultiline: {
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  dateButton: {
-    marginTop: theme.spacing.sm,
-    borderRadius: theme.radius.md,
-    paddingVertical: theme.spacing.md,
-    paddingHorizontal: theme.spacing.sm,
-    backgroundColor: theme.colors.surfacePrimary,
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.border,
-    alignItems: 'center',
-  },
-  dateButtonText: {
-    fontSize: theme.typography.sizes.body,
-    color: theme.colors.textPrimary,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: theme.spacing.sm,
-    marginTop: theme.spacing.lg,
-  },
-  actionButton: {
-    flex: 1,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    screen: {
+      flex: 1,
+      backgroundColor: currentTheme.colors.backgroundPrimary,
+    },
+    container: {
+      flexGrow: 1,
+      justifyContent: 'center',
+      padding: currentTheme.spacing.lg,
+    },
+    card: {
+      paddingVertical: currentTheme.spacing.lg,
+      paddingHorizontal: currentTheme.spacing.lg,
+      gap: currentTheme.spacing.sm,
+      maxHeight: '90%',
+    },
+    cardContent: {
+      gap: currentTheme.spacing.sm,
+      paddingBottom: currentTheme.spacing.lg,
+    },
+    stepLabel: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textSecondary,
+    },
+    input: {
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+      borderRadius: currentTheme.radius.md,
+      padding: currentTheme.spacing.sm,
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      marginTop: currentTheme.spacing.sm,
+    },
+    inputMultiline: {
+      minHeight: 100,
+      textAlignVertical: 'top',
+    },
+    dateButton: {
+      marginTop: currentTheme.spacing.sm,
+      borderRadius: currentTheme.radius.md,
+      paddingVertical: currentTheme.spacing.md,
+      paddingHorizontal: currentTheme.spacing.sm,
+      backgroundColor: currentTheme.colors.surfacePrimary,
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.border,
+      alignItems: 'center',
+    },
+    dateButtonText: {
+      fontSize: currentTheme.typography.sizes.body,
+      color: currentTheme.colors.textPrimary,
+    },
+    buttonRow: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: currentTheme.spacing.sm,
+      marginTop: currentTheme.spacing.lg,
+    },
+    actionButton: {
+      flex: 1,
+    },
+  });

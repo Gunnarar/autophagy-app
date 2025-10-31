@@ -1,49 +1,49 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
-import { theme } from '../../utils/theme';
+import { useTheme, useThemedStyles } from '../../utils/theme';
 
-const VARIANT_STYLES = {
+const buildVariantStyles = currentTheme => ({
   primary: {
-    backgroundColor: theme.colors.brandPrimary,
-    textColor: theme.colors.textOnPrimary,
+    backgroundColor: currentTheme.colors.brandPrimary,
+    textColor: currentTheme.colors.textOnPrimary,
   },
   secondary: {
-    backgroundColor: theme.colors.surfaceMuted,
-    textColor: theme.colors.brandSecondary,
+    backgroundColor: currentTheme.colors.surfaceMuted,
+    textColor: currentTheme.colors.brandSecondary,
   },
   outline: {
     backgroundColor: 'transparent',
-    borderColor: theme.colors.border,
+    borderColor: currentTheme.colors.border,
     borderWidth: StyleSheet.hairlineWidth * 2,
-    textColor: theme.colors.brandSecondary,
+    textColor: currentTheme.colors.brandSecondary,
   },
   ghost: {
     backgroundColor: 'transparent',
-    textColor: theme.colors.textSecondary,
+    textColor: currentTheme.colors.textSecondary,
   },
   danger: {
-    backgroundColor: theme.colors.error,
-    textColor: theme.colors.textOnPrimary,
+    backgroundColor: currentTheme.colors.error,
+    textColor: currentTheme.colors.textOnPrimary,
   },
-};
+});
 
-const SIZE_STYLES = {
+const buildSizeStyles = currentTheme => ({
   sm: {
     height: 40,
-    paddingHorizontal: theme.spacing.sm,
-    fontSize: theme.typography.sizes.caption,
+    paddingHorizontal: currentTheme.spacing.sm,
+    fontSize: currentTheme.typography.sizes.caption,
   },
   md: {
     height: 48,
-    paddingHorizontal: theme.spacing.sm + 4,
-    fontSize: theme.typography.sizes.body,
+    paddingHorizontal: currentTheme.spacing.sm + 4,
+    fontSize: currentTheme.typography.sizes.body,
   },
   lg: {
     height: 54,
-    paddingHorizontal: theme.spacing.md,
-    fontSize: theme.typography.sizes.headline,
+    paddingHorizontal: currentTheme.spacing.md,
+    fontSize: currentTheme.typography.sizes.headline,
   },
-};
+});
 
 export function Button({
   label,
@@ -57,8 +57,13 @@ export function Button({
   children,
   ...props
 }) {
-  const variantStyle = VARIANT_STYLES[variant] ?? VARIANT_STYLES.primary;
-  const sizeStyle = SIZE_STYLES[size] ?? SIZE_STYLES.md;
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
+  const variantStyles = useMemo(() => buildVariantStyles(currentTheme), [currentTheme]);
+  const sizeStyles = useMemo(() => buildSizeStyles(currentTheme), [currentTheme]);
+
+  const variantStyle = variantStyles[variant] ?? variantStyles.primary;
+  const sizeStyle = sizeStyles[size] ?? sizeStyles.md;
   const labelContent = label ?? (typeof children === 'string' ? children : undefined);
 
   return (
@@ -117,29 +122,30 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: theme.radius.md,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 0,
-  },
-  label: {
-    fontFamily: theme.typography.fontFamily.medium,
-    fontWeight: theme.typography.weights.semibold,
-  },
-  icon: {
-    marginRight: theme.spacing.xxs,
-  },
-  iconRight: {
-    marginRight: 0,
-    marginLeft: theme.spacing.xxs,
-  },
-  disabled: {
-    backgroundColor: theme.colors.disabledBackground,
-  },
-  labelDisabled: {
-    color: theme.colors.disabledText,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    base: {
+      borderRadius: currentTheme.radius.md,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 0,
+    },
+    label: {
+      fontFamily: currentTheme.typography.fontFamily.medium,
+      fontWeight: currentTheme.typography.weights.semibold,
+    },
+    icon: {
+      marginRight: currentTheme.spacing.xxs,
+    },
+    iconRight: {
+      marginRight: 0,
+      marginLeft: currentTheme.spacing.xxs,
+    },
+    disabled: {
+      backgroundColor: currentTheme.colors.disabledBackground,
+    },
+    labelDisabled: {
+      color: currentTheme.colors.disabledText,
+    },
+  });

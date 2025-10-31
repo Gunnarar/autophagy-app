@@ -1,4 +1,4 @@
-import { theme } from './theme';
+import { lightTheme } from './theme';
 
 export function createInfoNotifications({
   foodLog = [],
@@ -11,6 +11,7 @@ export function createInfoNotifications({
   fastingDismissedUntil = null,
   done = {},
   fastRecDismissed = false,
+  theme = lightTheme,
 }) {
   const notifications = [];
   const ongoingFast = fastLog.find(entry => !entry.end);

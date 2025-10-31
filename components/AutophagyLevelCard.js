@@ -3,13 +3,15 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card } from './ui/Card';
 import { AUTOPHAGY_LEVELS } from '../utils/constants';
-import { theme } from '../utils/theme';
+import { useTheme, useThemedStyles } from '../utils/theme';
 
 export function AutophagyLevelCard({ status }) {
   if (!status) {
     return null;
   }
 
+  const { theme: currentTheme } = useTheme();
+  const styles = useThemedStyles(createStyles);
   const { currentLevel, nextChallenge, completed = {} } = status;
 
   return (
@@ -33,10 +35,10 @@ export function AutophagyLevelCard({ status }) {
             ? 'progress-check'
             : 'shield-outline';
           const iconColor = finished
-            ? theme.colors.brandPrimary
+            ? currentTheme.colors.brandPrimary
             : isActive
-            ? theme.colors.info
-            : theme.colors.textMuted;
+            ? currentTheme.colors.info
+            : currentTheme.colors.textMuted;
           return (
             <View key={level.name} style={[styles.row, isActive && styles.activeRow]}>
               <View style={styles.rankBadge}>
@@ -61,72 +63,73 @@ export function AutophagyLevelCard({ status }) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    marginBottom: theme.spacing.lg,
-  },
-  overline: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: theme.spacing.tiny,
-  },
-  title: {
-    fontSize: theme.typography.sizes.headline,
-    fontWeight: theme.typography.weights.bold,
-    color: theme.colors.textPrimary,
-  },
-  subtitle: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.sm,
-  },
-  list: {
-    gap: theme.spacing.sm,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.xs,
-    paddingHorizontal: theme.spacing.sm,
-    borderRadius: theme.radius.md,
-    backgroundColor: theme.colors.surfacePrimary,
-  },
-  activeRow: {
-    borderWidth: StyleSheet.hairlineWidth * 2,
-    borderColor: theme.colors.brandPrimary,
-    backgroundColor: theme.colors.surfaceMuted,
-  },
-  rankBadge: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: theme.colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: theme.spacing.sm,
-  },
-  rankText: {
-    fontSize: theme.typography.sizes.caption,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.textSecondary,
-  },
-  rowContent: {
-    flex: 1,
-  },
-  levelName: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.textPrimary,
-  },
-  levelNameComplete: {
-    color: theme.colors.brandPrimary,
-  },
-  levelMeta: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    card: {
+      marginBottom: currentTheme.spacing.lg,
+    },
+    overline: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 0.8,
+      marginBottom: currentTheme.spacing.tiny,
+    },
+    title: {
+      fontSize: currentTheme.typography.sizes.headline,
+      fontWeight: currentTheme.typography.weights.bold,
+      color: currentTheme.colors.textPrimary,
+    },
+    subtitle: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      marginBottom: currentTheme.spacing.sm,
+    },
+    list: {
+      gap: currentTheme.spacing.sm,
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: currentTheme.spacing.xs,
+      paddingHorizontal: currentTheme.spacing.sm,
+      borderRadius: currentTheme.radius.md,
+      backgroundColor: currentTheme.colors.surfacePrimary,
+    },
+    activeRow: {
+      borderWidth: StyleSheet.hairlineWidth * 2,
+      borderColor: currentTheme.colors.brandPrimary,
+      backgroundColor: currentTheme.colors.surfaceMuted,
+    },
+    rankBadge: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginRight: currentTheme.spacing.sm,
+    },
+    rankText: {
+      fontSize: currentTheme.typography.sizes.caption,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.textSecondary,
+    },
+    rowContent: {
+      flex: 1,
+    },
+    levelName: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.textPrimary,
+    },
+    levelNameComplete: {
+      color: currentTheme.colors.brandPrimary,
+    },
+    levelMeta: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+    },
+  });
 
 export default AutophagyLevelCard;

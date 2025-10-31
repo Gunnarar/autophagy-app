@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import NotificationCard from './NotificationCard';
-import { theme } from '../utils/theme';
+import { useThemedStyles } from '../utils/theme';
 
 export default function NotificationList({ notifications = [], onDismiss }) {
+  const styles = useThemedStyles(createStyles);
   if (!notifications.length) {
     return (
       <View style={styles.emptyContainer}>
@@ -26,29 +27,30 @@ export default function NotificationList({ notifications = [], onDismiss }) {
   );
 }
 
-const styles = StyleSheet.create({
-  list: {
-    width: '100%',
-    marginTop: theme.spacing.md,
-    gap: theme.spacing.md,
-  },
-  emptyContainer: {
-    width: '100%',
-    padding: theme.spacing.lg,
-    borderRadius: theme.radius.lg,
-    backgroundColor: theme.colors.surfaceMuted,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: theme.spacing.xs,
-  },
-  emptyTitle: {
-    fontSize: theme.typography.sizes.body,
-    fontWeight: theme.typography.weights.semibold,
-    color: theme.colors.brandSecondary,
-  },
-  emptyDesc: {
-    fontSize: theme.typography.sizes.caption,
-    color: theme.colors.textSecondary,
-    textAlign: 'center',
-  },
-});
+const createStyles = currentTheme =>
+  StyleSheet.create({
+    list: {
+      width: '100%',
+      marginTop: currentTheme.spacing.md,
+      gap: currentTheme.spacing.md,
+    },
+    emptyContainer: {
+      width: '100%',
+      padding: currentTheme.spacing.lg,
+      borderRadius: currentTheme.radius.lg,
+      backgroundColor: currentTheme.colors.surfaceMuted,
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: currentTheme.spacing.xs,
+    },
+    emptyTitle: {
+      fontSize: currentTheme.typography.sizes.body,
+      fontWeight: currentTheme.typography.weights.semibold,
+      color: currentTheme.colors.brandSecondary,
+    },
+    emptyDesc: {
+      fontSize: currentTheme.typography.sizes.caption,
+      color: currentTheme.colors.textSecondary,
+      textAlign: 'center',
+    },
+  });
