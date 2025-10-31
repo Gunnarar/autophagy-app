@@ -33,7 +33,10 @@
 - [ ] **Personalization** _(dark mode toggle, quick actions: future)_
 - [ ] **Medical Safety** _(medication logging: future)_
 - [ ] **Resilient Storage & Sync** _(better error fallback, corruption handling)_
-- [ ] **Notification State Persistence** _(remember dismissals across sessions)_
+- [x] **Notification State Persistence** _(remember dismissals across sessions)_
+- [ ] **Patient Onboarding Flow** _(collect name, address, age, height, weight, contact info, medications, symptom list, 12/24‑month goals, and desired start date that triggers onboarding email)_
+- [ ] **Autophagy Program Picker** _(surface the beginner → growth hormone schedule: 24h, 48h, 72h, 96h, 120h, 144h, 168h)_
+- [ ] **Priority Health Metrics** _(log total time fasted, ketosis state, zero-carb days, weight—electrolytes intentionally out of scope)_
 
 #### Advanced/Optional (For Future)
 - [ ] **User Feedback Indicators** _(future)_
@@ -43,29 +46,31 @@
 - [ ] **Theming & Delight** _(future)_
 
 ### 🧪 Next Steps
-- Final QA and user testing (see QA checklist in project notes)
-- Polish UI/UX based on user feedback
-- Prepare for deployment (Expo Go, EAS Build, TestFlight/Play Store)
-- Run an accessibility pass on the chip-driven entry modals (Home/Symptoms) to confirm VoiceOver/TalkBack announce emoji labels and selection state correctly.
-- Adopt the refreshed Figma design system: new tokens, shared UI primitives, and updated screen layouts
-- Validate the new bottom navigation + hero metrics flow against the Figma mock (remove the legacy FAB once quick actions move into the tabs)
-- Persist notification snoozes/dismissals and harden AsyncStorage fallback paths
-- Plan for reminders/notifications and advanced features
+- [ ] Final QA and user testing (see QA checklist in project notes)
+- [ ] Polish UI/UX based on user feedback
+- [ ] Prepare for deployment (Expo Go, EAS Build, TestFlight/Play Store)
+- [ ] Run an accessibility pass on the chip-driven entry modals (Home/Symptoms) to confirm VoiceOver/TalkBack announce emoji labels and selection state correctly.
+- [x] Adopt the refreshed Figma design system: new tokens, shared UI primitives, and updated screen layouts.
+- [x] Swap bottom navigation icons to the lucide set used in Figma (quick actions now live inline; legacy FAB already removed).
+- [x] Persist notification snoozes/dismissals and harden AsyncStorage fallback paths.
+- [ ] Plan for reminders/notifications and advanced features.
 
 ### 🎨 Visual Refresh (Figma Alignment)
-- Introduce the Figma-derived design tokens (carnivore red palette, deep navy neutrals) in `utils/theme.js`
-- Build shared React Native primitives (`components/ui`) for Card, Button, and Chip (logs filters and modals now rely on them); extend the library with checklist/toggle primitives for upcoming settings work.
-- Mirror the Figma autophagy ranking in-app (`AutophagyLevelCard`) so the Info screen shows current level, next challenge, and completed tiers.
-- Restructure Home, Logs, and Profile screens to mirror the new hero sections, stat grids, and insights cards
-- Add trend visualizations (ketone/symptom correlation, weekly summaries) using reusable chart wrappers
-- Modernize modals and forms with dialog-style layouts, icon-backed selectors, and consistent spacing
+- [x] Introduce the Figma-derived design tokens (carnivore red palette, deep navy neutrals) in `utils/theme.js`
+- [x] Centralize gradient presets on `theme.gradients.*` and update Home hero/stat cards plus notification surfaces to use them.
+- [x] Build shared React Native primitives (`components/ui`) for Card, Button, and Chip (logs filters and modals now rely on them); extend the library with checklist/toggle primitives for upcoming settings work.
+- [x] Mirror the Figma autophagy ranking in-app (`AutophagyLevelCard`) so the Info screen shows current level, next challenge, and completed tiers.
+- [x] Restructure Home, Logs, and Profile screens to mirror the new hero sections, stat grids, and insights cards.
+- [x] Add trend visualizations (ketone/symptom correlation, weekly summaries) using reusable chart wrappers.
+- [x] Modernize modals and forms with dialog-style layouts, icon-backed selectors, and consistent spacing.
+- [x] Draw onboarding inspiration from Easy Fast’s streamlined flow while omitting electrolytes and focusing on our fasting/ketosis priorities.
 
 ### 🌙 Dark Mode Prep
-- Split `theme` into light/dark palettes that share spacing/typography tokens; derive colors from the Figma night variant.
-- Add a `ThemeProvider` wrapper that persists the chosen mode (system/default toggle via AsyncStorage) and exposes a `useThemeMode` hook.
-- Audit components that still rely on literal hex values (e.g. `components/KetoneLogModal.js`, `components/SymptomLogModal.js`, `components/LogEntryModal.js`) and swap them to the semantic tokens before enabling the toggle.
-- Provide light/dark values for `theme.overlay.scrim`/`scrimLight` once the theme provider lands so modal scrims adapt automatically.
-- Extend smoke tests to render the app in both modes once the theme provider exists to guard against missing token references.
+- [ ] Split `theme` into light/dark palettes that share spacing/typography tokens; derive colors from the Figma night variant.
+- [ ] Add a `ThemeProvider` wrapper that persists the chosen mode (system/default toggle via AsyncStorage) and exposes a `useThemeMode` hook.
+- [ ] Audit components that still rely on literal hex values (e.g. `components/KetoneLogModal.js`, `components/SymptomLogModal.js`, `components/LogEntryModal.js`) and swap them to the semantic tokens before enabling the toggle.
+- [ ] Provide light/dark values for `theme.overlay.scrim`/`scrimLight` once the theme provider lands so modal scrims adapt automatically.
+- [ ] Extend smoke tests to render the app in both modes once the theme provider exists to guard against missing token references.
 
 ### ♿ Manual Accessibility QA
 Use these quick checks whenever we touch chip selectors, modals, or other interactive primitives:

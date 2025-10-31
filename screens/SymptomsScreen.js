@@ -1,11 +1,23 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  Pressable,
+  TouchableWithoutFeedback,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
 import { LinearGradient } from 'expo-linear-gradient';
 import { theme } from '../utils/theme';
 import { Chip } from '../components/ui/Chip';
+import { Card } from '../components/ui/Card';
 
 export default function SymptomsScreen() {
   const { symptomLog, setSymptomLog } = useLogs();
@@ -106,76 +118,93 @@ export default function SymptomsScreen() {
         <Modal visible={modalVisible} transparent animationType="fade" onRequestClose={() => setModalVisible(false)}>
           <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
             <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Symptom' : 'Add Symptom'}</Text>
-                  <Text style={styles.sectionTitle}>Symptom</Text>
-                  <View style={styles.selectorRow}>
-                    {SYMPTOM_TYPES.map(t => (
-                      <Chip
-                        key={t.key}
-                        label={t.label}
-                        icon={<Text style={styles.selectorEmoji}>{t.emoji}</Text>}
-                        size="lg"
-                        active={symptomType === t.key}
-                        onPress={() => setSymptomType(t.key)}
-                        accessibilityLabel={t.label}
-                        style={styles.selectorChip}
-                        contentStyle={styles.selectorContentStacked}
-                        textStyle={styles.selectorLabel}
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.modalAvoider}
+                enabled
+              >
+                <TouchableWithoutFeedback onPress={() => {}}>
+                  <Card variant="outline" style={styles.modalContent}>
+                    <ScrollView
+                      keyboardShouldPersistTaps="handled"
+                      overScrollMode="never"
+                      contentContainerStyle={styles.modalScrollContent}
+                    >
+                      <Text style={styles.modalTitle}>{editIndex !== null ? 'Edit Symptom' : 'Add Symptom'}</Text>
+                      <Text style={styles.sectionTitle}>Symptom</Text>
+                      <View style={styles.selectorRow}>
+                        {SYMPTOM_TYPES.map(t => (
+                          <Chip
+                            key={t.key}
+                            label={t.label}
+                            icon={<Text style={styles.selectorEmoji}>{t.emoji}</Text>}
+                            size="lg"
+                            active={symptomType === t.key}
+                            onPress={() => setSymptomType(t.key)}
+                            accessibilityLabel={t.label}
+                            style={styles.selectorChip}
+                            contentStyle={styles.selectorContentStacked}
+                            textStyle={styles.selectorLabel}
+                          />
+                        ))}
+                      </View>
+                      <Text style={styles.selectedLabel}>{SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}</Text>
+                      <Text style={styles.sectionTitle}>Severity</Text>
+                      <View style={styles.selectorRow}>
+                        {SEVERITIES.map(s => (
+                          <Chip
+                            key={s.key}
+                            label={s.label}
+                            size="lg"
+                            active={severity === s.key}
+                            onPress={() => setSeverity(s.key)}
+                            accessibilityLabel={s.label}
+                            style={styles.selectorChip}
+                            textStyle={styles.selectorLabel}
+                          />
+                        ))}
+                      </View>
+                      <Pressable
+                        style={[styles.modalButton, styles.modalButtonSpacing]}
+                        onPress={() => setPickerMode(true)}
+                        accessibilityLabel="Edit time"
+                      >
+                        <Text style={styles.modalButtonPrimaryText}>Time: {symptomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+                      </Pressable>
+                      <DateTimePickerModal
+                        isVisible={pickerMode}
+                        mode="time"
+                        date={symptomTime}
+                        onConfirm={date => { setSymptomTime(date); setPickerMode(false); }}
+                        onCancel={() => setPickerMode(false)}
+                        is24Hour={true}
                       />
-                    ))}
-                  </View>
-                  <Text style={styles.selectedLabel}>{SYMPTOM_TYPES.find(t => t.key === symptomType)?.label}</Text>
-                  <Text style={styles.sectionTitle}>Severity</Text>
-                  <View style={styles.selectorRow}>
-                    {SEVERITIES.map(s => (
-                      <Chip
-                        key={s.key}
-                        label={s.label}
-                        size="lg"
-                        active={severity === s.key}
-                        onPress={() => setSeverity(s.key)}
-                        accessibilityLabel={s.label}
-                        style={styles.selectorChip}
-                        textStyle={styles.selectorLabel}
-                      />
-                    ))}
-                  </View>
-                  <Pressable
-                    style={[styles.modalButton, styles.modalButtonSpacing]}
-                    onPress={() => setPickerMode(true)}
-                    accessibilityLabel="Edit time"
-                  >
-                    <Text style={styles.modalButtonPrimaryText}>Time: {symptomTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
-                  </Pressable>
-                  <DateTimePickerModal
-                    isVisible={pickerMode}
-                    mode="time"
-                    date={symptomTime}
-                    onConfirm={date => { setSymptomTime(date); setPickerMode(false); }}
-                    onCancel={() => setPickerMode(false)}
-                    is24Hour={true}
-                  />
-                  <Text style={styles.noteLabel}>Note (optional):</Text>
-                  <View style={styles.fullWidthSection}>
-                    <TextInput
-                      style={styles.noteInput}
-                      numberOfLines={1}
-                      onChangeText={setSymptomNote}
-                      value={symptomNote}
-                      placeholder="e.g. after exercise, before meds"
-                      accessibilityLabel="Symptom note input"
-                    />
-                  </View>
-                  <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save symptom entry">
-                    <Text style={styles.modalButtonPrimaryText}>Save</Text>
-                  </Pressable>
-                  <Pressable style={[styles.modalButton, styles.modalButtonDisabled, styles.modalButtonTopMargin]} onPress={() => setModalVisible(false)} accessibilityLabel="Cancel">
-                    <Text style={styles.modalButtonDisabledText}>Cancel</Text>
-                  </Pressable>
-                </View>
-              </TouchableWithoutFeedback>
+                      <Text style={styles.noteLabel}>Note (optional):</Text>
+                      <View style={styles.fullWidthSection}>
+                        <TextInput
+                          style={styles.noteInput}
+                          numberOfLines={1}
+                          onChangeText={setSymptomNote}
+                          value={symptomNote}
+                          placeholder="e.g. after exercise, before meds"
+                          accessibilityLabel="Symptom note input"
+                          multiline
+                        />
+                      </View>
+                      <Pressable style={styles.modalButton} onPress={handleSave} accessibilityLabel="Save symptom entry">
+                        <Text style={styles.modalButtonPrimaryText}>Save</Text>
+                      </Pressable>
+                      <Pressable
+                        style={[styles.modalButton, styles.modalButtonDisabled, styles.modalButtonTopMargin]}
+                        onPress={() => setModalVisible(false)}
+                        accessibilityLabel="Cancel"
+                      >
+                        <Text style={styles.modalButtonDisabledText}>Cancel</Text>
+                      </Pressable>
+                    </ScrollView>
+                  </Card>
+                </TouchableWithoutFeedback>
+              </KeyboardAvoidingView>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
@@ -219,52 +248,56 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: theme.overlay.scrim,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  modalAvoider: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.large,
-    padding: 24,
-    width: 300,
-    alignItems: 'center',
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    width: '100%',
+    maxHeight: '90%',
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  modalScrollContent: {
+    paddingBottom: theme.spacing.lg,
+    gap: theme.spacing.md,
+    alignItems: 'stretch',
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: theme.colors.text,
+    fontSize: theme.typography.sizes.headline,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.textPrimary,
   },
   modalButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.regular,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
+    backgroundColor: theme.colors.brandPrimary,
+    borderRadius: theme.radius.sm,
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    alignSelf: 'stretch',
   },
   modalButtonSpacing: {
-    marginBottom: 12,
+    marginBottom: theme.spacing.md,
   },
   modalButtonPrimaryText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: theme.colors.textOnPrimary,
+    fontWeight: theme.typography.weights.semibold,
   },
   selectedLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 12,
-    color: theme.colors.text,
+    fontSize: theme.typography.sizes.body,
+    fontWeight: theme.typography.weights.semibold,
+    marginBottom: theme.spacing.sm,
+    color: theme.colors.textPrimary,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 8,
-    color: theme.colors.text,
+    fontSize: theme.typography.sizes.body,
+    fontWeight: theme.typography.weights.semibold,
+    marginBottom: theme.spacing.xs,
+    color: theme.colors.textPrimary,
   },
   selectorRow: {
     flexDirection: 'row',
@@ -299,22 +332,24 @@ const styles = StyleSheet.create({
   },
   noteLabel: {
     alignSelf: 'flex-start',
-    marginBottom: 4,
-    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.xs,
+    fontSize: theme.typography.sizes.body,
+    color: theme.colors.textPrimary,
   },
   fullWidthSection: {
     width: '100%',
-    marginBottom: 16,
+    marginBottom: theme.spacing.md,
   },
   noteInput: {
     borderColor: theme.colors.border,
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 8,
-    fontSize: 16,
-    color: theme.colors.text,
-    backgroundColor: '#f8f8f8',
-    minHeight: 40,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderRadius: theme.radius.sm,
+    padding: theme.spacing.sm,
+    fontSize: theme.typography.sizes.body,
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surfacePrimary,
+    minHeight: 72,
+    textAlignVertical: 'top',
   },
   symptomLogEmoji: {
     fontSize: 24,
@@ -335,13 +370,14 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   modalButtonDisabled: {
-    backgroundColor: theme.colors.disabled,
+    backgroundColor: theme.colors.surfaceMuted,
+    alignSelf: 'stretch',
   },
   modalButtonTopMargin: {
-    marginTop: 8,
+    marginTop: theme.spacing.xs,
   },
   modalButtonDisabledText: {
-    color: theme.colors.text,
-    fontWeight: 'bold',
+    color: theme.colors.textSecondary,
+    fontWeight: theme.typography.weights.semibold,
   },
 });

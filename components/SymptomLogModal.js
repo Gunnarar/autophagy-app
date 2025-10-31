@@ -1,5 +1,15 @@
 import React from 'react';
-import { Modal, View, Text, TextInput, TouchableWithoutFeedback, StyleSheet } from 'react-native';
+import {
+  Modal,
+  View,
+  Text,
+  TextInput,
+  TouchableWithoutFeedback,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { theme } from '../utils/theme';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
@@ -27,17 +37,28 @@ export default function SymptomLogModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.overlay}>
-          <TouchableWithoutFeedback onPress={() => {}}>
-            <Card variant="outline" style={styles.content}>
-              <Text style={styles.title}>Log symptom</Text>
-              <Text style={styles.subtitle}>Track how you feel to spot patterns with fasting and meals.</Text>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.avoiding}
+            enabled
+          >
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Card variant="outline" style={styles.content}>
+                <ScrollView
+                  keyboardShouldPersistTaps="handled"
+                  contentContainerStyle={styles.scrollContent}
+                  showsVerticalScrollIndicator={false}
+                  overScrollMode="never"
+                >
+                  <Text style={styles.title}>Log symptom</Text>
+                  <Text style={styles.subtitle}>Track how you feel to spot patterns with fasting and meals.</Text>
 
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Symptom</Text>
-                <View style={styles.selectorRow}>
-                  {SYMPTOM_TYPES.map(type => {
-                    const isActive = symptomType === type.key;
-                    return (
+                  <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>Symptom</Text>
+                  <View style={styles.selectorRow}>
+                    {SYMPTOM_TYPES.map(type => {
+                      const isActive = symptomType === type.key;
+                      return (
                       <Chip
                         key={type.key}
                         label={type.label}
@@ -52,15 +73,15 @@ export default function SymptomLogModal({
                       />
                     );
                   })}
+                  </View>
                 </View>
-              </View>
 
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Severity</Text>
-                <View style={styles.selectorRow}>
-                  {SEVERITIES.map(level => {
-                    const isActive = severity === level.key;
-                    return (
+                  <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>Severity</Text>
+                  <View style={styles.selectorRow}>
+                    {SEVERITIES.map(level => {
+                      const isActive = severity === level.key;
+                      return (
                       <Chip
                         key={level.key}
                         label={level.label}
@@ -73,17 +94,17 @@ export default function SymptomLogModal({
                       />
                     );
                   })}
+                  </View>
                 </View>
-              </View>
 
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Time</Text>
-                <Button
-                  label={time.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}
-                  variant="secondary"
-                  onPress={onOpenTimePicker}
-                  style={styles.fullWidthButton}
-                />
+                  <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>Time</Text>
+                  <Button
+                    label={time.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}
+                    variant="secondary"
+                    onPress={onOpenTimePicker}
+                    style={styles.fullWidthButton}
+                  />
                 <DateTimePickerModal
                   isVisible={isTimePickerVisible}
                   mode="datetime"
@@ -94,7 +115,7 @@ export default function SymptomLogModal({
                 />
               </View>
 
-              <View style={styles.section}>
+                  <View style={styles.section}>
                 <Text style={styles.sectionLabel}>Note (optional)</Text>
                 <TextInput
                   style={styles.noteInput}
@@ -106,12 +127,14 @@ export default function SymptomLogModal({
                 />
               </View>
 
-              <View style={styles.actions}>
-                <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.actionButton} />
-                <Button label="Save" onPress={onSave} style={styles.actionButton} />
-              </View>
-            </Card>
-          </TouchableWithoutFeedback>
+                  <View style={styles.actions}>
+                    <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.actionButton} />
+                    <Button label="Save" onPress={onSave} style={styles.actionButton} />
+                  </View>
+                </ScrollView>
+              </Card>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
       </TouchableWithoutFeedback>
     </Modal>
@@ -122,14 +145,23 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: theme.overlay.scrim,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  avoiding: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
   },
   content: {
     width: '100%',
+    maxHeight: '90%',
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.lg,
+    gap: theme.spacing.md,
+    alignItems: 'stretch',
   },
   title: {
     fontSize: theme.typography.sizes.headline,
@@ -195,6 +227,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: theme.spacing.md,
+    alignSelf: 'stretch',
+    gap: theme.spacing.xs,
   },
   actionButton: {
     marginLeft: theme.spacing.xs,

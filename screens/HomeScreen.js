@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { SEVERITIES } from '../utils/constants';
 import { useLogs } from '../contexts/LogsContext';
 import { useModalAction } from '../contexts/ModalActionContext';
@@ -31,11 +32,18 @@ export default function HomeScreen() {
   const unifiedRec = useUnifiedFastRecommendation();
   const fastingGoalHours = unifiedRec?.recommendedProgram?.duration || 16;
   const [logModal, setLogModal] = useState(null);
+  const [editFastStartVisible, setEditFastStartVisible] = useState(false);
+  const [ketoneModalVisible, setKetoneModalVisible] = useState(false);
+  const [ketoneValue, setKetoneValue] = useState('');
+  const [ketoneUnit, setKetoneUnit] = useState('mmol/L');
+  const [ketoneTime, setKetoneTime] = useState(new Date());
+  const [ketoneNote, setKetoneNote] = useState('');
 
 
   useEffect(() => {
     const handler = (action) => {
       if (action === 'logSymptom') {
+        setSymptomNote('');
         setSymptomModalVisible(true);
       }
     };
@@ -100,44 +108,59 @@ export default function HomeScreen() {
     .filter(entry => entry.type === 'animalMeat' && entry.pounds)
     .reduce((sum, entry) => sum + parseFloat(entry.pounds), 0);
 
-  const statCards = [
+  const sortedKetones = React.useMemo(
+    () => [...ketoneLog].filter(e => e.value != null).sort((a, b) => new Date(b.time) - new Date(a.time)),
+    [ketoneLog],
+  );
+  const latestKetone = sortedKetones[0];
+  const latestKetoneValue = latestKetone ? latestKetone.value.toFixed(1) : '—';
+  const latestKetoneUnit = latestKetone?.unit || 'mmol/L';
+  const ketoneInKetosis = latestKetone ? latestKetone.value >= 0.5 : false;
+  const ketoneColor = ketoneInKetosis ? theme.colors.brandPrimary : theme.colors.textSecondary;
+  const ketoneHistory = sortedKetones.slice(0, 5);
+
+  const statCards = React.useMemo(() => ([
     {
       key: 'meals',
       title: 'Meals today',
       value: todaysMeals.length.toString(),
       meta: `${todaysMeals.length === 1 ? 'entry' : 'entries'} logged`,
       footer: `${todaysMeat.toFixed(1)} lbs animal meat`,
+      footerColor: theme.colors.brandSecondary,
       icon: <MaterialCommunityIcons name="silverware-fork-knife" size={22} color={theme.colors.brandSecondary} />,
-      colors: ['#fef2f2', '#fde68a'],
+      gradient: theme.gradients.statCards.meals,
     },
     {
       key: 'symptoms',
       title: 'Symptoms logged',
       value: todaysSymptoms.length.toString(),
       meta: todaysSymptoms.length === 0 ? 'All clear today' : `${todaysSymptoms.length} noted`,
-      footer: unifiedRec?.challengeMsg ? unifiedRec.challengeMsg : 'Keep tracking changes',
+      footer: todaysSymptoms.length === 0 ? 'Great job staying mindful' : 'Log notable changes',
+      footerColor: theme.colors.brandHighlight,
       icon: <MaterialCommunityIcons name="stethoscope" size={22} color={theme.colors.error} />,
-      colors: ['#fff7ed', '#fed7aa'],
+      gradient: theme.gradients.statCards.symptoms,
     },
     {
       key: 'ketone',
       title: 'Latest ketone',
       value: latestKetoneValue,
       meta: latestKetoneValue === '—' ? 'No data yet' : latestKetoneUnit,
-      footer: ketoneInKetosis ? 'Optimal ketosis' : 'Log a reading',
+      footer: ketoneInKetosis ? 'Optimal ketosis' : 'Add a reading',
+      footerColor: ketoneInKetosis ? theme.colors.success : theme.colors.textSecondary,
       icon: <MaterialCommunityIcons name="water" size={22} color={theme.colors.info} />,
-      colors: ['#eff6ff', '#bfdbfe'],
+      gradient: theme.gradients.statCards.ketone,
     },
     {
       key: 'streak',
       title: 'Fasting streak',
       value: fastingStreak.toString(),
       meta: fastingStreak === 1 ? 'day completed' : 'days completed',
-      footer: unifiedRec?.planNextMsg || 'Consistency drives results',
+      footer: fastingStreak >= 3 ? 'Momentum is building' : 'Stay consistent',
+      footerColor: theme.colors.brandPrimary,
       icon: <MaterialCommunityIcons name="calendar-check" size={22} color={theme.colors.brandPrimary} />,
-      colors: ['#ecfdf5', '#a7f3d0'],
+      gradient: theme.gradients.statCards.streak,
     },
-  ];
+  ]), [todaysMeals.length, todaysMeat, todaysSymptoms.length, latestKetoneValue, latestKetoneUnit, ketoneInKetosis, fastingStreak]);
 
 
   const handleSaveSymptomWithTime = () => {
@@ -213,6 +236,22 @@ export default function HomeScreen() {
     ));
   }
 
+  function handleEditFastStart() {
+    if (!ongoingFast) {return;}
+    setEditFastStartVisible(true);
+  }
+
+  function handleConfirmFastStart(date) {
+    if (!ongoingFast) {
+      setEditFastStartVisible(false);
+      return;
+    }
+    setFastLog(current => current.map(f =>
+      f === ongoingFast ? { ...f, start: date.toISOString() } : f
+    ));
+    setEditFastStartVisible(false);
+  }
+
   // Calculate autophagy windows (X/365) from completed fasts
   const now = new Date();
   let autophagyDays = 0;
@@ -237,19 +276,6 @@ export default function HomeScreen() {
     fastTimer = `${h}h ${m}m elapsed`;
   }
 
-  // Helper to get most recent ketone entry
-  const sortedKetones = [...ketoneLog].filter(e => e.value != null).sort((a, b) => new Date(b.time) - new Date(a.time));
-  const latestKetone = sortedKetones[0];
-  const ketoneInKetosis = latestKetone && latestKetone.value >= 0.5;
-  const ketoneColor = ketoneInKetosis ? theme.colors.primary : theme.colors.border;
-  const ketoneHistory = sortedKetones.slice(0, 5);
-
-  const [ketoneModalVisible, setKetoneModalVisible] = useState(false);
-  const [ketoneValue, setKetoneValue] = useState('');
-  const [ketoneUnit, setKetoneUnit] = useState('mmol/L');
-  const [ketoneTime, setKetoneTime] = useState(new Date());
-  const [ketoneNote, setKetoneNote] = useState('');
-
   const hasOngoingFast = Boolean(ongoingFast);
   const formattedFastingHours = fastingHours > 0 ? fastingHours.toFixed(1) : '0.0';
   const greetingName = user?.name?.split(' ')[0] || 'there';
@@ -259,11 +285,9 @@ export default function HomeScreen() {
     : nextProgram
     ? `Next goal · ${nextProgram.duration}h fast`
     : 'Plan your next fast to stay on track';
-  const heroDetail = unifiedRec?.challengeMsg
-    || unifiedRec?.planNextMsg
-    || 'Track meals, symptoms, and ketones to understand your day.';
-  const latestKetoneValue = latestKetone ? latestKetone.value.toFixed(1) : '—';
-  const latestKetoneUnit = latestKetone?.unit || 'mmol/L';
+  const heroDetail = hasOngoingFast
+    ? 'Log how you feel to spot trends.'
+    : unifiedRec?.reason || 'Set up your next fast to stay on track.';
   const heroPrimaryAction = hasOngoingFast ? handleStopFast : handleStartFast;
   const heroPrimaryLabel = hasOngoingFast ? 'Stop fast' : 'Start fast';
 
@@ -293,15 +317,37 @@ export default function HomeScreen() {
         .filter(entry => entry.type === 'animalMeat' && entry.time && entry.time.slice(0, 10) === dayKey && entry.pounds)
         .reduce((sum, entry) => sum + parseFloat(entry.pounds), 0);
 
+      const fastHoursForDay = fastLog
+        .filter(entry => entry.end && entry.end.slice(0, 10) === dayKey)
+        .reduce((sum, entry) => {
+          const start = new Date(entry.start);
+          const end = new Date(entry.end);
+          if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {return sum;}
+          const duration = (end - start) / 3600000;
+          return duration > 0 ? sum + duration : sum;
+        }, 0);
+
+      const isToday = dayKey === today;
+      let todayFastHours = fastHoursForDay;
+      if (isToday && hasOngoingFast) {
+        const ongoingStart = new Date(ongoingFast.start);
+        if (!Number.isNaN(ongoingStart.getTime())) {
+          todayFastHours += (Date.now() - ongoingStart.getTime()) / 3600000;
+        }
+      }
+
+      const fastDays = todayFastHours ? Number((todayFastHours / 24).toFixed(2)) : null;
+
       days.push({
         date: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
         ketones: avgKetone,
         symptoms: avgSeverity,
+        fastDays,
         redMeat: meatForDay,
       });
     }
     return days;
-  }, [sortedKetones, symptomLog, foodLog]);
+  }, [sortedKetones, symptomLog, foodLog, fastLog, hasOngoingFast, ongoingFast, today]);
 
   function handleSaveKetone() {
     if (!ketoneValue) {return;}
@@ -326,7 +372,7 @@ export default function HomeScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <View style={styles.heroWrapper}>
           <LinearGradient
-            colors={[theme.colors.brandPrimary, theme.colors.brandPrimaryDark]}
+            colors={theme.gradients.hero}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}
@@ -384,7 +430,7 @@ export default function HomeScreen() {
           {statCards.map(card => (
             <LinearGradient
               key={card.key}
-              colors={card.colors}
+              colors={card.gradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.statGradient}
@@ -395,7 +441,7 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.statValue}>{card.value}</Text>
               <Text style={styles.statMeta}>{card.meta}</Text>
-              <Text style={styles.statMetaAccent}>{card.footer}</Text>
+              <Text style={[styles.statMetaAccent, { color: card.footerColor ?? theme.colors.brandSecondary }]}>{card.footer}</Text>
               {card.key === 'ketone' && (
                 <Button
                   label="Log ketone"
@@ -416,13 +462,15 @@ export default function HomeScreen() {
 
         <FastingSummaryCard
           fastingElapsedSeconds={fastingElapsed}
-          recommendedProgram={unifiedRec.recommendedProgram}
-          reason={unifiedRec.reason}
-          benefits={unifiedRec.benefits}
-          whatToExpect={unifiedRec.whatToExpect}
-          challengeMsg={unifiedRec.challengeMsg}
-          caution={unifiedRec.caution}
-          planNextMsg={unifiedRec.planNextMsg}
+          recommendedProgram={unifiedRec?.recommendedProgram}
+          reason={unifiedRec?.reason}
+          benefits={unifiedRec?.benefits}
+          whatToExpect={unifiedRec?.whatToExpect}
+          challengeMsg={unifiedRec?.challengeMsg}
+          caution={unifiedRec?.caution}
+          planNextMsg={unifiedRec?.planNextMsg}
+          hasOngoingFast={hasOngoingFast}
+          onEditStart={handleEditFastStart}
         />
         <AutophagyKetoneCard
           autophagyDays={autophagyDays}
@@ -432,7 +480,6 @@ export default function HomeScreen() {
           ketoneInKetosis={ketoneInKetosis}
           ketoneColor={ketoneColor}
           ketoneHistory={ketoneHistory}
-          onLogKetone={() => setKetoneModalVisible(true)}
         />
         <KetoneLogModal
           visible={ketoneModalVisible}
@@ -469,6 +516,12 @@ export default function HomeScreen() {
           visible={!!logModal}
           onSave={handleSaveLog}
           onCancel={handleCancelLog}
+        />
+        <DateTimePickerModal
+          isVisible={editFastStartVisible}
+          mode="datetime"
+          onConfirm={handleConfirmFastStart}
+          onCancel={() => setEditFastStartVisible(false)}
         />
       </ScrollView>
     </View>
@@ -544,7 +597,6 @@ const styles = StyleSheet.create({
     marginRight: theme.spacing.xs,
     minWidth: 140,
   },
-  heroActionSecondary: {},
   quickActionsCard: {
     marginBottom: theme.spacing.lg,
     paddingVertical: theme.spacing.md,
@@ -574,9 +626,11 @@ const styles = StyleSheet.create({
   },
   statGradient: {
     width: '48%',
-    marginBottom: theme.spacing.sm,
+    minWidth: 160,
     borderRadius: theme.radius.lg,
     padding: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    overflow: 'hidden',
   },
   statHeader: {
     flexDirection: 'row',
@@ -603,7 +657,6 @@ const styles = StyleSheet.create({
   },
   statMetaAccent: {
     fontSize: theme.typography.sizes.caption,
-    color: theme.colors.brandSecondary,
     marginTop: theme.spacing.tiny,
   },
   statButton: {

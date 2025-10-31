@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { theme } from '../utils/theme';
 import { formatTimeHM } from '../utils/constants';
 import { Card } from './ui/Card';
+import { Button } from './ui/Button';
 
 export default function FastingSummaryCard({
   fastingElapsedSeconds = 0,
@@ -13,6 +14,8 @@ export default function FastingSummaryCard({
   challengeMsg,
   caution,
   planNextMsg,
+  hasOngoingFast = false,
+  onEditStart,
 }) {
   const [showDetails, setShowDetails] = useState(false);
 
@@ -80,6 +83,15 @@ export default function FastingSummaryCard({
               : 'Starts around the 16h mark'}
           </Text>
         </View>
+        {hasOngoingFast && onEditStart ? (
+          <Button
+            label="Edit start time"
+            size="sm"
+            variant="secondary"
+            onPress={onEditStart}
+            style={styles.editStartButton}
+          />
+        ) : null}
       </View>
       <View style={styles.centerBlock}>
         <Text style={styles.challengeText}>Next Challenge: <Text style={styles.challengeHighlight}>{durationLabel}</Text></Text>
@@ -191,6 +203,10 @@ const styles = StyleSheet.create({
   autophagyMeta: {
     fontSize: theme.typography.sizes.caption,
     color: theme.colors.textSecondary,
+  },
+  editStartButton: {
+    alignSelf: 'stretch',
+    marginTop: theme.spacing.sm,
   },
   challengeText: {
     fontSize: 16,

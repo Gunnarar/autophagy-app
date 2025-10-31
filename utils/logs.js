@@ -159,8 +159,14 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
   let challengeMsg = '';
   if (nextChallenge && recommended.duration < nextChallenge) {
     challengeMsg = `Your next autophagy challenge is a ${nextChallenge}h fast. Completing the recommended fast will help you progress!`;
+    if (!overrideTo24h && !caution) {
+      reason = `You're on track—complete a ${recommended.duration}h fast to prep for the ${nextChallenge}h challenge.`;
+    }
   } else if (nextChallenge && recommended.duration === nextChallenge) {
     challengeMsg = 'This fast is your next autophagy challenge! Completing it will unlock a new level.';
+    if (!overrideTo24h && !caution) {
+      reason = `This ${recommended.duration}h fast advances you through the autophagy challenge ladder.`;
+    }
   }
 
   let planNextMsg = '';
@@ -198,7 +204,7 @@ export function calculateAutophagyProgress(fastLog = [], now = new Date()) {
       monthHours += durationHrs;
     }
 
-    FASTING_PROGRAMS.forEach(program => {
+  FASTING_PROGRAMS.forEach(program => {
       if (durationHrs >= program.duration) {
         completedFasts.add(program.key);
       }

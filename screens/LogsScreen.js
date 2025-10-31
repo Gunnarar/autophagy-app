@@ -1,5 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, TouchableWithoutFeedback, TextInput, Alert, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  Pressable,
+  TouchableWithoutFeedback,
+  TextInput,
+  Alert,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useLogs } from '../contexts/LogsContext';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
@@ -14,9 +26,9 @@ import { theme } from '../utils/theme';
 export default function LogsScreen() {
   const [filterType, setFilterType] = useState('all');
   const [timeRange, setTimeRange] = useState('week'); // week, month, 3m, 6m, year
-  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, ketoneLog } = useLogs();
+  const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, ketoneLog } = useLogs();
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [editLogType, setEditLogType] = useState(null); // 'food' or 'symptom'
+  const [editLogType, setEditLogType] = useState(null); // 'food' | 'symptom' | 'fast'
   const [editLog, setEditLog] = useState(null);
   const [editTime, setEditTime] = useState(new Date());
   const [editNote, setEditNote] = useState('');
@@ -24,6 +36,10 @@ export default function LogsScreen() {
   const [editSymptomType, setEditSymptomType] = useState('tremor');
   const [editSeverity, setEditSeverity] = useState('mild');
   const [showEditTimePicker, setShowEditTimePicker] = useState(false);
+  const [editFastStart, setEditFastStart] = useState(new Date());
+  const [editFastEnd, setEditFastEnd] = useState(null);
+  const [showFastStartPicker, setShowFastStartPicker] = useState(false);
+  const [showFastEndPicker, setShowFastEndPicker] = useState(false);
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [exportTimeRange, setExportTimeRange] = useState('week');
 
@@ -40,6 +56,11 @@ export default function LogsScreen() {
     ...foodLog.map(e => ({ ...e, logType: 'food' })),
     ...symptomLog.map(e => ({ ...e, logType: 'symptom' })),
     ...ketoneLog.map(e => ({ ...e, logType: 'ketone' })),
+    ...fastLog.map(e => ({
+      ...e,
+      logType: 'fast',
+      time: e.end || e.start,
+    })),
   ];
 
   // Time range filtering
@@ -57,7 +78,7 @@ export default function LogsScreen() {
   };
   const logs = allLogs.filter(e => {
     if (filterType !== 'all' && e.logType !== filterType) {return false;}
-    const dateStr = e.time;
+    const dateStr = e.time || e.end || e.start;
     if (!dateStr) {return false;}
     return inRange(dateStr);
   });
@@ -76,6 +97,34 @@ export default function LogsScreen() {
     return duration >= 24 && inRange(f.end);
   }).length;
   const symptomCount = symptomLog.filter(e => inRange(e.time)).length;
+
+  const formatDateTime = (date) => date.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
+
+  const handleEditPress = (entry) => {
+    setEditLogType(entry.logType);
+    setEditLog(entry);
+    setEditNote(entry.note || '');
+    setShowEditTimePicker(false);
+    setShowFastStartPicker(false);
+    setShowFastEndPicker(false);
+
+    if (entry.logType === 'food') {
+      setEditFoodType(entry.type || 'meal');
+      setEditTime(entry.time ? new Date(entry.time) : new Date());
+      setEditNote(entry.note || '');
+    } else if (entry.logType === 'symptom') {
+      setEditSymptomType(entry.type || 'tremor');
+      setEditSeverity(entry.severity || 'mild');
+      setEditTime(entry.time ? new Date(entry.time) : new Date());
+    } else if (entry.logType === 'fast') {
+      setEditFastStart(entry.start ? new Date(entry.start) : new Date());
+      setEditFastEnd(entry.end ? new Date(entry.end) : null);
+    } else {
+      setEditTime(entry.time ? new Date(entry.time) : new Date());
+    }
+
+    setEditModalVisible(true);
+  };
 
   const sortedFood = [...foodLog].sort((a, b) => new Date(a.time) - new Date(b.time));
   const fastingPeriods = [];
@@ -198,36 +247,42 @@ export default function LogsScreen() {
         <Modal visible={exportModalVisible} transparent animationType="fade" onRequestClose={() => setExportModalVisible(false)}>
           <TouchableWithoutFeedback onPress={() => setExportModalVisible(false)}>
             <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback onPress={() => {}}>
-                <View style={styles.modalContent}>
-                  <Text style={styles.modalTitle}>Export Logs</Text>
-                  <Text style={styles.modalDescription}>Select time range for export:</Text>
-                  <View style={[styles.chipRow, styles.modalChipRow]}>
-                    {[
-                      { key: 'week', label: 'Week' },
-                      { key: 'month', label: 'Month' },
-                      { key: '3m', label: '3 Months' },
-                      { key: '6m', label: '6 Months' },
-                      { key: 'year', label: 'Year' },
-                    ].map(opt => (
-                      <Chip
-                        key={opt.key}
-                        label={opt.label}
-                        size="sm"
-                        active={exportTimeRange === opt.key}
-                        onPress={() => setExportTimeRange(opt.key)}
-                      />
-                    ))}
-                  </View>
-                  <Button label="Export CSV" onPress={handleExportCSV} style={styles.modalPrimaryAction} />
-                  <Button
-                    label="Cancel"
-                    variant="secondary"
-                    onPress={() => setExportModalVisible(false)}
-                    style={styles.modalSecondaryAction}
-                  />
-                </View>
-              </TouchableWithoutFeedback>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={styles.modalAvoider}
+                enabled={false}
+              >
+                <TouchableWithoutFeedback onPress={() => {}}>
+                  <Card variant="outline" style={styles.modalContent}>
+                    <Text style={styles.modalTitle}>Export Logs</Text>
+                    <Text style={styles.modalDescription}>Select time range for export:</Text>
+                    <View style={[styles.chipRow, styles.modalChipRow]}>
+                      {[
+                        { key: 'week', label: 'Week' },
+                        { key: 'month', label: 'Month' },
+                        { key: '3m', label: '3 Months' },
+                        { key: '6m', label: '6 Months' },
+                        { key: 'year', label: 'Year' },
+                      ].map(opt => (
+                        <Chip
+                          key={opt.key}
+                          label={opt.label}
+                          size="sm"
+                          active={exportTimeRange === opt.key}
+                          onPress={() => setExportTimeRange(opt.key)}
+                        />
+                      ))}
+                    </View>
+                    <Button label="Export CSV" onPress={handleExportCSV} style={styles.modalPrimaryAction} />
+                    <Button
+                      label="Cancel"
+                      variant="secondary"
+                      onPress={() => setExportModalVisible(false)}
+                      style={styles.modalSecondaryAction}
+                    />
+                  </Card>
+                </TouchableWithoutFeedback>
+              </KeyboardAvoidingView>
             </View>
           </TouchableWithoutFeedback>
         </Modal>
@@ -273,6 +328,7 @@ export default function LogsScreen() {
               { key: 'all', label: 'All', icon: 'list' },
               { key: 'food', label: 'Food', icon: 'food' },
               { key: 'symptom', label: 'Symptoms', icon: 'stethoscope' },
+              { key: 'fast', label: 'Fasts', icon: 'timer-sand' },
               { key: 'ketone', label: 'Ketones', icon: 'water' },
             ].map(pill => {
               const isActive = filterType === pill.key;
@@ -307,6 +363,8 @@ export default function LogsScreen() {
             ? theme.colors.brandPrimary
             : entry.logType === 'symptom'
             ? theme.colors.error
+            : entry.logType === 'fast'
+            ? theme.colors.brandSecondary
             : theme.colors.info;
           const isHighlighted = matchesFilter || isFilterAll;
           const cardDynamicStyle = {
@@ -317,10 +375,16 @@ export default function LogsScreen() {
           return (
             <Card variant="outline" key={entry.id} style={[styles.logCard, cardDynamicStyle]}>
               <Text style={styles.cardTitle}>
-                {entry.logType === 'food' ? 'Meal' : entry.logType === 'symptom' ? (SYMPTOM_TYPES[entry.type] || entry.type) : 'Ketone'}
+                {entry.logType === 'food'
+                  ? 'Meal'
+                  : entry.logType === 'symptom'
+                  ? (SYMPTOM_TYPES.find(t => t.key === entry.type)?.label || entry.type)
+                  : entry.logType === 'fast'
+                  ? 'Fast'
+                  : 'Ketone'}
                 {'  '}
                 <Text style={styles.cardTimestamp}>
-                  {new Date(entry.time).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                  {new Date(entry.time || entry.end || entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
                 </Text>
                 {/* Fat red X for carb meals */}
                 {entry.logType === 'food' && entry.isCarb ? (
@@ -342,16 +406,33 @@ export default function LogsScreen() {
               {entry.logType === 'ketone' && (
                 <Text style={styles.cardText}>Ketone: {entry.value} {entry.unit}</Text>
               )}
+              {entry.logType === 'fast' && (
+                <>
+                  <Text style={styles.cardText}>
+                    Start: {new Date(entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                  </Text>
+                  {entry.end ? (
+                    <Text style={styles.cardText}>
+                      End: {new Date(entry.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                    </Text>
+                  ) : (
+                    <Text style={styles.cardText}>In progress</Text>
+                  )}
+                  <Text style={styles.cardText}>
+                    Duration: {entry.end ? `${((new Date(entry.end) - new Date(entry.start)) / 3600000).toFixed(1)}h` : '—'}
+                  </Text>
+                </>
+              )}
               <View style={styles.logActions}>
                 <Pressable
-                  onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }}
+                  onPress={() => handleEditPress(entry)}
                   style={[styles.modalButton, styles.modalButtonSpacingRight]}
                   accessibilityLabel="Edit log"
                 >
                   <Text style={styles.modalButtonPrimaryText}>Edit</Text>
                 </Pressable>
                 <Pressable
-                  onPress={() => { setEditLogType(entry.logType); setEditLog(entry); setEditModalVisible(true); }}
+                  onPress={() => handleEditPress(entry)}
                   style={[styles.modalButton, styles.modalButtonNeutral]}
                   accessibilityLabel="Delete log"
                 >
@@ -372,10 +453,28 @@ export default function LogsScreen() {
       <Modal visible={editModalVisible} transparent animationType="fade" onRequestClose={() => setEditModalVisible(false)}>
         <TouchableWithoutFeedback onPress={() => setEditModalVisible(false)}>
           <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={() => {}}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Edit {editLogType === 'food' ? 'Food' : 'Symptom'} Log</Text>
-                {editLogType === 'food' ? (
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={styles.modalAvoider}
+              enabled
+            >
+              <TouchableWithoutFeedback onPress={() => {}}>
+                <Card variant="outline" style={styles.modalContent}>
+                  <ScrollView
+                    keyboardShouldPersistTaps="handled"
+                    overScrollMode="never"
+                    contentContainerStyle={styles.modalScrollContent}
+                  >
+                    <Text style={styles.modalTitle}>
+                      {editLogType === 'food'
+                        ? 'Edit food log'
+                        : editLogType === 'symptom'
+                        ? 'Edit symptom log'
+                        : editLogType === 'fast'
+                        ? 'Edit fast'
+                        : 'Edit log'}
+                    </Text>
+                {editLogType === 'food' && (
                   <>
                     <Text style={styles.fieldLabel}>Type:</Text>
                     <View style={styles.selectorRow}>
@@ -389,7 +488,8 @@ export default function LogsScreen() {
                       />
                     </View>
                   </>
-                ) : (
+                )}
+                {editLogType === 'symptom' && (
                   <>
                     <Text style={styles.fieldLabel}>Symptom:</Text>
                     <View style={styles.selectorRow}>
@@ -426,71 +526,140 @@ export default function LogsScreen() {
                     </View>
                   </>
                 )}
-                <Text style={styles.fieldLabel}>Time:</Text>
-                <Pressable style={[styles.modalButton, styles.modalButtonBottomSpacing]} onPress={() => setShowEditTimePicker(true)}>
-                  <Text style={styles.modalButtonPrimaryText}>
-                    {editTime.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
-                  </Text>
-                </Pressable>
-                <DateTimePickerModal
-                  isVisible={showEditTimePicker}
-                  mode="datetime"
-                  date={editTime}
-                    onConfirm={date => { setEditTime(date); setShowEditTimePicker(false); }}
-                  onCancel={() => setShowEditTimePicker(false)}
-                  is24Hour={true}
-                />
-                <Text style={styles.fieldLabel}>Note (optional):</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    style={styles.noteInput}
-                    numberOfLines={1}
-                    onChangeText={setEditNote}
-                    value={editNote}
-                    placeholder="e.g. high carb, before meds, etc."
-                    accessibilityLabel="Log note input"
-                  />
-                </View>
-                <View style={styles.modalFooter}>
-                  <Pressable style={[styles.modalButton, styles.modalButtonNeutral]} onPress={() => {
-                    // Delete log
-                    if (editLogType === 'food') {
-                      setFoodLog(foodLog.filter(e => e.id !== editLog.id));
-                    } else {
-                      setSymptomLog(symptomLog.filter(e => e.id !== editLog.id));
-                    }
-                    setEditModalVisible(false);
-                  }} accessibilityLabel="Delete">
-                    <Text style={styles.modalButtonNeutralText}>Delete</Text>
-                  </Pressable>
-                  <Pressable style={styles.modalButton} onPress={() => {
-                    // Save changes
-                    if (editLogType === 'food') {
-                      setFoodLog(foodLog.map(e => e.id === editLog.id ? {
-                          ...e,
-                          type: editFoodType,
-                          time: editTime.toISOString(),
-                          note: editNote,
-                        } : e));
-                      } else {
-                        setSymptomLog(symptomLog.map(e => e.id === editLog.id ? {
-                          ...e,
-                          type: editSymptomType,
-                          severity: editSeverity,
-                          time: editTime.toISOString(),
-                          note: editNote,
-                        } : e));
-                      }
-                      setEditModalVisible(false);
-                    }} accessibilityLabel="Save">
-                    <Text style={styles.modalButtonPrimaryText}>Save</Text>
-                  </Pressable>
-                </View>
-                <Pressable style={[styles.modalButton, styles.modalButtonNeutral, styles.modalButtonTopMargin]} onPress={() => setEditModalVisible(false)} accessibilityLabel="Cancel">
-                  <Text style={styles.modalButtonNeutralText}>Cancel</Text>
-                </Pressable>
-              </View>
-            </TouchableWithoutFeedback>
+                {editLogType === 'fast' && (
+                  <>
+                    <Text style={styles.fieldLabel}>Start time</Text>
+                    <View style={styles.fastButtonRow}>
+                      <Button
+                        label={`Start: ${formatDateTime(editFastStart)}`}
+                        variant="secondary"
+                        onPress={() => setShowFastStartPicker(true)}
+                        style={styles.fastPrimaryButton}
+                      />
+                      <Button
+                        label="Set to now"
+                        variant="ghost"
+                        onPress={() => setEditFastStart(new Date())}
+                        style={styles.fastGhostButton}
+                      />
+                    </View>
+                    <DateTimePickerModal
+                      isVisible={showFastStartPicker}
+                      mode="datetime"
+                      date={editFastStart}
+                      onConfirm={date => { setShowFastStartPicker(false); setEditFastStart(date); }}
+                      onCancel={() => setShowFastStartPicker(false)}
+                      is24Hour
+                    />
+                    <Text style={styles.fieldLabel}>End time</Text>
+                    <View style={styles.fastButtonRow}>
+                      <Button
+                        label={editFastEnd ? `End: ${formatDateTime(editFastEnd)}` : 'Set end time'}
+                        variant="secondary"
+                        onPress={() => setShowFastEndPicker(true)}
+                        style={styles.fastPrimaryButton}
+                      />
+                      <Button
+                        label={editFastEnd ? 'Clear end' : 'Set to now'}
+                        variant="ghost"
+                        onPress={() => setEditFastEnd(editFastEnd ? null : new Date())}
+                        style={styles.fastGhostButton}
+                      />
+                    </View>
+                    <DateTimePickerModal
+                      isVisible={showFastEndPicker}
+                      mode="datetime"
+                      date={editFastEnd || new Date()}
+                      onConfirm={date => { setShowFastEndPicker(false); setEditFastEnd(date); }}
+                      onCancel={() => setShowFastEndPicker(false)}
+                      is24Hour
+                    />
+                  </>
+                )}
+                {editLogType !== 'fast' && (
+                  <>
+                    <Text style={styles.fieldLabel}>Time:</Text>
+                    <Pressable style={[styles.modalButton, styles.modalButtonBottomSpacing]} onPress={() => setShowEditTimePicker(true)}>
+                      <Text style={styles.modalButtonPrimaryText}>
+                        {formatDateTime(editTime)}
+                      </Text>
+                    </Pressable>
+                    <DateTimePickerModal
+                      isVisible={showEditTimePicker}
+                      mode="datetime"
+                      date={editTime}
+                      onConfirm={date => { setEditTime(date); setShowEditTimePicker(false); }}
+                      onCancel={() => setShowEditTimePicker(false)}
+                      is24Hour
+                    />
+                  </>
+                )}
+                    <Text style={styles.fieldLabel}>Note (optional):</Text>
+                    <View style={styles.inputWrapper}>
+                      <TextInput
+                        style={styles.noteInput}
+                        multiline
+                        onChangeText={setEditNote}
+                        value={editNote}
+                        placeholder={editLogType === 'fast' ? 'e.g. manual entry, planned extended fast' : 'e.g. high carb, before meds, etc.'}
+                        accessibilityLabel="Log note input"
+                      />
+                    </View>
+                    <View style={styles.modalFooter}>
+                      <Pressable style={[styles.modalButton, styles.modalButtonNeutral]} onPress={() => {
+                        // Delete log
+                        if (editLogType === 'food') {
+                          setFoodLog(foodLog.filter(e => e.id !== editLog.id));
+                        } else if (editLogType === 'symptom') {
+                          setSymptomLog(symptomLog.filter(e => e.id !== editLog.id));
+                        } else if (editLogType === 'fast') {
+                          setFastLog(fastLog.filter(e => e.id !== editLog.id));
+                        }
+                        setEditModalVisible(false);
+                      }} accessibilityLabel="Delete">
+                        <Text style={styles.modalButtonNeutralText}>Delete</Text>
+                      </Pressable>
+                      <Pressable style={styles.modalButton} onPress={() => {
+                        // Save changes
+                        if (editLogType === 'food') {
+                          setFoodLog(foodLog.map(e => e.id === editLog.id ? {
+                              ...e,
+                              type: editFoodType,
+                              time: editTime.toISOString(),
+                              note: editNote,
+                            } : e));
+                        } else if (editLogType === 'symptom') {
+                          setSymptomLog(symptomLog.map(e => e.id === editLog.id ? {
+                              ...e,
+                              type: editSymptomType,
+                              severity: editSeverity,
+                              time: editTime.toISOString(),
+                              note: editNote,
+                            } : e));
+                        } else if (editLogType === 'fast') {
+                          if (editFastEnd && editFastEnd < editFastStart) {
+                            Alert.alert('Invalid time', 'End time cannot be before the start time.');
+                            return;
+                          }
+                          setFastLog(fastLog.map(e => e.id === editLog.id ? {
+                              ...e,
+                              start: editFastStart.toISOString(),
+                              end: editFastEnd ? editFastEnd.toISOString() : undefined,
+                              note: editNote,
+                            } : e));
+                        }
+                        setEditModalVisible(false);
+                      }} accessibilityLabel="Save">
+                        <Text style={styles.modalButtonPrimaryText}>Save</Text>
+                      </Pressable>
+                    </View>
+                    <Pressable style={[styles.modalButton, styles.modalButtonNeutral, styles.modalButtonTopMargin]} onPress={() => setEditModalVisible(false)} accessibilityLabel="Cancel">
+                      <Text style={styles.modalButtonNeutralText}>Cancel</Text>
+                    </Pressable>
+                  </ScrollView>
+                </Card>
+              </TouchableWithoutFeedback>
+            </KeyboardAvoidingView>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
@@ -635,24 +804,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: theme.spacing.md,
+    alignSelf: 'stretch',
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: theme.overlay.scrim,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  modalAvoider: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: theme.colors.surfacePrimary,
-    borderRadius: theme.radius.lg,
+    width: '100%',
+    maxHeight: '90%',
     padding: theme.spacing.lg,
-    width: 320,
-    alignItems: 'center',
-    shadowColor: theme.shadow.medium.color,
-    shadowOffset: theme.shadow.medium.offset,
-    shadowOpacity: theme.shadow.medium.opacity,
-    shadowRadius: theme.shadow.medium.radius,
-    elevation: theme.shadow.medium.elevation,
+  },
+  modalScrollContent: {
+    paddingBottom: theme.spacing.lg,
+    gap: theme.spacing.md,
+    alignItems: 'stretch',
   },
   modalTitle: {
     fontSize: theme.typography.sizes.headline,
@@ -692,13 +864,26 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.sizes.body,
     color: theme.colors.textPrimary,
     backgroundColor: theme.colors.surfacePrimary,
-    minHeight: 40,
+    minHeight: 72,
+    textAlignVertical: 'top',
   },
   selectorRow: {
     flexDirection: 'row',
     marginBottom: theme.spacing.sm,
     flexWrap: 'wrap',
     justifyContent: 'center',
+  },
+  fastButtonRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.sm,
+  },
+  fastPrimaryButton: {
+    flex: 1,
+  },
+  fastGhostButton: {
+    flexShrink: 0,
   },
   selectorChip: {
     flexGrow: 1,

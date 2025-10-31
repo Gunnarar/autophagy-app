@@ -1,12 +1,18 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { Card } from './ui/Card';
 import { theme } from '../utils/theme';
 
 function formatTimestamp(value) {
   try {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) {return 'Invalid date';}
-    return date.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' });
+    return date.toLocaleString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      month: 'short',
+      day: 'numeric',
+    });
   } catch (error) {
     return 'Invalid date';
   }
@@ -20,129 +26,190 @@ export default function AutophagyKetoneCard({
   ketoneInKetosis = false,
   ketoneColor = theme.colors.textSecondary,
   ketoneHistory = [],
-  onLogKetone,
 }) {
+  const hasHistory = ketoneHistory.length > 1;
+
   return (
-    <View style={styles.card}>
-      <Text style={styles.title}>Autophagy & Ketones</Text>
-      <Text style={styles.autophagyText}>Autophagy: {autophagyDays} / 365 days</Text>
-      {hasOngoingFast && fastingTimerLabel ? (
-        <Text style={styles.fastTimer}>Fasting: {fastingTimerLabel}</Text>
-      ) : null}
-      <View style={styles.ketoneRow}>
-        <Text style={[styles.ketoneLabel, { color: ketoneColor }]}>Ketones: </Text>
-        {latestKetone ? (
-          <Text style={[styles.ketoneValue, { color: ketoneColor }]}>
-            {latestKetone.value} {latestKetone.unit}{' '}
-            <Text style={styles.ketoneTimestamp}>({formatTimestamp(latestKetone.time)})</Text>
-          </Text>
-        ) : (
-          <Text style={styles.noData}>No data</Text>
-        )}
-        {ketoneInKetosis ? <Text style={styles.ketoneIndicator}>🟢</Text> : null}
+    <Card variant="outline" style={styles.card}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.title}>Autophagy &amp; Ketones</Text>
+          <Text style={styles.subtitle}>Cellular cleanup and metabolic fuel</Text>
+        </View>
+        <View style={styles.autophagyBadge}>
+          <Text style={styles.autophagyCount}>{autophagyDays}</Text>
+          <Text style={styles.autophagyMeta}>/365 days</Text>
+        </View>
       </View>
-      {onLogKetone ? (
-        <Pressable style={styles.logButton} onPress={onLogKetone} accessibilityLabel="Log Ketone">
-          <Text style={styles.logButtonLabel}>Log Ketone</Text>
-        </Pressable>
+
+      {hasOngoingFast && fastingTimerLabel ? (
+        <View style={styles.fastRow}>
+          <Text style={styles.fastLabel}>Current fast</Text>
+          <Text style={styles.fastValue}>{fastingTimerLabel}</Text>
+        </View>
       ) : null}
-      {ketoneHistory.length > 1 && (
-        <View style={styles.historyContainer}>
-          <Text style={styles.historyTitle}>Recent Ketone Values:</Text>
+
+      <View style={styles.ketoneCard}>
+        <View style={styles.ketoneHeader}>
+          <Text style={styles.ketoneLabel}>Latest ketone</Text>
+          <Text style={[styles.ketoneValue, { color: ketoneColor }]}>
+            {latestKetone ? `${latestKetone.value} ${latestKetone.unit}` : 'No data'}
+          </Text>
+        </View>
+        {latestKetone ? (
+          <Text style={styles.ketoneTimestamp}>{formatTimestamp(latestKetone.time)}</Text>
+        ) : (
+          <Text style={styles.ketoneEmpty}>Add a reading to see progress</Text>
+        )}
+        {ketoneInKetosis ? <Text style={styles.ketoneState}>Ketosis likely engaged</Text> : null}
+      </View>
+
+      {hasHistory ? (
+        <View style={styles.history}>
+          <Text style={styles.historyTitle}>Recent readings</Text>
           {ketoneHistory.map(entry => (
-            <Text
-              key={entry.id}
-              style={[
-                styles.historyRow,
-                { color: entry.value >= 0.5 ? theme.colors.primary : theme.colors.textSecondary },
-              ]}
-            >
-              {entry.value} {entry.unit}{' '}
-              <Text style={styles.ketoneTimestamp}>({formatTimestamp(entry.time)})</Text>
-              {entry.note ? ` - ${entry.note}` : ''}
-            </Text>
+            <View key={entry.id} style={styles.historyRow}>
+              <Text
+                style={[
+                  styles.historyValue,
+                  { color: entry.value >= 0.5 ? theme.colors.brandPrimary : theme.colors.textSecondary },
+                ]}
+              >
+                {entry.value} {entry.unit}
+              </Text>
+              <Text style={styles.historyMeta}>{formatTimestamp(entry.time)}</Text>
+              {entry.note ? <Text style={styles.historyNote}>{entry.note}</Text> : null}
+            </View>
           ))}
         </View>
-      )}
-    </View>
+      ) : null}
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.large,
-    padding: theme.spacing.regular,
-    marginBottom: theme.spacing.regular,
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.md,
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: theme.colors.shadow,
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
   },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: theme.colors.text,
-    marginBottom: 8,
+    fontSize: theme.typography.sizes.headline,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.textPrimary,
   },
-  autophagyText: {
-    fontSize: 18,
-    color: theme.colors.primary,
-    marginBottom: 8,
-  },
-  fastTimer: {
-    fontSize: 16,
+  subtitle: {
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.textSecondary,
-    marginBottom: 8,
+    marginTop: theme.spacing.tiny,
   },
-  ketoneRow: {
+  autophagyBadge: {
+    alignItems: 'flex-end',
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: theme.spacing.xs,
+  },
+  autophagyCount: {
+    fontSize: theme.typography.sizes.headline,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.brandPrimary,
+  },
+  autophagyMeta: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+  },
+  fastRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    backgroundColor: theme.colors.surfaceMuted,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+  },
+  fastLabel: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  fastValue: {
+    fontSize: theme.typography.sizes.body,
+    fontWeight: theme.typography.weights.semibold,
+    color: theme.colors.brandSecondary,
+  },
+  ketoneCard: {
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.lg,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    backgroundColor: theme.colors.surfacePrimary,
+  },
+  ketoneHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   ketoneLabel: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: theme.typography.sizes.caption,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    color: theme.colors.textSecondary,
   },
   ketoneValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: theme.typography.sizes.title,
+    fontWeight: theme.typography.weights.bold,
   },
   ketoneTimestamp: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.textSecondary,
-    fontWeight: 'normal',
+    marginTop: theme.spacing.tiny,
   },
-  noData: {
-    fontSize: 18,
+  ketoneEmpty: {
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.textSecondary,
+    marginTop: theme.spacing.tiny,
   },
-  ketoneIndicator: {
-    fontSize: 18,
-    marginLeft: 6,
+  ketoneState: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.success,
+    marginTop: theme.spacing.tiny,
+    fontWeight: theme.typography.weights.semibold,
   },
-  logButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.regular,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-    marginBottom: 8,
-  },
-  logButtonLabel: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  historyContainer: {
-    width: '100%',
-    marginTop: 8,
+  history: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.border,
+    paddingTop: theme.spacing.sm,
+    gap: theme.spacing.sm,
   },
   historyTitle: {
-    fontSize: 14,
+    fontSize: theme.typography.sizes.caption,
     color: theme.colors.textSecondary,
-    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   historyRow: {
-    fontSize: 15,
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.surfaceMuted,
+    padding: theme.spacing.sm,
+  },
+  historyValue: {
+    fontSize: theme.typography.sizes.body,
+    fontWeight: theme.typography.weights.semibold,
+  },
+  historyMeta: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+  },
+  historyNote: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    marginTop: theme.spacing.tiny,
   },
 });

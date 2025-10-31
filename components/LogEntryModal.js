@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
-import { View, Text, Modal, TextInput, TouchableWithoutFeedback, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  Modal,
+  TextInput,
+  TouchableWithoutFeedback,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
 import { theme } from '../utils/theme';
@@ -12,23 +22,51 @@ const DIET_TYPES = [
   { key: 'animal', label: 'Animal', icon: '🍖' },
 ];
 
+const EMPTY_INITIAL_VALUES = Object.freeze({});
+
 export default function LogEntryModal({
   mode, // 'meal' or 'symptom'
   visible,
-  initialValues = {},
+  initialValues,
   onSave,
   onCancel,
 }) {
+  const safeInitialValues = initialValues ?? EMPTY_INITIAL_VALUES;
   // Shared fields
-  const [time, setTime] = useState(initialValues.time || new Date());
-  const [note, setNote] = useState(initialValues.note || '');
+  const [time, setTime] = useState(safeInitialValues.time || new Date());
+  const [note, setNote] = useState(safeInitialValues.note || '');
   const [pickerMode, setPickerMode] = useState(false);
   // Meal fields
-  const [dietType, setDietType] = useState(initialValues.dietType || 'standard');
-  const [meatPounds, setMeatPounds] = useState(initialValues.pounds || '');
+  const [dietType, setDietType] = useState(safeInitialValues.dietType || 'standard');
+  const [meatPounds, setMeatPounds] = useState(safeInitialValues.pounds || '');
   // Symptom fields
-  const [symptomType, setSymptomType] = useState(initialValues.type || 'tremor');
-  const [severity, setSeverity] = useState(initialValues.severity || 'mild');
+  const [symptomType, setSymptomType] = useState(safeInitialValues.type || 'tremor');
+  const [severity, setSeverity] = useState(safeInitialValues.severity || 'mild');
+
+  useEffect(() => {
+    if (!visible) {return;}
+    const nextTime = safeInitialValues.time
+      ? safeInitialValues.time instanceof Date
+        ? safeInitialValues.time
+        : new Date(safeInitialValues.time)
+      : new Date();
+    setTime(nextTime);
+    setNote(safeInitialValues.note || '');
+    setPickerMode(false);
+    setDietType(safeInitialValues.dietType || 'standard');
+    setMeatPounds(safeInitialValues.pounds || '');
+    setSymptomType(safeInitialValues.type || 'tremor');
+    setSeverity(safeInitialValues.severity || 'mild');
+  }, [
+    visible,
+    mode,
+    safeInitialValues.time,
+    safeInitialValues.note,
+    safeInitialValues.dietType,
+    safeInitialValues.pounds,
+    safeInitialValues.type,
+    safeInitialValues.severity,
+  ]);
 
   function handleSave() {
     if (mode === 'meal') {
@@ -52,134 +90,146 @@ export default function LogEntryModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <TouchableWithoutFeedback onPress={onCancel}>
         <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback onPress={() => {}}>
-            <Card variant="outline" style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{mode === 'meal' ? 'Add meal' : 'Log symptom'}</Text>
-              <Text style={styles.modalSubtitle}>
-                {mode === 'meal'
-                  ? 'Capture today’s intake to keep your nutrition history accurate.'
-                  : 'Track symptoms to understand how fasting and diet impact your day.'}
-              </Text>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardAvoider}
+            enabled
+          >
+            <TouchableWithoutFeedback onPress={() => {}}>
+              <Card variant="outline" style={styles.modalContent}>
+                <ScrollView
+                  keyboardShouldPersistTaps="handled"
+                  overScrollMode="never"
+                  contentContainerStyle={styles.scrollContent}
+                >
+                  <Text style={styles.modalTitle}>{mode === 'meal' ? 'Add meal' : 'Log symptom'}</Text>
+                  <Text style={styles.modalSubtitle}>
+                    {mode === 'meal'
+                      ? 'Capture today’s intake to keep your nutrition history accurate.'
+                      : 'Track symptoms to understand how fasting and diet impact your day.'}
+                  </Text>
 
-              {mode === 'meal' ? (
-                <View style={styles.section}>
-                  <Text style={styles.sectionLabel}>Diet type</Text>
-                  <View style={styles.selectorRow}>
-                    {DIET_TYPES.map(dt => {
-                      const isActive = dietType === dt.key;
-                      return (
-                        <Chip
-                          key={dt.key}
-                          label={dt.label}
-                          size="lg"
-                          active={isActive}
-                          onPress={() => setDietType(dt.key)}
-                          style={styles.selectorChip}
-                          textStyle={styles.selectorChipLabel}
-                          contentStyle={styles.selectorContentStacked}
-                          icon={dt.icon ? <Text style={styles.selectorEmoji}>{dt.icon}</Text> : null}
-                        />
-                      );
-                    })}
+                  {mode === 'meal' ? (
+                    <View style={styles.section}>
+                      <Text style={styles.sectionLabel}>Diet type</Text>
+                      <View style={styles.selectorRow}>
+                        {DIET_TYPES.map(dt => {
+                          const isActive = dietType === dt.key;
+                          return (
+                            <Chip
+                              key={dt.key}
+                              label={dt.label}
+                              size="lg"
+                              active={isActive}
+                              onPress={() => setDietType(dt.key)}
+                              style={styles.selectorChip}
+                              textStyle={styles.selectorChipLabel}
+                              contentStyle={styles.selectorContentStacked}
+                              icon={dt.icon ? <Text style={styles.selectorEmoji}>{dt.icon}</Text> : null}
+                            />
+                          );
+                        })}
+                      </View>
+                      <Text style={styles.sectionLabel}>Pounds of meat</Text>
+                      <TextInput
+                        style={styles.input}
+                        value={meatPounds}
+                        onChangeText={setMeatPounds}
+                        placeholder="e.g. 0.75"
+                        keyboardType="numeric"
+                      />
+                    </View>
+                  ) : (
+                    <View style={styles.section}>
+                      <Text style={styles.sectionLabel}>Symptom</Text>
+                      <View style={styles.selectorRow}>
+                        {SYMPTOM_TYPES.map(t => {
+                          const isActive = symptomType === t.key;
+                          return (
+                            <Chip
+                              key={t.key}
+                              label={t.label}
+                              icon={<Text style={styles.selectorEmoji}>{t.emoji}</Text>}
+                              size="lg"
+                              active={isActive}
+                              onPress={() => setSymptomType(t.key)}
+                              accessibilityLabel={t.label}
+                              style={styles.selectorChip}
+                              textStyle={styles.selectorChipLabel}
+                              contentStyle={styles.selectorContentStacked}
+                            />
+                          );
+                        })}
+                      </View>
+
+                      <Text style={styles.sectionLabel}>Severity</Text>
+                      <View style={styles.selectorRow}>
+                        {SEVERITIES.map(s => {
+                          const isActive = severity === s.key;
+                          return (
+                            <Chip
+                              key={s.key}
+                              label={s.label}
+                              size="lg"
+                              active={isActive}
+                              onPress={() => setSeverity(s.key)}
+                              style={styles.selectorChip}
+                              textStyle={styles.selectorChipLabel}
+                            />
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+
+                  <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>Time</Text>
+                    <Button
+                      label={`Time: ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                      variant="secondary"
+                      onPress={() => setPickerMode(true)}
+                      style={styles.sectionButton}
+                    />
+                    <DateTimePickerModal
+                      isVisible={pickerMode}
+                      mode="time"
+                      date={time}
+                      onConfirm={date => { setTime(date); setPickerMode(false); }}
+                      onCancel={() => setPickerMode(false)}
+                      is24Hour={true}
+                    />
                   </View>
-                  <Text style={styles.sectionLabel}>Pounds of meat</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={meatPounds}
-                    onChangeText={setMeatPounds}
-                    placeholder="e.g. 0.75"
-                    keyboardType="numeric"
-                  />
-                </View>
-              ) : (
-                <View style={styles.section}>
-                  <Text style={styles.sectionLabel}>Symptom</Text>
-                  <View style={styles.selectorRow}>
-                    {SYMPTOM_TYPES.map(t => {
-                      const isActive = symptomType === t.key;
-                      return (
-                        <Chip
-                          key={t.key}
-                          label={t.label}
-                          icon={<Text style={styles.selectorEmoji}>{t.emoji}</Text>}
-                          size="lg"
-                          active={isActive}
-                          onPress={() => setSymptomType(t.key)}
-                          accessibilityLabel={t.label}
-                          style={styles.selectorChip}
-                          textStyle={styles.selectorChipLabel}
-                          contentStyle={styles.selectorContentStacked}
-                        />
-                      );
-                    })}
+
+                  <View style={styles.section}>
+                    <Text style={styles.sectionLabel}>Note (optional)</Text>
+                    <TextInput
+                      style={styles.noteInput}
+                      numberOfLines={3}
+                      onChangeText={setNote}
+                      value={note}
+                      placeholder={mode === 'meal' ? 'e.g. post-workout, high protein' : 'e.g. after meds, light tremor'}
+                      accessibilityLabel="Log note input"
+                      multiline
+                    />
                   </View>
 
-                  <Text style={styles.sectionLabel}>Severity</Text>
-                  <View style={styles.selectorRow}>
-                    {SEVERITIES.map(s => {
-                      const isActive = severity === s.key;
-                      return (
-                        <Chip
-                          key={s.key}
-                          label={s.label}
-                          size="lg"
-                          active={isActive}
-                          onPress={() => setSeverity(s.key)}
-                          style={styles.selectorChip}
-                          textStyle={styles.selectorChipLabel}
-                        />
-                      );
-                    })}
+                  <View style={styles.modalActions}>
+                    <Button
+                      label="Cancel"
+                      variant="ghost"
+                      onPress={onCancel}
+                      style={styles.modalAction}
+                    />
+                    <Button
+                      label="Save"
+                      onPress={handleSave}
+                      style={styles.modalAction}
+                    />
                   </View>
-                </View>
-              )}
-
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Time</Text>
-                <Button
-                  label={`Time: ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                  variant="secondary"
-                  onPress={() => setPickerMode(true)}
-                  style={styles.sectionButton}
-                />
-                <DateTimePickerModal
-                  isVisible={pickerMode}
-                  mode="time"
-                  date={time}
-                  onConfirm={date => { setTime(date); setPickerMode(false); }}
-                  onCancel={() => setPickerMode(false)}
-                  is24Hour={true}
-                />
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Note (optional)</Text>
-                <TextInput
-                  style={styles.noteInput}
-                  numberOfLines={3}
-                  onChangeText={setNote}
-                  value={note}
-                  placeholder={mode === 'meal' ? 'e.g. post-workout, high protein' : 'e.g. after meds, light tremor'}
-                  accessibilityLabel="Log note input"
-                  multiline
-                />
-              </View>
-
-              <View style={styles.modalActions}>
-                <Button
-                  label="Cancel"
-                  variant="ghost"
-                  onPress={onCancel}
-                  style={styles.modalAction}
-                />
-                <Button
-                  label="Save"
-                  onPress={handleSave}
-                  style={styles.modalAction}
-                />
-              </View>
-            </Card>
-          </TouchableWithoutFeedback>
+                </ScrollView>
+              </Card>
+            </TouchableWithoutFeedback>
+          </KeyboardAvoidingView>
         </View>
       </TouchableWithoutFeedback>
     </Modal>
@@ -190,15 +240,23 @@ const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
     backgroundColor: theme.overlay.scrim,
+    paddingHorizontal: theme.spacing.lg,
+  },
+  keyboardAvoider: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.lg,
   },
   modalContent: {
     width: '100%',
+    maxHeight: '90%',
     borderRadius: theme.radius.lg,
     paddingVertical: theme.spacing.lg,
     paddingHorizontal: theme.spacing.lg,
+  },
+  scrollContent: {
+    paddingBottom: theme.spacing.lg,
+    alignItems: 'stretch',
   },
   modalTitle: {
     fontSize: theme.typography.sizes.headline,
@@ -273,6 +331,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-end',
     marginTop: theme.spacing.md,
+    alignSelf: 'stretch',
+    gap: theme.spacing.xs,
   },
   modalAction: {
     marginLeft: theme.spacing.xs,

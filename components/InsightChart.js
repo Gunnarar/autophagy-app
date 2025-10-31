@@ -4,12 +4,14 @@ import Svg, { Line, Polyline, Circle, Text as SvgText } from 'react-native-svg';
 import { theme } from '../utils/theme';
 
 const CHART_HEIGHT = 220;
-const CHART_WIDTH = Dimensions.get('window').width - theme.spacing.lg * 2;
-const MARGIN = { top: 16, right: 24, bottom: 32, left: 36 };
+const CONTAINER_PADDING = theme.spacing.sm * 2; // horizontal padding inside card
+const CHART_WIDTH = Dimensions.get('window').width - theme.spacing.lg * 2 - CONTAINER_PADDING * 2;
+const MARGIN = { top: 16, right: 20, bottom: 32, left: 36 };
 
 const seriesConfig = {
   ketones: { color: theme.colors.info, label: 'Ketones (mmol)' },
   symptoms: { color: theme.colors.error, label: 'Symptom severity' },
+  fastDays: { color: theme.colors.success, label: 'Fasting days' },
   redMeat: { color: theme.colors.brandPrimary, label: 'Red meat servings' },
 };
 
@@ -33,9 +35,10 @@ export default function InsightChart({ data = [] }) {
 
     const ketones = data.map(item => (item.ketones ?? null));
     const symptoms = data.map(item => (item.symptoms ?? null));
+    const fastDays = data.map(item => (item.fastDays ?? null));
     const redMeat = data.map(item => (item.redMeat ?? null));
 
-    const numericValues = [...ketones, ...symptoms, ...redMeat].filter(v => typeof v === 'number' && !Number.isNaN(v));
+    const numericValues = [...ketones, ...symptoms, ...fastDays, ...redMeat].filter(v => typeof v === 'number' && !Number.isNaN(v));
     const maxValue = numericValues.length ? Math.max(...numericValues, 1) : 1;
     const xStep = data.length > 1 ? (CHART_WIDTH - MARGIN.left - MARGIN.right) / (data.length - 1) : 0;
 
@@ -50,11 +53,13 @@ export default function InsightChart({ data = [] }) {
       points: {
         ketones: buildPoints(ketones, scaleX, scaleY),
         symptoms: buildPoints(symptoms, scaleX, scaleY),
+        fastDays: buildPoints(fastDays, scaleX, scaleY),
         redMeat: buildPoints(redMeat, scaleX, scaleY),
       },
       dots: {
         ketones: ketones.map((value, index) => (value == null ? null : { x: scaleX(index), y: scaleY(value) })),
         symptoms: symptoms.map((value, index) => (value == null ? null : { x: scaleX(index), y: scaleY(value) })),
+        fastDays: fastDays.map((value, index) => (value == null ? null : { x: scaleX(index), y: scaleY(value) })),
         redMeat: redMeat.map((value, index) => (value == null ? null : { x: scaleX(index), y: scaleY(value) })),
       },
       maxValue,

@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { Home, NotebookPen, Sparkles, UserRound } from 'lucide-react-native';
 
 import { LogsProvider } from './contexts/LogsContext';
 import { ModalActionProvider } from './contexts/ModalActionContext';
@@ -24,15 +24,21 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
 function renderTabIcon(routeName, focused, color, size) {
+  const iconProps = {
+    color,
+    size,
+    strokeWidth: focused ? 2.4 : 2,
+  };
+
   switch (routeName) {
     case 'Home':
-      return <MaterialCommunityIcons name={focused ? 'home-variant' : 'home-variant-outline'} size={size} color={color} />;
+      return <Home {...iconProps} />;
     case 'Logs':
-      return <MaterialCommunityIcons name={focused ? 'notebook' : 'notebook-outline'} size={size} color={color} />;
+      return <NotebookPen {...iconProps} />;
     case 'Info':
-      return <Ionicons name={focused ? 'sparkles' : 'sparkles-outline'} size={size} color={color} />;
+      return <Sparkles {...iconProps} />;
     case 'Profile':
-      return <Ionicons name={focused ? 'person-circle' : 'person-circle-outline'} size={size} color={color} />;
+      return <UserRound {...iconProps} />;
     default:
       return null;
   }

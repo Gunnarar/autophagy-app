@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Card } from './ui/Card';
 import { theme } from '../utils/theme';
 
 export default function NotificationCard({ notification, onDismiss }) {
@@ -8,7 +9,7 @@ export default function NotificationCard({ notification, onDismiss }) {
 
   const {
     icon,
-    color = theme.colors.primary,
+    color = theme.colors.brandPrimary,
     title,
     desc,
     action,
@@ -22,16 +23,9 @@ export default function NotificationCard({ notification, onDismiss }) {
   } = notification;
 
   return (
-    <View style={[styles.card, { borderLeftColor: color }]}>
-      {icon ? (
-        <MaterialCommunityIcons
-          name={icon}
-          size={32}
-          color={color}
-          style={styles.icon}
-        />
-      ) : null}
-      <View style={styles.body}>
+    <Card variant="outline" style={[styles.card, { borderLeftColor: color }]}>
+      {icon ? <MaterialCommunityIcons name={icon} size={28} color={color} style={styles.icon} /> : null}
+      <View style={styles.content}>
         {title ? <Text style={[styles.title, { color }]}>{title}</Text> : null}
         {desc ? <Text style={styles.desc}>{desc}</Text> : null}
 
@@ -52,25 +46,27 @@ export default function NotificationCard({ notification, onDismiss }) {
           <Text style={[styles.extraLine, styles.caution]}>Caution: Consider a shorter fast first.</Text>
         ) : null}
 
-        {action && actionLabel ? (
-          <Pressable
-            style={[styles.actionButton, { backgroundColor: color }]}
-            onPress={action}
-            accessibilityLabel={actionLabel}
-          >
-            <Text style={styles.actionLabel}>{actionLabel}</Text>
-          </Pressable>
-        ) : null}
+        <View style={styles.actions}>
+          {action && actionLabel ? (
+            <Pressable
+              style={[styles.actionButton, { backgroundColor: color }]}
+              onPress={action}
+              accessibilityLabel={actionLabel}
+            >
+              <Text style={styles.actionLabel}>{actionLabel}</Text>
+            </Pressable>
+          ) : null}
 
-        {secondaryAction && secondaryLabel ? (
-          <Pressable
-            style={[styles.actionButton, styles.secondaryButton]}
-            onPress={secondaryAction}
-            accessibilityLabel={secondaryLabel}
-          >
-            <Text style={[styles.actionLabel, styles.secondaryLabel]}>{secondaryLabel}</Text>
-          </Pressable>
-        ) : null}
+          {secondaryAction && secondaryLabel ? (
+            <Pressable
+              style={[styles.actionButton, styles.secondaryButton]}
+              onPress={secondaryAction}
+              accessibilityLabel={secondaryLabel}
+            >
+              <Text style={[styles.actionLabel, styles.secondaryLabel]}>{secondaryLabel}</Text>
+            </Pressable>
+          ) : null}
+        </View>
       </View>
       {notification.dismissible && onDismiss ? (
         <Pressable
@@ -78,10 +74,10 @@ export default function NotificationCard({ notification, onDismiss }) {
           style={styles.dismiss}
           accessibilityLabel="Dismiss notification"
         >
-          <MaterialCommunityIcons name="close" size={22} color="#888" />
+          <MaterialCommunityIcons name="close" size={20} color={theme.colors.textMuted} />
         </Pressable>
       ) : null}
-    </View>
+    </Card>
   );
 }
 
@@ -89,69 +85,66 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
     borderLeftWidth: 6,
+    paddingRight: theme.spacing.md,
+    position: 'relative',
+    gap: theme.spacing.sm,
   },
   icon: {
-    marginRight: 12,
     marginTop: 2,
   },
-  body: {
+  content: {
     flex: 1,
+    gap: theme.spacing.xs,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontSize: theme.typography.sizes.body,
+    fontWeight: theme.typography.weights.semibold,
   },
   desc: {
-    fontSize: 15,
-    color: '#4d6d6d',
-    marginBottom: 8,
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
   },
   extraLine: {
-    color: '#4d6d6d',
-    fontSize: 14,
-    marginBottom: 4,
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
   },
   extraLabel: {
-    fontWeight: 'bold',
-    color: '#2d4d4d',
+    fontWeight: theme.typography.weights.semibold,
+    color: theme.colors.textPrimary,
   },
   challenge: {
-    color: '#89ce00',
+    color: theme.colors.success,
+    fontWeight: theme.typography.weights.semibold,
   },
   caution: {
-    color: '#e74c3c',
-    fontWeight: 'bold',
+    color: theme.colors.error,
+    fontWeight: theme.typography.weights.semibold,
+  },
+  actions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: theme.spacing.xs,
+    marginTop: theme.spacing.tiny,
   },
   actionButton: {
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    alignSelf: 'flex-start',
-    marginTop: 4,
+    borderRadius: theme.radius.sm,
+    paddingVertical: theme.spacing.tiny + 1,
+    paddingHorizontal: theme.spacing.sm,
   },
   actionLabel: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: theme.colors.textOnPrimary,
+    fontWeight: theme.typography.weights.semibold,
+    fontSize: theme.typography.sizes.caption,
   },
   secondaryButton: {
-    backgroundColor: '#ccc',
-    marginTop: 6,
+    backgroundColor: theme.colors.surfaceMuted,
   },
   secondaryLabel: {
-    color: '#2d4d4d',
+    color: theme.colors.brandSecondary,
   },
   dismiss: {
-    marginLeft: 12,
-    padding: 4,
+    padding: theme.spacing.tiny,
+    marginLeft: theme.spacing.xs,
   },
 });

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useLogs } from '../contexts/LogsContext';
 import { useModalAction } from '../contexts/ModalActionContext';
-import { loadString, saveString } from '../utils/storage';
+import { loadString, saveString, loadJSON, saveJSON } from '../utils/storage';
 import NotificationList from '../components/NotificationList';
 import AutophagyLevelCard from '../components/AutophagyLevelCard';
 import { createInfoNotifications } from '../utils/notifications';
@@ -45,6 +45,7 @@ export default function InfoScreen() {
   const today = new Date().toISOString().slice(0, 10);
   const [done, setDone] = useState({});
   const [fastingDismissedUntil, setFastingDismissedUntil] = useState(null);
+  const [notificationPrefsHydrated, setNotificationPrefsHydrated] = useState(false);
   const unifiedRec = useUnifiedFastRecommendation();
   const [fastRecDismissed, setFastRecDismissed] = useState(false);
 
@@ -53,8 +54,30 @@ export default function InfoScreen() {
       const todayKey = new Date().toISOString().slice(0, 10);
       const dismissed = await loadString('fastRecDismissed');
       setFastRecDismissed(dismissed === todayKey);
+
+      const storedDone = await loadJSON('notificationDone', {});
+      if (storedDone && typeof storedDone === 'object') {
+        setDone(storedDone);
+      }
+
+      const storedSnooze = await loadJSON('notificationFastingDismissedUntil', null);
+      if (typeof storedSnooze === 'number') {
+        setFastingDismissedUntil(storedSnooze);
+      }
+
+      setNotificationPrefsHydrated(true);
     })();
   }, []);
+
+  useEffect(() => {
+    if (!notificationPrefsHydrated) {return;}
+    saveJSON('notificationDone', done);
+  }, [done, notificationPrefsHydrated]);
+
+  useEffect(() => {
+    if (!notificationPrefsHydrated) {return;}
+    saveJSON('notificationFastingDismissedUntil', fastingDismissedUntil);
+  }, [fastingDismissedUntil, notificationPrefsHydrated]);
 
   const handleDismissFastRec = async () => {
     const todayKey = new Date().toISOString().slice(0, 10);

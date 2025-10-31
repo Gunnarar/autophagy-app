@@ -1,3 +1,5 @@
+import { theme } from './theme';
+
 export function createInfoNotifications({
   foodLog = [],
   symptomLog = [],
@@ -11,6 +13,7 @@ export function createInfoNotifications({
   fastRecDismissed = false,
 }) {
   const notifications = [];
+  const ongoingFast = fastLog.find(entry => !entry.end);
   const mealTypes = ['meal', 'animalMeat', 'carbMeal'];
 
   // 1. No meal in 24h
@@ -31,7 +34,7 @@ export function createInfoNotifications({
     notifications.push({
       key: 'no-meal',
       icon: 'alert',
-      color: '#e74c3c',
+      color: theme.colors.error,
       title: 'No meal logged in 24h',
       desc: 'You have not logged a meal in over 24 hours. Please log your meal for accurate tracking.',
       primaryAction: { type: 'modalAction', payload: 'logMeal' },
@@ -45,7 +48,7 @@ export function createInfoNotifications({
     notifications.push({
       key: 'no-symptom',
       icon: 'stethoscope',
-      color: '#f7b731',
+      color: theme.colors.warning,
       title: 'No symptoms logged today',
       desc: 'You have not logged any symptoms today. Logging symptoms helps track your progress.',
       primaryAction: { type: 'modalAction', payload: 'logSymptom' },
@@ -53,15 +56,30 @@ export function createInfoNotifications({
   }
 
   // 3. Next autophagy challenge
+  const includeUnifiedRec = Boolean(unifiedRec && !fastRecDismissed);
   if (nextChallenge) {
-    notifications.push({
-      key: 'autophagy-challenge',
-      icon: 'bacteria',
-      color: '#6bb3b6',
-      title: 'Next Autophagy Challenge',
-      desc: `Your next challenge: ${nextChallenge}h fast (${currentLevel || 'Current'} level).`,
-      primaryAction: { type: 'modalAction', payload: 'logFast' },
-    });
+    const showAutophagyChallenge = ongoingFast ? true : !includeUnifiedRec;
+    if (showAutophagyChallenge && ongoingFast?.start) {
+      const start = new Date(ongoingFast.start);
+      const elapsedMs = Date.now() - start.getTime();
+      const elapsedHours = elapsedMs > 0 ? (elapsedMs / 3600000).toFixed(1) : '0.0';
+      notifications.push({
+        key: 'autophagy-challenge',
+        icon: 'bacteria',
+        color: theme.colors.info,
+        title: 'Autophagy Challenge',
+        desc: `Current fast: ${elapsedHours}h elapsed. Next milestone ${nextChallenge}h.`,
+      });
+    } else if (showAutophagyChallenge) {
+      notifications.push({
+        key: 'autophagy-challenge',
+        icon: 'bacteria',
+        color: theme.colors.info,
+        title: 'Next Autophagy Challenge',
+        desc: `Your next challenge: ${nextChallenge}h fast (${currentLevel || 'Current'} level).`,
+        primaryAction: { type: 'modalAction', payload: 'logFast' },
+      });
+    }
   }
 
   // 4. Fasting streak
@@ -91,7 +109,7 @@ export function createInfoNotifications({
     notifications.push({
       key: 'fasting-streak',
       icon: 'fire',
-      color: '#89ce00',
+      color: theme.colors.success,
       title: 'Fasting Streak',
       desc: `You are on a ${fastingStreak}-day fasting streak!`,
     });
@@ -109,7 +127,7 @@ export function createInfoNotifications({
     notifications.push({
       key: 'longest-fast',
       icon: 'timer-sand',
-      color: '#6bb3b6',
+      color: theme.colors.info,
       title: 'Longest Fast',
       desc: `Your longest fast is ${Math.round(longestFastHours)} hours.`,
     });
@@ -131,7 +149,7 @@ export function createInfoNotifications({
     notifications.push({
       key: 'meal-streak',
       icon: 'food',
-      color: '#89ce00',
+      color: theme.colors.success,
       title: 'Meal Logging Streak',
       desc: `You have logged meals for ${mealStreak} days in a row!`,
     });
@@ -153,7 +171,7 @@ export function createInfoNotifications({
     notifications.push({
       key: 'symptom-streak',
       icon: 'star',
-      color: '#ffd700',
+      color: theme.colors.brandHighlight,
       title: 'Symptom Logging Achievement',
       desc: `You have logged symptoms for ${symptomStreak} days in a row!`,
     });
@@ -165,7 +183,7 @@ export function createInfoNotifications({
       key: 'rec-meditation',
       doneKey: `meditation-${today}`,
       icon: 'meditation',
-      color: '#b3c7f7',
+      color: theme.colors.info,
       title: 'Try a meditation session',
       desc: 'Take a few minutes to relax and meditate today.',
     },
@@ -173,7 +191,7 @@ export function createInfoNotifications({
       key: 'rec-exercise',
       doneKey: `exercise-${today}`,
       icon: 'walk',
-      color: '#b3c7f7',
+      color: theme.colors.info,
       title: 'Do gentle exercise',
       desc: 'A short walk or stretching can help.',
     },
@@ -181,7 +199,7 @@ export function createInfoNotifications({
       key: 'rec-hydration',
       doneKey: `hydration-${today}`,
       icon: 'water',
-      color: '#b3c7f7',
+      color: theme.colors.info,
       title: 'Drink water',
       desc: 'Stay hydrated throughout the day.',
     },
@@ -201,11 +219,11 @@ export function createInfoNotifications({
   });
 
   // 9. Unified fast recommendation (if not dismissed)
-  if (unifiedRec && !fastRecDismissed) {
+  if (includeUnifiedRec) {
     notifications.unshift({
       key: 'unified-fast-recommendation',
       icon: 'timer-sand',
-      color: unifiedRec.caution ? '#e74c3c' : '#89ce00',
+      color: unifiedRec.caution ? theme.colors.error : theme.colors.success,
       title: `Next Recommended Fast: ${unifiedRec.recommendedProgram.duration}h`,
       desc: unifiedRec.reason,
       benefits: unifiedRec.benefits,

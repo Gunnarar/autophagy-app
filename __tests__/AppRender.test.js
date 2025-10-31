@@ -25,6 +25,14 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
+jest.mock('lucide-react-native', () => {
+  const { View } = require('react-native');
+  const MockIcon = (props) => <View {...props} />;
+  return new Proxy({}, {
+    get: () => MockIcon,
+  });
+});
+
 jest.mock('react-native-modal-datetime-picker', () => {
   const { View } = require('react-native');
   return ({ isVisible, children }) => (isVisible ? <View>{children}</View> : null);

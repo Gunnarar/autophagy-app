@@ -1,7 +1,20 @@
 import React, { useState } from 'react';
-import { Text, TextInput, Button, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  View,
+} from 'react-native';
 import { useUser } from '../contexts/UserContext';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
+import { theme } from '../utils/theme';
 
 const steps = [
   { key: 'name', label: 'Name' },
@@ -22,7 +35,7 @@ const requiredFields = ['name', 'age', 'height', 'weight', 'email', 'startDate']
 
 export default function OnboardingScreen({ navigation }) {
   const { saveUser } = useUser();
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState({ startDate: new Date().toISOString() });
   const [step, setStep] = useState(0);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -52,52 +65,161 @@ export default function OnboardingScreen({ navigation }) {
   };
 
   const { key, label, keyboardType, multiline, isDate } = steps[step];
+  const isLast = step === steps.length - 1;
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Onboarding</Text>
-      <Text style={styles.label}>{label}</Text>
-      {isDate ? (
-        <>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => setShowDatePicker(true)}
+    <KeyboardAvoidingView
+      style={styles.screen}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      enabled
+    >
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Card variant="outline" style={styles.card}>
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.cardContent}
           >
-            <Text style={styles.dateButtonText}>
-              {form.startDate ? new Date(form.startDate).toLocaleDateString() : 'Select Date'}
+            <Text style={styles.stepLabel}>Step {step + 1} of {steps.length}</Text>
+            <Text style={styles.title}>Let’s get to know you</Text>
+            <Text style={styles.subtitle}>
+              {label}
             </Text>
-          </TouchableOpacity>
-          <DateTimePickerModal
-            isVisible={showDatePicker}
-            mode="date"
-            onConfirm={date => {
-              setShowDatePicker(false);
-              handleChange('startDate', date.toISOString());
-            }}
-            onCancel={() => setShowDatePicker(false)}
-          />
-        </>
-      ) : (
-        <TextInput
-          style={[styles.input, multiline && styles.inputMultiline]}
-          value={form[key] || ''}
-          onChangeText={v => handleChange(key, v)}
-          keyboardType={keyboardType || 'default'}
-          autoFocus
-          multiline={!!multiline}
-        />
-      )}
-      <Button title={step === steps.length - 1 ? 'Finish' : 'Next'} onPress={handleNext} />
-    </ScrollView>
+            {isDate ? (
+              <>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text style={styles.dateButtonText}>
+                    {form.startDate ? new Date(form.startDate).toLocaleDateString() : 'Select start date'}
+                  </Text>
+                </TouchableOpacity>
+              <DateTimePickerModal
+                isVisible={showDatePicker}
+                mode="date"
+                date={form.startDate ? new Date(form.startDate) : new Date()}
+                onConfirm={date => {
+                  setShowDatePicker(false);
+                  handleChange('startDate', date.toISOString());
+                }}
+                onCancel={() => setShowDatePicker(false)}
+              />
+              </>
+            ) : (
+              <TextInput
+                style={[styles.input, multiline && styles.inputMultiline]}
+                value={form[key] || ''}
+                onChangeText={v => handleChange(key, v)}
+                keyboardType={keyboardType || 'default'}
+                returnKeyType={isLast ? 'done' : 'next'}
+                onSubmitEditing={() => {
+                  if (!multiline) {
+                    handleNext();
+                  }
+                }}
+                blurOnSubmit={!multiline}
+                multiline={!!multiline}
+                autoCapitalize={key === 'email' ? 'none' : 'sentences'}
+              />
+            )}
+          </ScrollView>
+          <View style={styles.buttonRow}>
+            {step > 0 && (
+              <Button
+                label="Back"
+                variant="secondary"
+                size="md"
+                onPress={() => setStep(step - 1)}
+                style={styles.actionButton}
+              />
+            )}
+            <Button
+              label={isLast ? 'Finish' : 'Next'}
+              size="md"
+              onPress={handleNext}
+              style={styles.actionButton}
+            />
+          </View>
+        </Card>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-  title: { fontSize: 28, fontWeight: 'bold', marginBottom: 24 },
-  label: { fontSize: 18, marginBottom: 8 },
-  input: { borderWidth: 1, borderColor: '#ccc', borderRadius: 8, padding: 12, width: '100%', marginBottom: 16 },
-  inputMultiline: { height: 80 },
-  dateButton: { borderWidth: 1, borderColor: '#6bb3b6', borderRadius: 8, padding: 16, width: '100%', alignItems: 'center', marginBottom: 16 },
-  dateButtonText: { fontSize: 16, color: '#2d4d4d' },
+  screen: {
+    flex: 1,
+    backgroundColor: theme.colors.backgroundPrimary,
+  },
+  container: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: theme.spacing.lg,
+  },
+  card: {
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
+    maxHeight: '90%',
+  },
+  cardContent: {
+    gap: theme.spacing.sm,
+    paddingBottom: theme.spacing.lg,
+  },
+  stepLabel: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  title: {
+    fontSize: theme.typography.sizes.headline,
+    fontWeight: theme.typography.weights.bold,
+    color: theme.colors.textPrimary,
+  },
+  subtitle: {
+    fontSize: theme.typography.sizes.body,
+    color: theme.colors.textSecondary,
+  },
+  input: {
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    padding: theme.spacing.sm,
+    fontSize: theme.typography.sizes.body,
+    color: theme.colors.textPrimary,
+    backgroundColor: theme.colors.surfacePrimary,
+    marginTop: theme.spacing.sm,
+  },
+  inputMultiline: {
+    minHeight: 100,
+    textAlignVertical: 'top',
+  },
+  dateButton: {
+    marginTop: theme.spacing.sm,
+    borderRadius: theme.radius.md,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.sm,
+    backgroundColor: theme.colors.surfacePrimary,
+    borderWidth: StyleSheet.hairlineWidth * 2,
+    borderColor: theme.colors.border,
+    alignItems: 'center',
+  },
+  dateButtonText: {
+    fontSize: theme.typography.sizes.body,
+    color: theme.colors.textPrimary,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: theme.spacing.sm,
+    marginTop: theme.spacing.lg,
+  },
+  actionButton: {
+    flex: 1,
+  },
 });

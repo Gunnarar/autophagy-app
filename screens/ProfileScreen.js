@@ -1,8 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Trash2 } from 'lucide-react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useUser } from '../contexts/UserContext';
+import { useLogs } from '../contexts/LogsContext';
+import { deleteItem } from '../utils/storage';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { theme } from '../utils/theme';
@@ -10,7 +13,17 @@ import { theme } from '../utils/theme';
 const AVATAR_PLACEHOLDER = 'https://ui-avatars.com/api/?name=Genesis+User&background=b3c7f7&color=fff&size=128';
 
 export default function ProfileScreen({ navigation }) {
-  const { user } = useUser();
+  const { user, saveUser } = useUser();
+  const {
+    foodLog,
+    symptomLog,
+    fastLog,
+    ketoneLog,
+    setFoodLog,
+    setSymptomLog,
+    setFastLog,
+    setKetoneLog,
+  } = useLogs();
 
   if (!user) {
     return (
@@ -20,7 +33,62 @@ export default function ProfileScreen({ navigation }) {
     );
   }
 
+  const handleResetData = () => {
+    Alert.alert(
+      'Reset app data',
+      'This will remove all logs, notifications, and profile details. You will be taken back to onboarding.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: async () => {
+            setFoodLog([]);
+            setSymptomLog([]);
+            setFastLog([]);
+            setKetoneLog([]);
+
+            await Promise.all([
+              deleteItem('foodLog'),
+              deleteItem('symptomLog'),
+              deleteItem('fastLog'),
+              deleteItem('ketoneLog'),
+              deleteItem('autophagyProgress'),
+              deleteItem('notificationDone'),
+              deleteItem('notificationFastingDismissedUntil'),
+              deleteItem('fastRecDismissed'),
+              deleteItem('userProfile'),
+            ]);
+
+            await saveUser({ onboarded: false });
+          },
+        },
+      ],
+    );
+  };
+
   const firstName = user.name?.split(' ')[0] || 'Genesis user';
+  const weeklyInsights = React.useMemo(() => {
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 6);
+
+    const fastsCompleted = fastLog.filter(entry => entry?.end && new Date(entry.end) >= start).length;
+
+    const recentKetones = ketoneLog
+      .filter(entry => entry?.time && entry?.value != null && new Date(entry.time) >= start);
+    const avgKetone = recentKetones.length
+      ? (recentKetones.reduce((sum, entry) => sum + Number(entry.value || 0), 0) / recentKetones.length).toFixed(1)
+      : '—';
+
+    const symptomCount = symptomLog.filter(entry => entry?.time && new Date(entry.time) >= start).length;
+
+    return {
+      fastsCompleted,
+      avgKetone,
+      symptomCount,
+    };
+  }, [fastLog, ketoneLog, symptomLog]);
   const profileActions = [
     {
       key: 'profileDetails',
@@ -95,17 +163,17 @@ export default function ProfileScreen({ navigation }) {
         <Text style={styles.sectionTitle}>Weekly highlights</Text>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>4</Text>
+            <Text style={styles.summaryValue}>{weeklyInsights.fastsCompleted}</Text>
             <Text style={styles.summaryLabel}>Fasts completed</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>0.5</Text>
+            <Text style={styles.summaryValue}>{weeklyInsights.avgKetone}</Text>
             <Text style={styles.summaryLabel}>Avg ketones</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryValue}>3</Text>
+            <Text style={styles.summaryValue}>{weeklyInsights.symptomCount}</Text>
             <Text style={styles.summaryLabel}>Symptom logs</Text>
           </View>
         </View>
@@ -157,6 +225,19 @@ export default function ProfileScreen({ navigation }) {
         <Text style={styles.helpTitle}>Need a hand?</Text>
         <Text style={styles.helpSubtitle}>Email support@genesis4pd.com and we’ll respond within one business day.</Text>
         <Button label="Email support" variant="primary" size="sm" onPress={() => {}} style={styles.helpButton} />
+      </Card>
+
+      <Card variant="outline" style={styles.dangerCard}>
+        <Text style={styles.dangerTitle}>Danger zone</Text>
+        <Text style={styles.dangerSubtitle}>Remove all locally stored data and restart onboarding. This cannot be undone.</Text>
+        <Button
+          label="Reset app data"
+          variant="danger"
+          size="sm"
+          leftIcon={<Trash2 color={theme.colors.textOnPrimary} size={18} strokeWidth={2} />}
+          onPress={handleResetData}
+          style={styles.dangerButton}
+        />
       </Card>
     </ScrollView>
   );
@@ -333,6 +414,24 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.sm,
   },
   helpButton: {
+    alignSelf: 'flex-start',
+  },
+  dangerCard: {
+    marginBottom: theme.spacing.xl,
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.lg,
+    gap: theme.spacing.sm,
+  },
+  dangerTitle: {
+    fontSize: theme.typography.sizes.body,
+    fontWeight: theme.typography.weights.semibold,
+    color: theme.colors.error,
+  },
+  dangerSubtitle: {
+    fontSize: theme.typography.sizes.caption,
+    color: theme.colors.textSecondary,
+  },
+  dangerButton: {
     alignSelf: 'flex-start',
   },
 });

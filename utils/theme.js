@@ -19,6 +19,14 @@ const palette = {
   slateText: '#1B3B4B',
   slateSubdued: '#5A7684',
   slateMuted: '#7F97A5',
+  peach100: '#fef2f2',
+  peach200: '#fde68a',
+  apricot100: '#fff7ed',
+  apricot200: '#fed7aa',
+  sky100: '#eff6ff',
+  sky200: '#bfdbfe',
+  mint100: '#ecfdf5',
+  mint200: '#a7f3d0',
 };
 
 const colors = {
@@ -67,6 +75,16 @@ const colors = {
   successLegacy: '#89ce00',
   shadow: '#132535',
   disabled: '#ccc',
+};
+
+const gradients = {
+  hero: [palette.carnivoreRed, palette.carnivoreRedDark],
+  statCards: {
+    meals: [palette.peach100, palette.peach200],
+    symptoms: [palette.apricot100, palette.apricot200],
+    ketone: [palette.sky100, palette.sky200],
+    streak: [palette.mint100, palette.mint200],
+  },
 };
 
 const typography = {
@@ -162,6 +180,7 @@ const overlay = {
 export const theme = {
   palette,
   colors,
+  gradients,
   typography,
   spacing,
   radius,
