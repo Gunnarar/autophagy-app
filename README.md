@@ -4,6 +4,12 @@
 
 **Genesis4PD Autophagy App** is a robust, user-friendly health-tracking app for Parkinson's Disease, focused on fasting, diet, and symptom logging. The MVP is complete and ready for final QA and user testing. All core flows are unified, accessible, and polished. See below for details.
 
+## 📦 Release 0.3.0 Highlights
+- Theme system now includes light, dark, blue, and red presets backed by a persistent ThemeProvider.
+- Profile settings offer an appearance toggle and language picker; localization covers English, Spanish, Icelandic, and Chinese.
+- Home, Logs, Info, and modal flows align with the latest Figma mockups, including tappable stat cards and autophagy challenges.
+- Fasting program picker is live with progressive unlocking, scheduling, and localization support.
+
 ### ✅ Core Features Implemented
 - **Onboarding & Profile**: Multi-step onboarding, persistent profile, edit/view all data, required field validation, user-friendly errors.
 - **Fasting Tracking**: Fasting timer, log/history, progress metrics (autophagy windows), ongoing fast shown on Home, predefined programs (24h–7d) with progressive unlocking, schedule/snooze fasts.
@@ -30,12 +36,12 @@
 #### High Value (User Engagement & Medical Relevance)
 - [ ] **Reminders & Notifications** _(Deferred: requires on-device QA & dismissal persistence)_
 - [x] **Data Visualization** _(basic charts/streaks done)_
-- [ ] **Personalization** _(dark mode toggle, quick actions: future)_
+- [x] **Personalization** _(theme presets + language picker shipped in v0.3.0; optional quick actions remain future)_
 - [ ] **Medical Safety** _(medication logging: future)_
 - [ ] **Resilient Storage & Sync** _(better error fallback, corruption handling)_
 - [x] **Notification State Persistence** _(remember dismissals across sessions)_
-- [ ] **Patient Onboarding Flow** _(collect name, address, age, height, weight, contact info, medications, symptom list, 12/24‑month goals, and desired start date that triggers onboarding email)_
-- [ ] **Autophagy Program Picker** _(surface the beginner → growth hormone schedule: 24h, 48h, 72h, 96h, 120h, 144h, 168h)_
+- [x] **Patient Onboarding Flow** _(multi-step profile + start date captured; onboarding email trigger still TBD)_
+- [x] **Autophagy Program Picker** _(24h–168h programs available with locking/unlocking and scheduling)_
 - [ ] **Priority Health Metrics** _(log total time fasted, ketosis state, zero-carb days, weight—electrolytes intentionally out of scope)_
 
 #### Advanced/Optional (For Future)
@@ -65,12 +71,13 @@
 - [x] Modernize modals and forms with dialog-style layouts, icon-backed selectors, and consistent spacing.
 - [x] Draw onboarding inspiration from Easy Fast’s streamlined flow while omitting electrolytes and focusing on our fasting/ketosis priorities.
 
-### 🌙 Dark Mode Prep
-- [ ] Split `theme` into light/dark palettes that share spacing/typography tokens; derive colors from the Figma night variant.
-- [ ] Add a `ThemeProvider` wrapper that persists the chosen mode (system/default toggle via AsyncStorage) and exposes a `useThemeMode` hook.
-- [ ] Audit components that still rely on literal hex values (e.g. `components/KetoneLogModal.js`, `components/SymptomLogModal.js`, `components/LogEntryModal.js`) and swap them to the semantic tokens before enabling the toggle.
-- [ ] Provide light/dark values for `theme.overlay.scrim`/`scrimLight` once the theme provider lands so modal scrims adapt automatically.
-- [ ] Extend smoke tests to render the app in both modes once the theme provider exists to guard against missing token references.
+### 🌙 Theme System
+- [x] Split `theme` into light/dark palettes that share spacing/typography tokens; derive colors from the Figma night variant.
+- [x] Add a `ThemeProvider` wrapper that persists the chosen mode (AsyncStorage-backed toggle in Profile) and exposes helper hooks.
+- [x] Audit components that previously relied on hex literals and migrate to semantic tokens/gradients.
+- [x] Provide light/dark values for modal scrims and overlay tokens.
+- [ ] Extend smoke tests to render the app in multiple themes to guard against missing token references.
+- [ ] Evaluate adding automated visual regression checks for light/dark/blue/red presets.
 
 ### ♿ Manual Accessibility QA
 Use these quick checks whenever we touch chip selectors, modals, or other interactive primitives:
@@ -175,8 +182,8 @@ Images 1 through 4 are screenshots from applications that we want to take inspir
   - Simple charts/timelines for fasting, symptoms, and food patterns.
   - Streaks, milestones, or "longest fast" badges.
 - **Personalization**
-  - Customizable quick actions (if reintroduced).
-  - Large text/dark mode toggle in Profile.
+  - Theme presets (light, dark, blue, red) and language picker live in Profile.
+  - Future: reintroduce customizable quick actions when the UX is ready.
 - **Medical Safety**
   - Medication logging (optional, with warnings for fasting/med conflicts).
   - Export logs as CSV/PDF for healthcare providers.
@@ -193,7 +200,7 @@ Images 1 through 4 are screenshots from applications that we want to take inspir
 - **Offline Support & Sync**
   - Local-first data, sync when online.
 - **Theming & Delight**
-  - Subtle animations, Genesis4PD color palette, dark/light mode.
+  - Subtle animations, extended palette variants, and contextual theming cues.
 
 ### Design & Inspiration
 - Take UI/UX inspiration from referenced apps and screenshots (Easy Fast, MindMyPD).
