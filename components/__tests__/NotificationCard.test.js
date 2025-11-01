@@ -7,6 +7,17 @@ jest.mock('@expo/vector-icons', () => ({
   MaterialCommunityIcons: () => null,
 }));
 
+jest.mock('../../contexts/LocalizationContext', () => ({
+  useTranslation: () => ({
+    t: (_key, fallback, params) => {
+      if (fallback && params) {
+        return Object.keys(params).reduce((acc, paramKey) => acc.replace(`{${paramKey}}`, params[paramKey]), fallback);
+      }
+      return fallback;
+    },
+  }),
+}));
+
 const baseNotification = {
   key: 'test-card',
   title: 'Hydration reminder',

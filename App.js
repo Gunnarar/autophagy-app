@@ -10,6 +10,7 @@ import { LogsProvider } from './contexts/LogsContext';
 import { ModalActionProvider } from './contexts/ModalActionContext';
 import { UserProvider, useUser } from './contexts/UserContext';
 import { AVAILABLE_THEME_MODES, ThemeProvider, useTheme } from './utils/theme';
+import { LocalizationProvider, useTranslation } from './contexts/LocalizationContext';
 import { loadString, saveString } from './utils/storage';
 
 import HomeScreen from './screens/HomeScreen';
@@ -97,6 +98,7 @@ function renderTabIcon(routeName, focused, color, size) {
 
 function MainTabs() {
   const { theme: currentTheme } = useTheme();
+  const { t } = useTranslation();
   return (
     <Tab.Navigator
       initialRouteName="Home"
@@ -115,24 +117,52 @@ function MainTabs() {
           fontWeight: currentTheme.typography.weights.medium,
         },
         tabBarIcon: ({ focused, color, size }) => renderTabIcon(route.name, focused, color, size),
+        tabBarLabel: ({ focused, color }) => (
+          <Text style={{ color, fontSize: 12, fontWeight: focused ? currentTheme.typography.weights.semibold : currentTheme.typography.weights.medium }}>
+            {route.name === 'Home'
+              ? t('navigation.home', 'Home')
+              : route.name === 'Logs'
+              ? t('navigation.logs', 'Logs')
+              : route.name === 'Info'
+              ? t('navigation.info', 'Insights')
+              : t('navigation.profile', 'Profile')}
+          </Text>
+        ),
         headerShown: false,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Logs" component={LogsScreen} />
-      <Tab.Screen name="Info" component={InfoScreen} options={{ title: 'Insights' }} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen
+        name="Home"
+        component={HomeScreen}
+        options={{ title: t('navigation.home', 'Home') }}
+      />
+      <Tab.Screen
+        name="Logs"
+        component={LogsScreen}
+        options={{ title: t('navigation.logs', 'Logs') }}
+      />
+      <Tab.Screen
+        name="Info"
+        component={InfoScreen}
+        options={{ title: t('navigation.info', 'Insights') }}
+      />
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: t('navigation.profile', 'Profile') }}
+      />
     </Tab.Navigator>
   );
 }
 
 function Root() {
   const { theme: currentTheme } = useTheme();
+  const { t } = useTranslation();
   const { user, loading } = useUser();
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: currentTheme.colors.backgroundPrimary }]}>
-        <Text style={[styles.loadingText, { color: currentTheme.colors.textPrimary }]}>Loading...</Text>
+        <Text style={[styles.loadingText, { color: currentTheme.colors.textPrimary }]}>{t('common.loading', 'Loading…')}</Text>
       </View>
     );
   }
@@ -197,15 +227,17 @@ function AppNavigation() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemePersistenceProvider>
-        <UserProvider>
-          <ModalActionProvider>
-            <LogsProvider>
-              <AppNavigation />
-            </LogsProvider>
-          </ModalActionProvider>
-        </UserProvider>
-      </ThemePersistenceProvider>
+      <LocalizationProvider>
+        <ThemePersistenceProvider>
+          <UserProvider>
+            <ModalActionProvider>
+              <LogsProvider>
+                <AppNavigation />
+              </LogsProvider>
+            </ModalActionProvider>
+          </UserProvider>
+        </ThemePersistenceProvider>
+      </LocalizationProvider>
     </SafeAreaProvider>
   );
 }

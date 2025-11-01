@@ -42,7 +42,23 @@ export function inferFastsFromFoodLog(foodLog = []) {
   return fasts;
 }
 
-export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptomLog = [], autophagyStatus = null) {
+export function getUnifiedFastRecommendation(
+  fastLog = [],
+  foodLog = [],
+  symptomLog = [],
+  autophagyStatus = null,
+  translate,
+) {
+  const format = (key, fallback, params) => {
+    if (typeof translate === 'function') {
+      return translate(key, fallback, params);
+    }
+    if (!params) {return fallback;}
+    return Object.keys(params).reduce(
+      (acc, paramKey) => acc.replace(`{${paramKey}}`, params[paramKey]),
+      fallback,
+    );
+  };
   const now = new Date();
   const RECENT_DAYS = 60;
   const CARB_MEAL_WINDOW_DAYS = 7;
@@ -92,19 +108,19 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
   ).length;
 
   let caution = false;
-  let reason = `Based on your recent fasting history, we recommend a ${recommended.duration}h fast.`;
+  let reason = format('info.recommendation.base', 'Based on your recent fasting history, we recommend a {hours}h fast.', { hours: recommended.duration });
   let overrideTo24h = false;
 
   if (carbMeals > CARB_MEAL_LIMIT) {
     recommended = FASTING_PROGRAMS[0];
-    reason = "You've had several carb meals recently. Start with a 24h fast to reset.";
+    reason = format('info.recommendation.carbReset', "You've had several carb meals recently. Start with a 24h fast to reset.");
     caution = true;
     overrideTo24h = true;
   }
 
   if (!overrideTo24h && recommended.duration > 24 && animalMeals < ANIMAL_MEAL_MIN) {
     recommended = FASTING_PROGRAMS[0];
-    reason = 'We recommend a 24h fast. For multi-day fasts, ensure at least 3 animal-based meals in the week prior.';
+    reason = format('info.recommendation.animalMealsReminder', 'We recommend a 24h fast. For multi-day fasts, ensure at least 3 animal-based meals in the week prior.');
     caution = true;
   }
 
@@ -125,7 +141,7 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
       const daysSinceLastProlonged = (now - lastProlongedEnd) / (1000 * 3600 * 24);
       if (daysSinceLastProlonged < REFEED_DAYS && recommended.duration >= PROLONGED_FAST_HOURS) {
         recommended = FASTING_PROGRAMS[0];
-        reason = `You recently completed a prolonged fast. Allow at least ${REFEED_DAYS} days of refeed (normal eating) before attempting another prolonged fast.`;
+        reason = format('info.recommendation.afterProlonged', 'You recently completed a prolonged fast. Allow at least {days} days of refeed (normal eating) before attempting another prolonged fast.', { days: REFEED_DAYS });
         caution = true;
       }
     }
@@ -137,14 +153,14 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
     return (now - lastMeal) / (1000 * 3600) >= 16;
   })();
 
-  let whatToExpect = 'Expect to feel hungry in the first 12-24h, then possibly more energy and mental clarity as your body adapts.';
+  let whatToExpect = format('info.recommendation.whatToExpect.base', 'Expect to feel hungry in the first 12-24h, then possibly more energy and mental clarity as your body adapts.');
   if (fastingNow) {
     if (recommended.duration >= 48) {
-      whatToExpect = 'You may feel increased mental clarity, mild fatigue, or hunger. Deep autophagy and immune renewal are likely active.';
+      whatToExpect = format('info.recommendation.whatToExpect.deep', 'You may feel increased mental clarity, mild fatigue, or hunger. Deep autophagy and immune renewal are likely active.');
     } else if (recommended.duration >= 36) {
-      whatToExpect = 'You may notice fat burning, improved focus, and mild hunger. Autophagy is ramping up.';
+      whatToExpect = format('info.recommendation.whatToExpect.ramping', 'You may notice fat burning, improved focus, and mild hunger. Autophagy is ramping up.');
     } else {
-      whatToExpect = 'You may feel hungry or energized. Autophagy is likely starting.';
+      whatToExpect = format('info.recommendation.whatToExpect.starting', 'You may feel hungry or energized. Autophagy is likely starting.');
     }
   }
 
@@ -152,26 +168,26 @@ export function getUnifiedFastRecommendation(fastLog = [], foodLog = [], symptom
     ? symptomLog.filter(entry => entry?.time && (now - new Date(entry.time)) / (1000 * 3600 * 24) < 2)
     : [];
   if (recentSymptoms.length > 0) {
-    whatToExpect += ' Monitor your symptoms closely and break your fast if you feel unwell.';
+    whatToExpect += ` ${format('info.recommendation.whatToExpect.monitor', 'Monitor your symptoms closely and break your fast if you feel unwell.')}`;
   }
 
   const nextChallenge = autophagyStatus?.nextChallenge;
   let challengeMsg = '';
   if (nextChallenge && recommended.duration < nextChallenge) {
-    challengeMsg = `Your next autophagy challenge is a ${nextChallenge}h fast. Completing the recommended fast will help you progress!`;
+    challengeMsg = format('info.recommendation.challengeAhead', 'Your next autophagy challenge is a {hours}h fast. Completing the recommended fast will help you progress!', { hours: nextChallenge });
     if (!overrideTo24h && !caution) {
-      reason = `You're on track—complete a ${recommended.duration}h fast to prep for the ${nextChallenge}h challenge.`;
+      reason = format('info.recommendation.challengePrep', "You're on track—complete a {recommended}h fast to prep for the {next}h challenge.", { recommended: recommended.duration, next: nextChallenge });
     }
   } else if (nextChallenge && recommended.duration === nextChallenge) {
-    challengeMsg = 'This fast is your next autophagy challenge! Completing it will unlock a new level.';
+    challengeMsg = format('info.recommendation.challengeNow', 'This fast is your next autophagy challenge! Completing it will unlock a new level.');
     if (!overrideTo24h && !caution) {
-      reason = `This ${recommended.duration}h fast advances you through the autophagy challenge ladder.`;
+      reason = format('info.recommendation.challengeAdvance', 'This {hours}h fast advances you through the autophagy challenge ladder.', { hours: recommended.duration });
     }
   }
 
   let planNextMsg = '';
   if (!caution && recommended.duration > 24) {
-    planNextMsg = 'Tip: For best results, plan your next multi-day fast soon after completing this one, while your diet is still supportive.';
+    planNextMsg = format('info.recommendation.planNext', 'Tip: For best results, plan your next multi-day fast soon after completing this one, while your diet is still supportive.');
   }
 
   return {

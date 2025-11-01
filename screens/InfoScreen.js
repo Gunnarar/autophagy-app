@@ -8,37 +8,39 @@ import AutophagyLevelCard from '../components/AutophagyLevelCard';
 import { createInfoNotifications } from '../utils/notifications';
 import { Card } from '../components/ui/Card';
 import { useTheme, useThemedStyles } from '../utils/theme';
+import { useTranslation } from '../contexts/LocalizationContext';
 
-function resolvePrimaryLabel(action) {
+function resolvePrimaryLabel(action, t) {
   if (!action) return undefined;
   if (action.type === 'modalAction') {
     switch (action.payload) {
       case 'logMeal':
-        return 'Log Meal';
+        return t('info.actions.logMeal', 'Log Meal');
       case 'logSymptom':
-        return 'Log Symptom';
+        return t('info.actions.logSymptom', 'Log Symptom');
       case 'logFast':
-        return 'Start Fast';
+        return t('info.actions.startFast', 'Start Fast');
       default:
-        return 'Open';
+        return t('info.actions.open', 'Open');
     }
   }
   if (action.type === 'markDone') {
-    return 'Mark as done';
+    return t('info.actions.markDone', 'Mark as done');
   }
   return undefined;
 }
 
-function resolveSecondaryLabel(action) {
+function resolveSecondaryLabel(action, t) {
   if (!action) return undefined;
   if (action.type === 'snoozeFastingDismiss') {
-    return "I'm still fasting";
+    return t('info.actions.stillFasting', "I'm still fasting");
   }
   return undefined;
 }
 
 export default function InfoScreen() {
   const { foodLog, symptomLog, fastLog, useAutophagyStatus, useUnifiedFastRecommendation } = useLogs();
+  const { t } = useTranslation();
   const autophagyStatus = useAutophagyStatus();
   const { nextChallenge, currentLevel } = autophagyStatus;
   const { triggerModalAction } = useModalAction();
@@ -46,7 +48,7 @@ export default function InfoScreen() {
   const [done, setDone] = useState({});
   const [fastingDismissedUntil, setFastingDismissedUntil] = useState(null);
   const [notificationPrefsHydrated, setNotificationPrefsHydrated] = useState(false);
-  const unifiedRec = useUnifiedFastRecommendation();
+  const unifiedRec = useUnifiedFastRecommendation(t);
   const [fastRecDismissed, setFastRecDismissed] = useState(false);
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
@@ -100,6 +102,7 @@ export default function InfoScreen() {
     done,
     fastRecDismissed,
     theme: currentTheme,
+    translate: t,
   });
 
   const notifications = baseNotifications.map(item => {
@@ -117,7 +120,7 @@ export default function InfoScreen() {
             break;
         }
       };
-      notification.actionLabel = resolvePrimaryLabel(item.primaryAction);
+      notification.actionLabel = resolvePrimaryLabel(item.primaryAction, t);
     }
 
     if (item.secondaryAction) {
@@ -127,7 +130,7 @@ export default function InfoScreen() {
           setFastingDismissedUntil(Date.now() + hours * 3600 * 1000);
         }
       };
-      notification.secondaryLabel = resolveSecondaryLabel(item.secondaryAction);
+      notification.secondaryLabel = resolveSecondaryLabel(item.secondaryAction, t);
     }
 
     return notification;
@@ -137,18 +140,18 @@ export default function InfoScreen() {
     <View style={styles.screen}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <Card variant="tinted" style={styles.heroCard}>
-          <Text style={styles.overline}>Insights</Text>
-          <Text style={styles.title}>Keep building momentum</Text>
+          <Text style={styles.overline}>{t('info.hero.overline', 'Insights')}</Text>
+          <Text style={styles.title}>{t('info.hero.title', 'Keep building momentum')}</Text>
           <Text style={styles.subtitle}>
-            {unifiedRec.reason || 'Track meals, symptoms, and ketones to understand how fasting shapes your day.'}
+            {unifiedRec.reason || t('info.hero.subtitle', 'Track meals, symptoms, and ketones to understand how fasting shapes your day.')}
           </Text>
           <View style={styles.heroMeta}>
             <Text style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Current level:</Text> {currentLevel || 'Getting started'}
+              <Text style={styles.metaLabel}>{t('info.hero.currentLevel', 'Current level:')}</Text> {currentLevel || t('info.hero.gettingStarted', 'Getting started')}
             </Text>
             <Text style={styles.metaItem}>
-              <Text style={styles.metaLabel}>Next challenge:</Text>{' '}
-              {nextChallenge ? `${nextChallenge}h fast` : 'Complete your first fast'}
+              <Text style={styles.metaLabel}>{t('info.hero.nextChallenge', 'Next challenge:')}</Text>{' '}
+              {nextChallenge ? t('info.hero.nextChallengeValue', '{hours}h fast', { hours: nextChallenge }) : t('info.hero.nextChallengeFallback', 'Complete your first fast')}
             </Text>
           </View>
         </Card>
@@ -156,7 +159,7 @@ export default function InfoScreen() {
         <AutophagyLevelCard status={autophagyStatus} />
 
         <Card variant="outline" style={styles.notificationsCard}>
-          <Text style={styles.sectionTitle}>Updates & reminders</Text>
+          <Text style={styles.sectionTitle}>{t('info.notifications.title', 'Updates & reminders')}</Text>
           <NotificationList
             notifications={notifications}
             onDismiss={handleDismissFastRec}

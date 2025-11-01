@@ -2,6 +2,17 @@ import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import KetoneLogModal from '../KetoneLogModal';
 
+jest.mock('../../contexts/LocalizationContext', () => ({
+  useTranslation: () => ({
+    t: (_key, fallback, params) => {
+      if (fallback && params) {
+        return Object.keys(params).reduce((acc, paramKey) => acc.replace(`{${paramKey}}`, params[paramKey]), fallback);
+      }
+      return fallback;
+    },
+  }),
+}));
+
 describe('KetoneLogModal', () => {
   it('invokes the unit selector when a chip is tapped', () => {
     const handleSelectUnit = jest.fn();

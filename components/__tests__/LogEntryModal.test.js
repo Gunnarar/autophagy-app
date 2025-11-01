@@ -3,6 +3,17 @@ import { fireEvent, render } from '@testing-library/react-native';
 import LogEntryModal from '../LogEntryModal';
 import { SYMPTOM_TYPES, SEVERITIES } from '../../utils/constants';
 
+jest.mock('../../contexts/LocalizationContext', () => ({
+  useTranslation: () => ({
+    t: (_key, fallback, params) => {
+      if (fallback && params) {
+        return Object.keys(params).reduce((acc, paramKey) => acc.replace(`{${paramKey}}`, params[paramKey]), fallback);
+      }
+      return fallback;
+    },
+  }),
+}));
+
 const defaultProps = {
   visible: true,
   onCancel: jest.fn(),

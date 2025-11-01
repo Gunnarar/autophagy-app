@@ -14,19 +14,20 @@ import { useUser } from '../contexts/UserContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useTheme, useThemedStyles } from '../utils/theme';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 const FIELD_CONFIGS = [
-  { key: 'name', label: 'Name' },
-  { key: 'address', label: 'Address' },
-  { key: 'age', label: 'Age', keyboardType: 'numeric' },
-  { key: 'height', label: 'Height (cm)', keyboardType: 'numeric' },
-  { key: 'weight', label: 'Weight (kg)', keyboardType: 'numeric' },
-  { key: 'email', label: 'Email', keyboardType: 'email-address', autoCapitalize: 'none' },
-  { key: 'cell', label: 'Cell Phone', keyboardType: 'phone-pad' },
-  { key: 'medications', label: 'Medications', multiline: true },
-  { key: 'symptoms', label: 'Symptoms', multiline: true },
-  { key: 'goal12', label: '12-Month Goal', multiline: true },
-  { key: 'goal24', label: '24-Month Goal', multiline: true },
+  { key: 'name', labelKey: 'profileDetails.fields.name', fallback: 'Name' },
+  { key: 'address', labelKey: 'profileDetails.fields.address', fallback: 'Address' },
+  { key: 'age', labelKey: 'profileDetails.fields.age', fallback: 'Age', keyboardType: 'numeric' },
+  { key: 'height', labelKey: 'profileDetails.fields.height', fallback: 'Height (cm)', keyboardType: 'numeric' },
+  { key: 'weight', labelKey: 'profileDetails.fields.weight', fallback: 'Weight (kg)', keyboardType: 'numeric' },
+  { key: 'email', labelKey: 'profileDetails.fields.email', fallback: 'Email', keyboardType: 'email-address', autoCapitalize: 'none' },
+  { key: 'cell', labelKey: 'profileDetails.fields.cell', fallback: 'Cell Phone', keyboardType: 'phone-pad' },
+  { key: 'medications', labelKey: 'profileDetails.fields.medications', fallback: 'Medications', multiline: true },
+  { key: 'symptoms', labelKey: 'profileDetails.fields.symptoms', fallback: 'Symptoms', multiline: true },
+  { key: 'goal12', labelKey: 'profileDetails.fields.goal12', fallback: '12-Month Goal', multiline: true },
+  { key: 'goal24', labelKey: 'profileDetails.fields.goal24', fallback: '24-Month Goal', multiline: true },
 ];
 
 const REQUIRED_FIELDS = ['name', 'age', 'height', 'weight', 'email', 'startDate'];
@@ -38,11 +39,12 @@ export default function ProfileDetailsScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
   if (!user) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading…</Text>
+        <Text style={styles.loadingText}>{t('profileDetails.loading', 'Loading…')}</Text>
       </View>
     );
   }
@@ -54,14 +56,20 @@ export default function ProfileDetailsScreen() {
   const handleSave = async () => {
     for (const key of REQUIRED_FIELDS) {
       if (!form[key] || String(form[key]).trim() === '') {
-        const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-        Alert.alert('Missing info', `Please enter your ${label}.`);
+        const fieldConfig = FIELD_CONFIGS.find(field => field.key === key);
+        const fieldLabel = fieldConfig
+          ? t(fieldConfig.labelKey, fieldConfig.fallback)
+          : t('profileDetails.startDate', 'Start Date');
+        Alert.alert(
+          t('profileDetails.missingInfoTitle', 'Missing info'),
+          t('profileDetails.missingInfoMessage', 'Please enter your {field}.', { field: fieldLabel }),
+        );
         return;
       }
     }
     await saveUser(form);
     setEditing(false);
-    Alert.alert('Success', 'Profile updated!');
+    Alert.alert(t('profileDetails.successTitle', 'Success'), t('profileDetails.successMessage', 'Profile updated!'));
   };
 
   const handleCancel = () => {
@@ -74,6 +82,8 @@ export default function ProfileDetailsScreen() {
     handleChange('startDate', date.toISOString());
   };
 
+  const noValueLabel = t('profileDetails.noValue', '—');
+
   return (
     <KeyboardAvoidingView
       style={styles.screen}
@@ -84,10 +94,11 @@ export default function ProfileDetailsScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <Card variant="outline" style={styles.card}>
-          <Text style={styles.title}>Profile details</Text>
-          <Text style={styles.subtitle}>Update your personal information and long-term goals.</Text>
+          <Text style={styles.title}>{t('profileDetails.title', 'Profile details')}</Text>
+          <Text style={styles.subtitle}>{t('profileDetails.subtitle', 'Update your personal information and long-term goals.')}</Text>
 
-          {FIELD_CONFIGS.map(({ key, label, keyboardType, multiline, autoCapitalize }) => {
+          {FIELD_CONFIGS.map(({ key, labelKey, fallback, keyboardType, multiline, autoCapitalize }) => {
+            const label = t(labelKey, fallback);
             const value = form[key] ? String(form[key]) : '';
             return (
               <View key={key} style={styles.fieldRow}>
@@ -104,17 +115,17 @@ export default function ProfileDetailsScreen() {
                     returnKeyType={multiline ? 'default' : 'next'}
                   />
                 ) : (
-                  <Text style={styles.value}>{value || '—'}</Text>
+                  <Text style={styles.value}>{value || noValueLabel}</Text>
                 )}
               </View>
             );
           })}
 
           <View style={styles.fieldRow}>
-            <Text style={styles.label}>Start Date</Text>
+            <Text style={styles.label}>{t('profileDetails.startDate', 'Start Date')}</Text>
             {editing ? (
               <Button
-                label={form.startDate ? new Date(form.startDate).toLocaleDateString() : 'Select date'}
+                label={form.startDate ? new Date(form.startDate).toLocaleDateString() : t('profileDetails.selectDate', 'Select date')}
                 variant="secondary"
                 size="sm"
                 onPress={() => setShowDatePicker(true)}
@@ -122,7 +133,7 @@ export default function ProfileDetailsScreen() {
               />
             ) : (
               <Text style={styles.value}>
-                {user.startDate ? new Date(user.startDate).toLocaleDateString() : '—'}
+                {user.startDate ? new Date(user.startDate).toLocaleDateString() : noValueLabel}
               </Text>
             )}
           </View>
@@ -130,20 +141,20 @@ export default function ProfileDetailsScreen() {
           {editing ? (
             <View style={styles.buttonRow}>
               <Button
-                label="Cancel"
+                label={t('profileDetails.cancel', 'Cancel')}
                 variant="ghost"
                 onPress={handleCancel}
                 style={styles.actionButton}
               />
               <Button
-                label="Save"
+                label={t('profileDetails.save', 'Save')}
                 onPress={handleSave}
                 style={styles.actionButton}
               />
             </View>
           ) : (
             <Button
-              label="Edit profile"
+              label={t('profileDetails.editProfile', 'Edit profile')}
               onPress={() => setEditing(true)}
               style={styles.fullWidthButton}
             />

@@ -2,14 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import NotificationCard from './NotificationCard';
 import { useThemedStyles } from '../utils/theme';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 export default function NotificationList({ notifications = [], onDismiss }) {
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   if (!notifications.length) {
     return (
       <View style={styles.emptyContainer}>
-        <Text style={styles.emptyTitle}>No updates right now</Text>
-        <Text style={styles.emptyDesc}>Check back later for recommendations and reminders.</Text>
+        <Text style={styles.emptyTitle}>{t('info.notifications.emptyTitle', 'No updates right now')}</Text>
+        <Text style={styles.emptyDesc}>{t('info.notifications.emptyDescription', 'Check back later for recommendations and reminders.')}</Text>
       </View>
     );
   }

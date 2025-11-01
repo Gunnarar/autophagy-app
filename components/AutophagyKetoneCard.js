@@ -2,11 +2,12 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Card } from './ui/Card';
 import { useTheme, useThemedStyles } from '../utils/theme';
+import { useTranslation } from '../contexts/LocalizationContext';
 
-function formatTimestamp(value) {
+function formatTimestamp(value, fallback = 'Invalid date') {
   try {
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {return 'Invalid date';}
+    if (Number.isNaN(date.getTime())) {return fallback;}
     return date.toLocaleString([], {
       hour: '2-digit',
       minute: '2-digit',
@@ -14,7 +15,7 @@ function formatTimestamp(value) {
       day: 'numeric',
     });
   } catch (error) {
-    return 'Invalid date';
+    return fallback;
   }
 }
 
@@ -29,47 +30,49 @@ export default function AutophagyKetoneCard({
 }) {
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   const ketoneColor = ketoneColorProp ?? currentTheme.colors.textSecondary;
   const hasHistory = ketoneHistory.length > 1;
+  const invalidDateLabel = t('common.invalidDate', 'Invalid date');
 
   return (
     <Card variant="outline" style={styles.card}>
       <View style={styles.header}>
         <View>
-          <Text style={styles.title}>Autophagy &amp; Ketones</Text>
-          <Text style={styles.subtitle}>Cellular cleanup and metabolic fuel</Text>
+          <Text style={styles.title}>{t('home.autophagyKetone.title', 'Autophagy & Ketones')}</Text>
+          <Text style={styles.subtitle}>{t('home.autophagyKetone.subtitle', 'Cellular cleanup and metabolic fuel')}</Text>
         </View>
         <View style={styles.autophagyBadge}>
           <Text style={styles.autophagyCount}>{autophagyDays}</Text>
-          <Text style={styles.autophagyMeta}>/365 days</Text>
+          <Text style={styles.autophagyMeta}>{t('home.autophagyKetone.autophagyMeta', '/365 days')}</Text>
         </View>
       </View>
 
       {hasOngoingFast && fastingTimerLabel ? (
         <View style={styles.fastRow}>
-          <Text style={styles.fastLabel}>Current fast</Text>
+          <Text style={styles.fastLabel}>{t('home.autophagyKetone.currentFast', 'Current fast')}</Text>
           <Text style={styles.fastValue}>{fastingTimerLabel}</Text>
         </View>
       ) : null}
 
       <View style={styles.ketoneCard}>
         <View style={styles.ketoneHeader}>
-          <Text style={styles.ketoneLabel}>Latest ketone</Text>
+          <Text style={styles.ketoneLabel}>{t('home.autophagyKetone.latestKetone', 'Latest ketone')}</Text>
           <Text style={[styles.ketoneValue, { color: ketoneColor }]}>
-            {latestKetone ? `${latestKetone.value} ${latestKetone.unit}` : 'No data'}
+            {latestKetone ? `${latestKetone.value} ${latestKetone.unit}` : t('home.autophagyKetone.noData', 'No data')}
           </Text>
         </View>
         {latestKetone ? (
-          <Text style={styles.ketoneTimestamp}>{formatTimestamp(latestKetone.time)}</Text>
+          <Text style={styles.ketoneTimestamp}>{formatTimestamp(latestKetone.time, invalidDateLabel)}</Text>
         ) : (
-          <Text style={styles.ketoneEmpty}>Add a reading to see progress</Text>
+          <Text style={styles.ketoneEmpty}>{t('home.autophagyKetone.addReading', 'Add a reading to see progress')}</Text>
         )}
-        {ketoneInKetosis ? <Text style={styles.ketoneState}>Ketosis likely engaged</Text> : null}
+        {ketoneInKetosis ? <Text style={styles.ketoneState}>{t('home.autophagyKetone.ketosisEngaged', 'Ketosis likely engaged')}</Text> : null}
       </View>
 
       {hasHistory ? (
         <View style={styles.history}>
-          <Text style={styles.historyTitle}>Recent readings</Text>
+          <Text style={styles.historyTitle}>{t('home.autophagyKetone.historyTitle', 'Recent readings')}</Text>
           {ketoneHistory.map(entry => (
             <View key={entry.id} style={styles.historyRow}>
               <Text
@@ -80,7 +83,7 @@ export default function AutophagyKetoneCard({
               >
                 {entry.value} {entry.unit}
               </Text>
-              <Text style={styles.historyMeta}>{formatTimestamp(entry.time)}</Text>
+              <Text style={styles.historyMeta}>{formatTimestamp(entry.time, invalidDateLabel)}</Text>
               {entry.note ? <Text style={styles.historyNote}>{entry.note}</Text> : null}
             </View>
           ))}

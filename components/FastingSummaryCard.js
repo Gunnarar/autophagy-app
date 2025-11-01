@@ -4,6 +4,7 @@ import { useTheme, useThemedStyles } from '../utils/theme';
 import { formatTimeHM } from '../utils/constants';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 export default function FastingSummaryCard({
   fastingElapsedSeconds = 0,
@@ -20,6 +21,7 @@ export default function FastingSummaryCard({
   const [showDetails, setShowDetails] = useState(false);
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
   const { progressPercent, remainingLabel, goalReached, durationLabel } = useMemo(() => {
     const durationHours = recommendedProgram?.duration ?? 0;
@@ -31,9 +33,11 @@ export default function FastingSummaryCard({
       progressPercent: Math.round(progress * 100),
       remainingLabel: durationSeconds <= 0 || goalReachedFlag ? '0h 0m' : formatTimeHM(remainingSeconds),
       goalReached: goalReachedFlag,
-      durationLabel: durationHours ? `${durationHours}h Fast` : 'Fast',
+      durationLabel: durationHours
+        ? t('fastingSummary.durationLabel', '{hours}h fast', { hours: durationHours })
+        : t('fastingSummary.genericFast', 'Fast'),
     };
-  }, [fastingElapsedSeconds, recommendedProgram]);
+  }, [fastingElapsedSeconds, recommendedProgram, t]);
 
   const progressFillStyle = useMemo(
     () => [styles.progressFill, { width: `${progressPercent}%` }],
@@ -46,48 +50,57 @@ export default function FastingSummaryCard({
   const hoursElapsed = fastingElapsedSeconds / 3600;
   const autophagyProgress = Math.min(1, Math.max(0, (hoursElapsed - 16) / 12));
   const autophagyPercent = Math.round(autophagyProgress * 100);
-  const metabolicState = (() => {
-    if (hoursElapsed < 4) return 'Fed state';
-    if (hoursElapsed < 8) return 'Early fasting';
-    if (hoursElapsed < 12) return 'Fat burning';
-    if (hoursElapsed < 24) return 'Autophagy active';
-    return 'Deep autophagy';
+  const metabolicStateKey = (() => {
+    if (hoursElapsed < 4) return 'fed';
+    if (hoursElapsed < 8) return 'early';
+    if (hoursElapsed < 12) return 'fatBurning';
+    if (hoursElapsed < 24) return 'autophagyActive';
+    return 'deepAutophagy';
   })();
+  const metabolicState = t(`home.metabolicState.${metabolicStateKey}`, 'Metabolic state');
 
   return (
     <Card style={styles.card}>
-      <Text style={styles.title}>Fasting</Text>
+      <Text style={styles.title}>{t('fastingSummary.title', 'Fasting')}</Text>
       <View style={styles.centerBlock}>
         <Text style={styles.elapsedText}>{formatTimeHM(fastingElapsedSeconds)}</Text>
-        <Text style={styles.caption}>Elapsed</Text>
+        <Text style={styles.caption}>{t('fastingSummary.elapsed', 'Elapsed')}</Text>
         <View style={styles.progressTrack}>
           <View style={progressFillStyle} />
         </View>
         <Text style={styles.caption}>
-          {goalReached ? <Text style={styles.goalReached}><Text style={styles.goalIcon}>🎉</Text> Goal reached!</Text> : `${remainingLabel} remaining`}
+          {goalReached ? (
+            <Text style={styles.goalReached}>
+              <Text style={styles.goalIcon}>🎉</Text> {t('fastingSummary.goalReached', 'Goal reached!')}
+            </Text>
+          ) : (
+            t('fastingSummary.remaining', '{remaining} remaining', { remaining: remainingLabel })
+          )}
         </Text>
         <Text style={feedbackStyle}>
-          {goalReached ? 'You did it!' : 'Keep going!'}
+          {goalReached ? t('fastingSummary.feedbackDone', 'You did it!') : t('fastingSummary.feedbackKeepGoing', 'Keep going!')}
         </Text>
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{metabolicState}</Text>
         </View>
         <View style={styles.autophagyBlock}>
-          <Text style={styles.autophagyLabel}>Autophagy activation</Text>
+          <Text style={styles.autophagyLabel}>{t('fastingSummary.autophagyLabel', 'Autophagy activation')}</Text>
           <View style={styles.autophagyTrack}>
             <View style={[styles.autophagyFill, { width: `${autophagyPercent}%` }]} />
           </View>
           <Text style={styles.autophagyMeta}>
             {autophagyPercent >= 100
-              ? 'Deep autophagy engaged'
+              ? t('fastingSummary.autophagyComplete', 'Deep autophagy engaged')
               : autophagyPercent > 0
-              ? `${Math.max(0, 28 - hoursElapsed).toFixed(1)}h to full activation`
-              : 'Starts around the 16h mark'}
+              ? t('fastingSummary.autophagyTime', '{hours}h to full activation', {
+                  hours: Math.max(0, 28 - hoursElapsed).toFixed(1),
+                })
+              : t('fastingSummary.autophagyStart', 'Starts around the 16h mark')}
           </Text>
         </View>
         {hasOngoingFast && onEditStart ? (
           <Button
-            label="Edit start time"
+            label={t('fastingSummary.editStart', 'Edit start time')}
             size="sm"
             variant="secondary"
             onPress={onEditStart}
@@ -96,23 +109,40 @@ export default function FastingSummaryCard({
         ) : null}
       </View>
       <View style={styles.centerBlock}>
-        <Text style={styles.challengeText}>Next Challenge: <Text style={styles.challengeHighlight}>{durationLabel}</Text></Text>
+        <Text style={styles.challengeText}>
+          {t('fastingSummary.nextChallengePrefix', 'Next Challenge:')}{' '}
+          <Text style={styles.challengeHighlight}>{durationLabel}</Text>
+        </Text>
       </View>
       <Pressable
         onPress={() => setShowDetails(prev => !prev)}
         style={styles.learnMore}
-        accessibilityLabel={showDetails ? 'Hide fasting details' : 'Show fasting details'}
+        accessibilityLabel={showDetails ? t('fastingSummary.accessibilityHide', 'Hide fasting details') : t('fastingSummary.accessibilityShow', 'Show fasting details')}
       >
-        <Text style={styles.learnMoreText}>{showDetails ? 'Hide details' : 'Learn more'}</Text>
+        <Text style={styles.learnMoreText}>
+          {showDetails ? t('fastingSummary.hideDetails', 'Hide details') : t('fastingSummary.learnMore', 'Learn more')}
+        </Text>
       </Pressable>
       {showDetails && (
         <View style={styles.details}>
-          {!!reason && <Text style={styles.detailLine}><Text style={styles.detailLabel}>Recommendation:</Text> {reason}</Text>}
-          {!!benefits && <Text style={styles.detailLine}><Text style={styles.detailLabel}>Benefits:</Text> {benefits}</Text>}
-          {!!whatToExpect && <Text style={styles.detailLine}><Text style={styles.detailLabel}>What to expect:</Text> {whatToExpect}</Text>}
+          {!!reason && (
+            <Text style={styles.detailLine}>
+              <Text style={styles.detailLabel}>{t('fastingSummary.detailRecommendation', 'Recommendation:')}</Text> {reason}
+            </Text>
+          )}
+          {!!benefits && (
+            <Text style={styles.detailLine}>
+              <Text style={styles.detailLabel}>{t('fastingSummary.detailBenefits', 'Benefits:')}</Text> {benefits}
+            </Text>
+          )}
+          {!!whatToExpect && (
+            <Text style={styles.detailLine}>
+              <Text style={styles.detailLabel}>{t('fastingSummary.detailExpect', 'What to expect:')}</Text> {whatToExpect}
+            </Text>
+          )}
           {!!planNextMsg && <Text style={styles.detailLine}>{planNextMsg}</Text>}
           {!!challengeMsg && <Text style={[styles.detailLine, styles.challengeNote]}>{challengeMsg}</Text>}
-          {caution && <Text style={[styles.detailLine, styles.caution]}>Caution: Consider a shorter fast first.</Text>}
+          {caution && <Text style={[styles.detailLine, styles.caution]}>{t('fastingSummary.caution', 'Caution: Consider a shorter fast first.')}</Text>}
         </View>
       )}
     </Card>

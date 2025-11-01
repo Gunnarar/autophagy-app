@@ -16,12 +16,14 @@ import InsightChart from '../components/InsightChart';
 import { useUser } from '../contexts/UserContext';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 export default function HomeScreen() {
   const { foodLog, setFoodLog, symptomLog, setSymptomLog, fastLog, setFastLog, useUnifiedFastRecommendation, ketoneLog, setKetoneLog } = useLogs();
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { user } = useUser();
+  const { t, language } = useTranslation();
   const [symptomModalVisible, setSymptomModalVisible] = useState(false);
   const [symptomType, setSymptomType] = useState('tremor');
   const [severity, setSeverity] = useState('mild');
@@ -31,7 +33,7 @@ export default function HomeScreen() {
   const { setModalActionHandler } = useModalAction();
   const [fastingStreak, setFastingStreak] = useState(0);
   const today = new Date().toISOString().slice(0, 10);
-  const unifiedRec = useUnifiedFastRecommendation();
+  const unifiedRec = useUnifiedFastRecommendation(t);
   const fastingGoalHours = unifiedRec?.recommendedProgram?.duration || 16;
   const [logModal, setLogModal] = useState(null);
   const [editFastStartVisible, setEditFastStartVisible] = useState(false);
@@ -91,18 +93,38 @@ export default function HomeScreen() {
   const fastingHours = fastingElapsed / 3600;
   const metabolicState = (() => {
     if (fastingHours < 4) {
-      return { label: 'Fed state', icon: 'restaurant-outline', color: currentTheme.colors.textSecondary };
+      return {
+        label: t('home.metabolicState.fed', 'Fed state'),
+        icon: 'restaurant-outline',
+        color: currentTheme.colors.textSecondary,
+      };
     }
     if (fastingHours < 8) {
-      return { label: 'Early fasting', icon: 'time-outline', color: currentTheme.colors.info };
+      return {
+        label: t('home.metabolicState.early', 'Early fasting'),
+        icon: 'time-outline',
+        color: currentTheme.colors.info,
+      };
     }
     if (fastingHours < 12) {
-      return { label: 'Fat burning', icon: 'flame-outline', color: currentTheme.colors.brandHighlight };
+      return {
+        label: t('home.metabolicState.fatBurning', 'Fat burning'),
+        icon: 'flame-outline',
+        color: currentTheme.colors.brandHighlight,
+      };
     }
     if (fastingHours < 24) {
-      return { label: 'Autophagy active', icon: 'shield-checkmark-outline', color: currentTheme.colors.success };
+      return {
+        label: t('home.metabolicState.autophagyActive', 'Autophagy active'),
+        icon: 'shield-checkmark-outline',
+        color: currentTheme.colors.success,
+      };
     }
-    return { label: 'Deep autophagy', icon: 'sparkles-outline', color: currentTheme.colors.brandPrimary };
+    return {
+      label: t('home.metabolicState.deepAutophagy', 'Deep autophagy'),
+      icon: 'sparkles-outline',
+      color: currentTheme.colors.brandPrimary,
+    };
   })();
 
   const todaysMeat = todaysMeals
@@ -123,50 +145,74 @@ export default function HomeScreen() {
   const statCards = React.useMemo(() => {
     const isDarkMode = currentTheme.isDark;
     const mutedText = currentTheme.colors.textOnSurfaceMuted || currentTheme.colors.textSecondary;
+    const mealCount = todaysMeals.length;
+    const symptomCount = todaysSymptoms.length;
 
     return [
       {
         key: 'meals',
-        title: 'Meals today',
-        value: todaysMeals.length.toString(),
-        meta: `${todaysMeals.length === 1 ? 'entry' : 'entries'} logged`,
-        footer: `${todaysMeat.toFixed(1)} lbs animal meat`,
+        title: t('home.cards.meals.title', 'Meals today'),
+        value: mealCount.toString(),
+        meta:
+          mealCount === 1
+            ? t('home.cards.meals.metaSingle', 'entry logged')
+            : t('home.cards.meals.metaPlural', '{count} entries logged', { count: mealCount }),
+        footer: t('home.cards.meals.footer', '{pounds} lbs animal meat', {
+          pounds: todaysMeat.toFixed(1),
+        }),
         footerColor: isDarkMode ? mutedText : currentTheme.colors.brandSecondary,
         icon: <MaterialCommunityIcons name="silverware-fork-knife" size={22} color={isDarkMode ? mutedText : currentTheme.colors.brandSecondary} />,
         gradient: currentTheme.gradients.statCards.meals,
       },
       {
         key: 'symptoms',
-        title: 'Symptoms logged',
-        value: todaysSymptoms.length.toString(),
-        meta: todaysSymptoms.length === 0 ? 'All clear today' : `${todaysSymptoms.length} noted`,
-        footer: todaysSymptoms.length === 0 ? 'Great job staying mindful' : 'Log notable changes',
+        title: t('home.cards.symptoms.title', 'Symptoms logged'),
+        value: symptomCount.toString(),
+        meta:
+          symptomCount === 0
+            ? t('home.cards.symptoms.metaClear', 'All clear today')
+            : t('home.cards.symptoms.metaNoted', '{count} noted', { count: symptomCount }),
+        footer:
+          symptomCount === 0
+            ? t('home.cards.symptoms.footerClear', 'Great job staying mindful')
+            : t('home.cards.symptoms.footerLog', 'Log notable changes'),
         footerColor: isDarkMode ? mutedText : currentTheme.colors.brandHighlight,
         icon: <MaterialCommunityIcons name="stethoscope" size={22} color={isDarkMode ? mutedText : currentTheme.colors.error} />,
         gradient: currentTheme.gradients.statCards.symptoms,
       },
       {
         key: 'ketone',
-        title: 'Latest ketone',
+        title: t('home.cards.ketone.title', 'Latest ketone'),
         value: latestKetoneValue,
-        meta: latestKetoneValue === '—' ? 'No data yet' : latestKetoneUnit,
-        footer: ketoneInKetosis ? 'Optimal ketosis' : 'Add a reading',
+        meta:
+          latestKetoneValue === '—'
+            ? t('home.cards.ketone.metaEmpty', 'No data yet')
+            : latestKetoneUnit,
+        footer: ketoneInKetosis
+          ? t('home.cards.ketone.footerOptimal', 'Optimal ketosis')
+          : t('home.cards.ketone.footerPrompt', 'Add a reading'),
         footerColor: isDarkMode ? mutedText : (ketoneInKetosis ? currentTheme.colors.success : currentTheme.colors.textSecondary),
         icon: <MaterialCommunityIcons name="water" size={22} color={isDarkMode ? mutedText : currentTheme.colors.info} />,
         gradient: currentTheme.gradients.statCards.ketone,
       },
       {
         key: 'streak',
-        title: 'Fasting streak',
+        title: t('home.cards.streak.title', 'Fasting streak'),
         value: fastingStreak.toString(),
-        meta: fastingStreak === 1 ? 'day completed' : 'days completed',
-        footer: fastingStreak >= 3 ? 'Momentum is building' : 'Stay consistent',
+        meta:
+          fastingStreak === 1
+            ? t('home.cards.streak.metaSingle', 'day completed')
+            : t('home.cards.streak.metaPlural', 'days completed'),
+        footer:
+          fastingStreak >= 3
+            ? t('home.cards.streak.footerStrong', 'Momentum is building')
+            : t('home.cards.streak.footerKeepGoing', 'Stay consistent'),
         footerColor: isDarkMode ? mutedText : currentTheme.colors.brandPrimary,
         icon: <MaterialCommunityIcons name="calendar-check" size={22} color={isDarkMode ? mutedText : currentTheme.colors.brandPrimary} />,
         gradient: currentTheme.gradients.statCards.streak,
       },
     ];
-  }, [todaysMeals.length, todaysMeat, todaysSymptoms.length, latestKetoneValue, latestKetoneUnit, ketoneInKetosis, fastingStreak, currentTheme]);
+  }, [currentTheme, fastingStreak, ketoneInKetosis, latestKetoneUnit, latestKetoneValue, t, todaysMeat, todaysSymptoms.length, todaysMeals.length]);
 
 
   const handleSaveSymptomWithTime = () => {
@@ -279,26 +325,27 @@ export default function HomeScreen() {
     const elapsed = Math.floor((Date.now() - start.getTime()) / 1000);
     const h = Math.floor(elapsed / 3600);
     const m = Math.floor((elapsed % 3600) / 60);
-    fastTimer = `${h}h ${m}m elapsed`;
+    fastTimer = t('home.fastTimer', '{hours}h {minutes}m elapsed', { hours: h, minutes: m });
   }
 
   const hasOngoingFast = Boolean(ongoingFast);
   const formattedFastingHours = fastingHours > 0 ? fastingHours.toFixed(1) : '0.0';
-  const greetingName = user?.name?.split(' ')[0] || 'there';
+  const greetingName = user?.name?.split(' ')[0] || t('home.hero.fallbackName', 'there');
   const nextProgram = unifiedRec?.recommendedProgram;
   const heroSubtitle = hasOngoingFast
-    ? `Current fast · ${formattedFastingHours}h elapsed`
+    ? t('home.hero.subtitleOngoing', 'Current fast · {hours}h elapsed', { hours: formattedFastingHours })
     : nextProgram
-    ? `Next goal · ${nextProgram.duration}h fast`
-    : 'Plan your next fast to stay on track';
+    ? t('home.hero.subtitleNext', 'Next goal · {duration}h fast', { duration: nextProgram.duration })
+    : t('home.hero.subtitlePlan', 'Plan your next fast to stay on track');
   const heroDetail = hasOngoingFast
-    ? 'Log how you feel to spot trends.'
-    : unifiedRec?.reason || 'Set up your next fast to stay on track.';
+    ? t('home.hero.detailOngoing', 'Log how you feel to spot trends.')
+    : unifiedRec?.reason || t('home.hero.detailPlan', 'Set up your next fast to stay on track.');
   const heroPrimaryAction = hasOngoingFast ? handleStopFast : handleStartFast;
-  const heroPrimaryLabel = hasOngoingFast ? 'Stop fast' : 'Start fast';
+  const heroPrimaryLabel = hasOngoingFast ? t('buttons.stopFast', 'Stop fast') : t('buttons.startFast', 'Start fast');
 
   const trendData = React.useMemo(() => {
     const days = [];
+    const locale = language === 'en' ? 'en-US' : language === 'es' ? 'es-ES' : language;
     for (let i = 6; i >= 0; i--) {
       const day = new Date();
       day.setHours(0, 0, 0, 0);
@@ -345,7 +392,7 @@ export default function HomeScreen() {
       const fastDays = todayFastHours ? Number((todayFastHours / 24).toFixed(2)) : null;
 
       days.push({
-        date: day.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: day.toLocaleDateString(locale || undefined, { month: 'short', day: 'numeric' }),
         ketones: avgKetone,
         symptoms: avgSeverity,
         fastDays,
@@ -353,7 +400,7 @@ export default function HomeScreen() {
       });
     }
     return days;
-  }, [sortedKetones, symptomLog, foodLog, fastLog, hasOngoingFast, ongoingFast, today]);
+  }, [sortedKetones, symptomLog, foodLog, fastLog, hasOngoingFast, ongoingFast, today, language]);
 
   function handleSaveKetone() {
     if (!ketoneValue) {return;}
@@ -383,8 +430,8 @@ export default function HomeScreen() {
             end={{ x: 1, y: 1 }}
             style={styles.heroCard}
           >
-            <Text style={styles.heroOverline}>Daily snapshot</Text>
-            <Text style={styles.heroTitle}>Welcome back, {greetingName}</Text>
+            <Text style={styles.heroOverline}>{t('home.hero.overline', 'Daily snapshot')}</Text>
+            <Text style={styles.heroTitle}>{t('home.hero.title', 'Welcome back, {name}', { name: greetingName })}</Text>
             <Text style={styles.heroSubtitle}>{heroSubtitle}</Text>
             <Text style={styles.heroCaption}>{heroDetail}</Text>
             <View style={styles.heroBadge}>
@@ -447,7 +494,7 @@ export default function HomeScreen() {
         </View>
 
         <Card variant="outline" style={styles.insightCard}>
-          <Text style={styles.sectionLabel}>7-day trend</Text>
+          <Text style={styles.sectionLabel}>{t('home.sections.trend', '7-day trend')}</Text>
           <InsightChart data={trendData} />
         </Card>
 

@@ -14,6 +14,7 @@ import { useTheme, useThemedStyles } from '../utils/theme';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Chip } from './ui/Chip';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 export default function KetoneLogModal({
   visible,
@@ -30,6 +31,7 @@ export default function KetoneLogModal({
 }) {
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
@@ -47,16 +49,16 @@ export default function KetoneLogModal({
                   overScrollMode="never"
                   contentContainerStyle={styles.scrollContent}
                 >
-                  <Text style={styles.title}>Log ketone</Text>
-                  <Text style={styles.subtitle}>Capture the latest reading to understand ketosis trends.</Text>
+                  <Text style={styles.title}>{t('ketoneModal.title', 'Log ketone')}</Text>
+                  <Text style={styles.subtitle}>{t('ketoneModal.subtitle', 'Capture the latest reading to understand ketosis trends.')}</Text>
 
                   <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Value</Text>
+                    <Text style={styles.sectionLabel}>{t('ketoneModal.valueLabel', 'Value')}</Text>
                     <View style={styles.valueRow}>
                       <TextInput
                         style={[styles.input, styles.inputFlexible]}
                         keyboardType="decimal-pad"
-                        placeholder="e.g. 0.7"
+                        placeholder={t('ketoneModal.valuePlaceholder', 'e.g. 0.7')}
                         value={value}
                         onChangeText={onChangeValue}
                         accessibilityLabel="Ketone value input"
@@ -79,7 +81,7 @@ export default function KetoneLogModal({
                   </View>
 
                   <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Time</Text>
+                    <Text style={styles.sectionLabel}>{t('ketoneModal.timeLabel', 'Time')}</Text>
                     <Button
                       label={time.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}
                       variant="secondary"
@@ -89,20 +91,20 @@ export default function KetoneLogModal({
                   </View>
 
                   <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Note (optional)</Text>
+                    <Text style={styles.sectionLabel}>{t('ketoneModal.noteLabel', 'Note (optional)')}</Text>
                     <TextInput
                       style={styles.noteInput}
-                      placeholder="e.g. after exercise, before meds"
+                      placeholder={t('ketoneModal.notePlaceholder', 'e.g. after exercise, before meds')}
                       value={note}
                       onChangeText={onChangeNote}
-                      accessibilityLabel="Ketone note input"
+                      accessibilityLabel={t('ketoneModal.noteAccessibility', 'Ketone note input')}
                       multiline
                     />
                   </View>
 
                   <View style={styles.actions}>
-                    <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.actionButton} />
-                    <Button label="Save" onPress={onSave} style={styles.actionButton} />
+                    <Button label={t('common.cancel', 'Cancel')} variant="ghost" onPress={onCancel} style={styles.actionButton} />
+                    <Button label={t('common.save', 'Save')} onPress={onSave} style={styles.actionButton} />
                   </View>
                 </ScrollView>
               </Card>

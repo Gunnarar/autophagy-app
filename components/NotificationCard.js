@@ -3,12 +3,14 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Card } from './ui/Card';
 import { useTheme, useThemedStyles } from '../utils/theme';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 export default function NotificationCard({ notification, onDismiss }) {
   if (!notification) {return null;}
 
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
   const {
     icon,
@@ -34,19 +36,19 @@ export default function NotificationCard({ notification, onDismiss }) {
 
         {benefits ? (
           <Text style={styles.extraLine}>
-            <Text style={styles.extraLabel}>Benefits:</Text> {benefits}
+            <Text style={styles.extraLabel}>{t('info.notifications.benefitsLabel', 'Benefits:')}</Text> {benefits}
           </Text>
         ) : null}
         {whatToExpect ? (
           <Text style={styles.extraLine}>
-            <Text style={styles.extraLabel}>What to expect:</Text> {whatToExpect}
+            <Text style={styles.extraLabel}>{t('info.notifications.expectLabel', 'What to expect:')}</Text> {whatToExpect}
           </Text>
         ) : null}
         {challengeMsg ? (
           <Text style={[styles.extraLine, styles.challenge]}>{challengeMsg}</Text>
         ) : null}
         {caution ? (
-          <Text style={[styles.extraLine, styles.caution]}>Caution: Consider a shorter fast first.</Text>
+          <Text style={[styles.extraLine, styles.caution]}>{t('info.notifications.caution', 'Caution: Consider a shorter fast first.')}</Text>
         ) : null}
 
         <View style={styles.actions}>
@@ -75,7 +77,7 @@ export default function NotificationCard({ notification, onDismiss }) {
         <Pressable
           onPress={onDismiss}
           style={styles.dismiss}
-          accessibilityLabel="Dismiss notification"
+          accessibilityLabel={t('info.notifications.dismiss', 'Dismiss notification')}
         >
           <MaterialCommunityIcons name="close" size={20} color={currentTheme.colors.textMuted} />
         </Pressable>

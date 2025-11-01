@@ -16,6 +16,7 @@ import { SYMPTOM_TYPES, SEVERITIES } from '../utils/constants';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Chip } from './ui/Chip';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 export default function SymptomLogModal({
   visible,
@@ -35,6 +36,7 @@ export default function SymptomLogModal({
 }) {
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
@@ -53,11 +55,11 @@ export default function SymptomLogModal({
                   showsVerticalScrollIndicator={false}
                   overScrollMode="never"
                 >
-                  <Text style={styles.title}>Log symptom</Text>
-                  <Text style={styles.subtitle}>Track how you feel to spot patterns with fasting and meals.</Text>
+                  <Text style={styles.title}>{t('symptomModal.title', 'Log symptom')}</Text>
+                  <Text style={styles.subtitle}>{t('symptomModal.subtitle', 'Track how you feel to spot patterns with fasting and meals.')}</Text>
 
                   <View style={styles.section}>
-                  <Text style={styles.sectionLabel}>Symptom</Text>
+                  <Text style={styles.sectionLabel}>{t('symptomModal.symptomLabel', 'Symptom')}</Text>
                   <View style={styles.selectorRow}>
                     {SYMPTOM_TYPES.map(type => {
                       const isActive = symptomType === type.key;
@@ -80,7 +82,7 @@ export default function SymptomLogModal({
                 </View>
 
                   <View style={styles.section}>
-                  <Text style={styles.sectionLabel}>Severity</Text>
+                  <Text style={styles.sectionLabel}>{t('symptomModal.severityLabel', 'Severity')}</Text>
                   <View style={styles.selectorRow}>
                     {SEVERITIES.map(level => {
                       const isActive = severity === level.key;
@@ -101,7 +103,7 @@ export default function SymptomLogModal({
                 </View>
 
                   <View style={styles.section}>
-                  <Text style={styles.sectionLabel}>Time</Text>
+                  <Text style={styles.sectionLabel}>{t('symptomModal.timeLabel', 'Time')}</Text>
                   <Button
                     label={time.toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric', year: 'numeric' })}
                     variant="secondary"
@@ -119,20 +121,20 @@ export default function SymptomLogModal({
               </View>
 
                   <View style={styles.section}>
-                <Text style={styles.sectionLabel}>Note (optional)</Text>
+                <Text style={styles.sectionLabel}>{t('symptomModal.noteLabel', 'Note (optional)')}</Text>
                 <TextInput
                   style={styles.noteInput}
                   onChangeText={onChangeNote}
                   value={note}
-                  placeholder="e.g. after exercise, before meds"
-                  accessibilityLabel="Symptom note input"
+                  placeholder={t('symptomModal.notePlaceholder', 'e.g. after exercise, before meds')}
+                  accessibilityLabel={t('symptomModal.noteAccessibility', 'Symptom note input')}
                   multiline
                 />
               </View>
 
                   <View style={styles.actions}>
-                    <Button label="Cancel" variant="ghost" onPress={onCancel} style={styles.actionButton} />
-                    <Button label="Save" onPress={onSave} style={styles.actionButton} />
+                    <Button label={t('common.cancel', 'Cancel')} variant="ghost" onPress={onCancel} style={styles.actionButton} />
+                    <Button label={t('common.save', 'Save')} onPress={onSave} style={styles.actionButton} />
                   </View>
                 </ScrollView>
               </Card>

@@ -3,6 +3,17 @@ import { fireEvent, render } from '@testing-library/react-native';
 import SymptomLogModal from '../SymptomLogModal';
 import { SYMPTOM_TYPES, SEVERITIES } from '../../utils/constants';
 
+jest.mock('../../contexts/LocalizationContext', () => ({
+  useTranslation: () => ({
+    t: (_key, fallback, params) => {
+      if (fallback && params) {
+        return Object.keys(params).reduce((acc, paramKey) => acc.replace(`{${paramKey}}`, params[paramKey]), fallback);
+      }
+      return fallback;
+    },
+  }),
+}));
+
 describe('SymptomLogModal', () => {
   const defaultProps = {
     visible: true,

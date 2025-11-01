@@ -1,8 +1,8 @@
 {
   "name": "genesis4pd-app",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "versionInfo": {
-    "androidVersionCode": 2
+    "androidVersionCode": 3
   },
   "main": "index.js",
   "scripts": {

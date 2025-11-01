@@ -15,20 +15,21 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { useTheme, useThemedStyles } from '../utils/theme';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 const steps = [
-  { key: 'name', label: 'Name' },
-  { key: 'address', label: 'Address' },
-  { key: 'age', label: 'Age', keyboardType: 'numeric' },
-  { key: 'height', label: 'Height (cm)', keyboardType: 'numeric' },
-  { key: 'weight', label: 'Weight (kg)', keyboardType: 'numeric' },
-  { key: 'email', label: 'Email', keyboardType: 'email-address' },
-  { key: 'cell', label: 'Cell Phone', keyboardType: 'phone-pad' },
-  { key: 'medications', label: 'Medications (optional)', multiline: true },
-  { key: 'symptoms', label: 'Symptoms (comma separated, optional)', multiline: true },
-  { key: 'goal12', label: '12-Month Goal', multiline: true },
-  { key: 'goal24', label: '24-Month Goal', multiline: true },
-  { key: 'startDate', label: 'Pick a Start Date', isDate: true },
+  { key: 'name', labelKey: 'onboarding.profileStep.nameLabel', defaultLabel: 'Name' },
+  { key: 'address', labelKey: 'onboarding.profileStep.addressLabel', defaultLabel: 'Address' },
+  { key: 'age', labelKey: 'onboarding.profileStep.ageLabel', defaultLabel: 'Age', keyboardType: 'numeric' },
+  { key: 'height', labelKey: 'onboarding.profileStep.heightLabel', defaultLabel: 'Height (cm)', keyboardType: 'numeric' },
+  { key: 'weight', labelKey: 'onboarding.profileStep.weightLabel', defaultLabel: 'Weight (kg)', keyboardType: 'numeric' },
+  { key: 'email', labelKey: 'onboarding.profileStep.emailLabel', defaultLabel: 'Email', keyboardType: 'email-address' },
+  { key: 'cell', labelKey: 'onboarding.profileStep.cellLabel', defaultLabel: 'Cell Phone', keyboardType: 'phone-pad' },
+  { key: 'medications', labelKey: 'onboarding.profileStep.medicationsLabel', defaultLabel: 'Medications (optional)', multiline: true },
+  { key: 'symptoms', labelKey: 'onboarding.profileStep.symptomsLabel', defaultLabel: 'Symptoms (comma separated, optional)', multiline: true },
+  { key: 'goal12', labelKey: 'onboarding.profileStep.goal12Label', defaultLabel: '12-Month Goal', multiline: true },
+  { key: 'goal24', labelKey: 'onboarding.profileStep.goal24Label', defaultLabel: '24-Month Goal', multiline: true },
+  { key: 'startDate', labelKey: 'onboarding.profileStep.startDateLabel', defaultLabel: 'Pick a Start Date', isDate: true },
 ];
 
 const requiredFields = ['name', 'age', 'height', 'weight', 'email', 'startDate'];
@@ -40,13 +41,19 @@ export default function OnboardingScreen({ navigation }) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
   const handleChange = (key, value) => setForm({ ...form, [key]: value });
 
   const handleNext = () => {
-    const { key } = steps[step];
+    const currentStep = steps[step];
+    const { key } = currentStep;
+    const labelText = t(currentStep.labelKey, currentStep.defaultLabel);
     if (requiredFields.includes(key) && (!form[key] || form[key].toString().trim() === '')) {
-      Alert.alert('Missing info', `Please enter your ${steps[step].label}.`);
+      Alert.alert(
+        t('onboarding.missingInfoTitle', 'Missing info'),
+        t('onboarding.missingInfoMessage', 'Please enter your {field}.', { field: labelText }),
+      );
       return;
     }
     if (step < steps.length - 1) {setStep(step + 1);}
@@ -57,16 +64,22 @@ export default function OnboardingScreen({ navigation }) {
     // Validate all required fields
     for (const key of requiredFields) {
       if (!form[key] || form[key].toString().trim() === '') {
-        Alert.alert('Missing info', `Please enter your ${steps.find(s => s.key === key).label}.`);
+        const missingStep = steps.find(s => s.key === key);
+        const labelText = missingStep ? t(missingStep.labelKey, missingStep.defaultLabel) : key;
+        Alert.alert(
+          t('onboarding.missingInfoTitle', 'Missing info'),
+          t('onboarding.missingInfoMessage', 'Please enter your {field}.', { field: labelText }),
+        );
         return;
       }
     }
     await saveUser({ ...form, onboarded: true });
-    Alert.alert('Success', 'Onboarding complete!');
+    Alert.alert(t('onboarding.successTitle', 'Success'), t('onboarding.successMessage', 'Onboarding complete!'));
     navigation.replace('MainTabs');
   };
 
-  const { key, label, keyboardType, multiline, isDate } = steps[step];
+  const { key, keyboardType, multiline, isDate } = steps[step];
+  const currentLabel = t(steps[step].labelKey, steps[step].defaultLabel);
   const isLast = step === steps.length - 1;
 
   return (
@@ -85,10 +98,12 @@ export default function OnboardingScreen({ navigation }) {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.cardContent}
           >
-            <Text style={styles.stepLabel}>Step {step + 1} of {steps.length}</Text>
-            <Text style={styles.title}>Let’s get to know you</Text>
+            <Text style={styles.stepLabel}>
+              {t('onboarding.stepIndicator', 'Step {current} of {total}', { current: step + 1, total: steps.length })}
+            </Text>
+            <Text style={styles.title}>{t('onboarding.title', 'Let’s get to know you')}</Text>
             <Text style={styles.subtitle}>
-              {label}
+              {currentLabel}
             </Text>
             {isDate ? (
               <>
@@ -97,7 +112,9 @@ export default function OnboardingScreen({ navigation }) {
                   onPress={() => setShowDatePicker(true)}
                 >
                   <Text style={styles.dateButtonText}>
-                    {form.startDate ? new Date(form.startDate).toLocaleDateString() : 'Select start date'}
+                    {form.startDate
+                      ? new Date(form.startDate).toLocaleDateString()
+                      : t('onboarding.selectStartDate', 'Select start date')}
                   </Text>
                 </TouchableOpacity>
               <DateTimePickerModal
@@ -132,7 +149,7 @@ export default function OnboardingScreen({ navigation }) {
           <View style={styles.buttonRow}>
             {step > 0 && (
               <Button
-                label="Back"
+                label={t('common.back', 'Back')}
                 variant="secondary"
                 size="md"
                 onPress={() => setStep(step - 1)}
@@ -140,7 +157,7 @@ export default function OnboardingScreen({ navigation }) {
               />
             )}
             <Button
-              label={isLast ? 'Finish' : 'Next'}
+              label={isLast ? t('common.finish', 'Finish') : t('common.next', 'Next')}
               size="md"
               onPress={handleNext}
               style={styles.actionButton}

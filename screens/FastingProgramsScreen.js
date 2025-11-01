@@ -6,6 +6,7 @@ import { useTheme, useThemedStyles } from '../utils/theme';
 import { Button } from '../components/ui/Button';
 import { useUser } from '../contexts/UserContext';
 import { useLogs } from '../contexts/LogsContext';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 // For now, assume user.completedFasts is an array of completed program keys
 function getStatus(program, completedFasts) {
@@ -24,8 +25,12 @@ export default function FastingProgramsScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
 
   const scheduledFast = user?.scheduledFast;
+  const selectedProgramLabel = selectedProgram
+    ? t(`fastingPrograms.programs.${selectedProgram.key}`, selectedProgram.label)
+    : '';
 
   const handleSelect = (program) => {
     setSelectedProgram(program);
@@ -86,15 +91,15 @@ export default function FastingProgramsScreen() {
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Fasting Programs</Text>
+      <Text style={styles.title}>{t('fastingPrograms.title', 'Fasting Programs')}</Text>
       {scheduledFast && (
         <View style={styles.scheduledBox}>
-          <Text style={styles.scheduledLabel}>Next Scheduled Fast:</Text>
+          <Text style={styles.scheduledLabel}>{t('fastingPrograms.nextScheduled', 'Next Scheduled Fast:')}</Text>
           <Text style={styles.scheduledText}>
-            {FASTING_PROGRAMS.find(p => p.key === scheduledFast.programKey)?.label || scheduledFast.programKey}
+            {t(`fastingPrograms.programs.${scheduledFast.programKey}`, FASTING_PROGRAMS.find(p => p.key === scheduledFast.programKey)?.label || scheduledFast.programKey)}
           </Text>
           <Text style={styles.scheduledText}>
-            Start: {new Date(scheduledFast.startTime).toLocaleString()}
+            {t('fastingPrograms.scheduledStart', 'Start: {value}', { value: new Date(scheduledFast.startTime).toLocaleString() })}
           </Text>
         </View>
       )}
@@ -108,8 +113,8 @@ export default function FastingProgramsScreen() {
             disabled={status === 'locked'}
             onPress={() => handleSelect(program)}
           >
-            <Text style={styles.programLabel}>{program.label}</Text>
-            <Text style={styles.programDuration}>{program.duration} hours</Text>
+            <Text style={styles.programLabel}>{t(`fastingPrograms.programs.${program.key}`, program.label)}</Text>
+            <Text style={styles.programDuration}>{t('fastingPrograms.duration', '{hours} hours', { hours: program.duration })}</Text>
             <Text
               style={[
                 styles.status,
@@ -118,7 +123,13 @@ export default function FastingProgramsScreen() {
                 isSelected && styles.statusSelected,
               ]}
             >
-              {status === 'completed' ? '✓ Completed' : status === 'locked' ? '🔒 Locked' : isSelected ? 'Selected' : 'Unlocked'}
+              {status === 'completed'
+                ? t('fastingPrograms.status.completed', '✓ Completed')
+                : status === 'locked'
+                ? t('fastingPrograms.status.locked', '🔒 Locked')
+                : isSelected
+                ? t('fastingPrograms.status.selected', 'Selected')
+                : t('fastingPrograms.status.unlocked', 'Unlocked')}
             </Text>
           </TouchableOpacity>
         );
@@ -131,13 +142,13 @@ export default function FastingProgramsScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Schedule Fast</Text>
-            <Text style={styles.modalDesc}>Would you like to start your {selectedProgram?.label} now or schedule it for later?</Text>
+            <Text style={styles.modalTitle}>{t('fastingPrograms.modal.title', 'Schedule Fast')}</Text>
+            <Text style={styles.modalDesc}>{t('fastingPrograms.modal.description', 'Would you like to start your {program} now or schedule it for later?', { program: selectedProgramLabel })}</Text>
             <View style={styles.modalActionRow}>
-              <Button label="Start now" onPress={handleStartNow} style={styles.modalButton} />
-              <Button label="Schedule later" variant="secondary" onPress={handleSchedule} style={styles.modalButton} />
+              <Button label={t('fastingPrograms.modal.startNow', 'Start now')} onPress={handleStartNow} style={styles.modalButton} />
+              <Button label={t('fastingPrograms.modal.scheduleLater', 'Schedule later')} variant="secondary" onPress={handleSchedule} style={styles.modalButton} />
             </View>
-            <Button label="Cancel" variant="ghost" onPress={() => setModalVisible(false)} style={styles.modalButton} textStyle={styles.modalButtonGhostText} />
+            <Button label={t('common.cancel', 'Cancel')} variant="ghost" onPress={() => setModalVisible(false)} style={styles.modalButton} textStyle={styles.modalButtonGhostText} />
           </View>
         </View>
       </Modal>

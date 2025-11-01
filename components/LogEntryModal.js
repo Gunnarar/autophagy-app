@@ -16,6 +16,7 @@ import { useTheme, useThemedStyles } from '../utils/theme';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Chip } from './ui/Chip';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 const DIET_TYPES = [
   { key: 'standard', label: 'Standard', icon: '🥗' },
@@ -34,6 +35,7 @@ export default function LogEntryModal({
   const safeInitialValues = initialValues ?? EMPTY_INITIAL_VALUES;
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
+  const { t } = useTranslation();
   // Shared fields
   const [time, setTime] = useState(safeInitialValues.time || new Date());
   const [note, setNote] = useState(safeInitialValues.note || '');
@@ -104,23 +106,23 @@ export default function LogEntryModal({
                   overScrollMode="never"
                   contentContainerStyle={styles.scrollContent}
                 >
-                  <Text style={styles.modalTitle}>{mode === 'meal' ? 'Add meal' : 'Log symptom'}</Text>
+                  <Text style={styles.modalTitle}>{mode === 'meal' ? t('logEntryModal.addMealTitle', 'Add meal') : t('logEntryModal.logSymptomTitle', 'Log symptom')}</Text>
                   <Text style={styles.modalSubtitle}>
                     {mode === 'meal'
-                      ? 'Capture today’s intake to keep your nutrition history accurate.'
-                      : 'Track symptoms to understand how fasting and diet impact your day.'}
+                      ? t('logEntryModal.mealSubtitle', 'Capture today’s intake to keep your nutrition history accurate.')
+                      : t('logEntryModal.symptomSubtitle', 'Track symptoms to understand how fasting and diet impact your day.')}
                   </Text>
 
                   {mode === 'meal' ? (
                     <View style={styles.section}>
-                      <Text style={styles.sectionLabel}>Diet type</Text>
+                      <Text style={styles.sectionLabel}>{t('logEntryModal.dietType', 'Diet type')}</Text>
                       <View style={styles.selectorRow}>
                         {DIET_TYPES.map(dt => {
                           const isActive = dietType === dt.key;
                           return (
                             <Chip
                               key={dt.key}
-                              label={dt.label}
+                              label={t(`logEntryModal.diet.${dt.key}`, dt.label)}
                               size="lg"
                               active={isActive}
                               onPress={() => setDietType(dt.key)}
@@ -132,18 +134,18 @@ export default function LogEntryModal({
                           );
                         })}
                       </View>
-                      <Text style={styles.sectionLabel}>Pounds of meat</Text>
+                      <Text style={styles.sectionLabel}>{t('logEntryModal.meatLabel', 'Pounds of meat')}</Text>
                       <TextInput
                         style={styles.input}
                         value={meatPounds}
                         onChangeText={setMeatPounds}
-                        placeholder="e.g. 0.75"
+                        placeholder={t('logEntryModal.meatPlaceholder', 'e.g. 0.75')}
                         keyboardType="numeric"
                       />
                     </View>
                   ) : (
                     <View style={styles.section}>
-                      <Text style={styles.sectionLabel}>Symptom</Text>
+                      <Text style={styles.sectionLabel}>{t('logEntryModal.symptomLabel', 'Symptom')}</Text>
                       <View style={styles.selectorRow}>
                         {SYMPTOM_TYPES.map(t => {
                           const isActive = symptomType === t.key;
@@ -164,7 +166,7 @@ export default function LogEntryModal({
                         })}
                       </View>
 
-                      <Text style={styles.sectionLabel}>Severity</Text>
+                      <Text style={styles.sectionLabel}>{t('logEntryModal.severityLabel', 'Severity')}</Text>
                       <View style={styles.selectorRow}>
                         {SEVERITIES.map(s => {
                           const isActive = severity === s.key;
@@ -185,9 +187,9 @@ export default function LogEntryModal({
                   )}
 
                   <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Time</Text>
+                    <Text style={styles.sectionLabel}>{t('logEntryModal.timeLabel', 'Time')}</Text>
                     <Button
-                      label={`Time: ${time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                      label={t('logEntryModal.timeValue', 'Time: {value}', { value: time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) })}
                       variant="secondary"
                       onPress={() => setPickerMode(true)}
                       style={styles.sectionButton}
@@ -203,27 +205,29 @@ export default function LogEntryModal({
                   </View>
 
                   <View style={styles.section}>
-                    <Text style={styles.sectionLabel}>Note (optional)</Text>
+                    <Text style={styles.sectionLabel}>{t('logEntryModal.noteLabel', 'Note (optional)')}</Text>
                     <TextInput
                       style={styles.noteInput}
                       numberOfLines={3}
                       onChangeText={setNote}
                       value={note}
-                      placeholder={mode === 'meal' ? 'e.g. post-workout, high protein' : 'e.g. after meds, light tremor'}
-                      accessibilityLabel="Log note input"
+                      placeholder={mode === 'meal'
+                        ? t('logEntryModal.mealNotePlaceholder', 'e.g. post-workout, high protein')
+                        : t('logEntryModal.symptomNotePlaceholder', 'e.g. after meds, light tremor')}
+                      accessibilityLabel={t('logEntryModal.noteAccessibility', 'Log note input')}
                       multiline
                     />
                   </View>
 
                   <View style={styles.modalActions}>
                     <Button
-                      label="Cancel"
+                      label={t('common.cancel', 'Cancel')}
                       variant="ghost"
                       onPress={onCancel}
                       style={styles.modalAction}
                     />
                     <Button
-                      label="Save"
+                      label={t('common.save', 'Save')}
                       onPress={handleSave}
                       style={styles.modalAction}
                     />

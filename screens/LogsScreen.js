@@ -22,6 +22,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Chip } from '../components/ui/Chip';
 import { useTheme, useThemedStyles } from '../utils/theme';
+import { useTranslation } from '../contexts/LocalizationContext';
 
 export default function LogsScreen() {
   const [filterType, setFilterType] = useState('all');
@@ -43,6 +44,7 @@ export default function LogsScreen() {
   const [exportModalVisible, setExportModalVisible] = useState(false);
   const [exportTimeRange, setExportTimeRange] = useState('week');
   const { theme } = useTheme();
+  const { t } = useTranslation();
   const styles = useThemedStyles(createStyles);
 
   useEffect(() => {
@@ -223,10 +225,13 @@ export default function LogsScreen() {
       // Save to file
       const fileUri = FileSystem.cacheDirectory + `genesis4pd-logs-${Date.now()}.csv`;
       await FileSystem.writeAsStringAsync(fileUri, csv, { encoding: FileSystem.EncodingType.UTF8 });
-      await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: 'Share Genesis4PD Logs' });
+      await Sharing.shareAsync(fileUri, { mimeType: 'text/csv', dialogTitle: t('logs.export.shareTitle', 'Share Genesis4PD Logs') });
       setExportModalVisible(false);
     } catch (err) {
-      Alert.alert('Export Error', err.message || 'Failed to export logs.');
+      Alert.alert(
+        t('logs.export.errorTitle', 'Export Error'),
+        err.message || t('logs.export.errorMessage', 'Failed to export logs.'),
+      );
     }
   }
 
@@ -235,11 +240,11 @@ export default function LogsScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.title}>Logs &amp; insights</Text>
-            <Text style={styles.subtitle}>Review meals, symptoms, and fasts</Text>
+            <Text style={styles.title}>{t('logs.title', 'Logs & insights')}</Text>
+            <Text style={styles.subtitle}>{t('logs.subtitle', 'Review meals, symptoms, and fasts')}</Text>
           </View>
           <Button
-            label="Export"
+            label={t('logs.exportButton', 'Export')}
             variant="secondary"
             size="sm"
             onPress={() => setExportModalVisible(true)}
@@ -256,15 +261,15 @@ export default function LogsScreen() {
               >
                 <TouchableWithoutFeedback onPress={() => {}}>
                   <Card variant="outline" style={styles.modalContent}>
-                    <Text style={styles.modalTitle}>Export Logs</Text>
-                    <Text style={styles.modalDescription}>Select time range for export:</Text>
+                    <Text style={styles.modalTitle}>{t('logs.export.title', 'Export Logs')}</Text>
+                    <Text style={styles.modalDescription}>{t('logs.export.description', 'Select time range for export:')}</Text>
                     <View style={[styles.chipRow, styles.modalChipRow]}>
                       {[
-                        { key: 'week', label: 'Week' },
-                        { key: 'month', label: 'Month' },
-                        { key: '3m', label: '3 Months' },
-                        { key: '6m', label: '6 Months' },
-                        { key: 'year', label: 'Year' },
+                        { key: 'week', label: t('timeRange.week', 'Week') },
+                        { key: 'month', label: t('timeRange.month', 'Month') },
+                        { key: '3m', label: t('timeRange.threeMonths', '3 Months') },
+                        { key: '6m', label: t('timeRange.sixMonths', '6 Months') },
+                        { key: 'year', label: t('timeRange.year', 'Year') },
                       ].map(opt => (
                         <Chip
                           key={opt.key}
@@ -275,9 +280,9 @@ export default function LogsScreen() {
                         />
                       ))}
                     </View>
-                    <Button label="Export CSV" onPress={handleExportCSV} style={styles.modalPrimaryAction} />
+                    <Button label={t('logs.export.action', 'Export CSV')} onPress={handleExportCSV} style={styles.modalPrimaryAction} />
                     <Button
-                      label="Cancel"
+                      label={t('common.cancel', 'Cancel')}
                       variant="secondary"
                       onPress={() => setExportModalVisible(false)}
                       style={styles.modalSecondaryAction}
@@ -289,14 +294,14 @@ export default function LogsScreen() {
           </TouchableWithoutFeedback>
         </Modal>
         <Card variant="tinted" style={styles.rangeCard}>
-          <Text style={styles.sectionLabel}>Time range</Text>
+          <Text style={styles.sectionLabel}>{t('logs.timeRange', 'Time range')}</Text>
           <View style={styles.chipRow}>
             {[
-              { key: 'week', label: 'Week' },
-              { key: 'month', label: 'Month' },
-              { key: '3m', label: '3 Months' },
-              { key: '6m', label: '6 Months' },
-              { key: 'year', label: 'Year' },
+              { key: 'week', label: t('timeRange.week', 'Week') },
+              { key: 'month', label: t('timeRange.month', 'Month') },
+              { key: '3m', label: t('timeRange.threeMonths', '3 Months') },
+              { key: '6m', label: t('timeRange.sixMonths', '6 Months') },
+              { key: 'year', label: t('timeRange.year', 'Year') },
             ].map(opt => (
               <Chip
                 key={opt.key}
@@ -310,28 +315,28 @@ export default function LogsScreen() {
 
         <Card variant="outline" style={styles.summaryCard}>
           <View style={styles.summaryMetric}>
-            <Text style={styles.summaryLabel}>Meat (lbs)</Text>
+            <Text style={styles.summaryLabel}>{t('logs.summary.meat', 'Meat (lbs)')}</Text>
             <Text style={[styles.summaryValue, styles.summaryValueMeat]}>{meatPounds.toFixed(1)}</Text>
           </View>
           <View style={styles.summaryMetric}>
-            <Text style={styles.summaryLabel}>Prolonged Fasts</Text>
+            <Text style={styles.summaryLabel}>{t('logs.summary.prolongedFasts', 'Prolonged Fasts')}</Text>
             <Text style={[styles.summaryValue, styles.summaryValueFasts]}>{prolongedFasts}</Text>
           </View>
           <View style={styles.summaryMetric}>
-            <Text style={styles.summaryLabel}>Symptoms</Text>
+            <Text style={styles.summaryLabel}>{t('logs.summary.symptoms', 'Symptoms')}</Text>
             <Text style={[styles.summaryValue, styles.summaryValueSymptoms]}>{symptomCount}</Text>
           </View>
         </Card>
 
         <Card variant="tinted" style={styles.filterCard}>
-          <Text style={styles.sectionLabel}>Filter by</Text>
+          <Text style={styles.sectionLabel}>{t('logs.filterBy', 'Filter by')}</Text>
           <View style={styles.chipRow}>
             {[
-              { key: 'all', label: 'All', icon: 'list' },
-              { key: 'food', label: 'Food', icon: 'food' },
-              { key: 'symptom', label: 'Symptoms', icon: 'stethoscope' },
-              { key: 'fast', label: 'Fasts', icon: 'timer-sand' },
-              { key: 'ketone', label: 'Ketones', icon: 'water' },
+              { key: 'all', label: t('logs.filters.all', 'All'), icon: 'list' },
+              { key: 'food', label: t('logs.filters.food', 'Food'), icon: 'food' },
+              { key: 'symptom', label: t('logs.filters.symptom', 'Symptoms'), icon: 'stethoscope' },
+              { key: 'fast', label: t('logs.filters.fast', 'Fasts'), icon: 'timer-sand' },
+              { key: 'ketone', label: t('logs.filters.ketone', 'Ketones'), icon: 'water' },
             ].map(pill => {
               const isActive = filterType === pill.key;
               const iconColor = isActive ? theme.colors.textOnPrimary : theme.colors.brandSecondary;
@@ -353,8 +358,8 @@ export default function LogsScreen() {
         {/* Empty state for no logs */}
         {logs.length === 0 && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>No logs yet</Text>
-            <Text style={styles.emptyStateSubtitle}>Tap + to add your first log!</Text>
+            <Text style={styles.emptyStateTitle}>{t('logs.empty.title', 'No logs yet')}</Text>
+            <Text style={styles.emptyStateSubtitle}>{t('logs.empty.subtitle', 'Tap + to add your first log!')}</Text>
           </View>
         )}
         {/* Log list */}
@@ -374,16 +379,19 @@ export default function LogsScreen() {
             borderLeftColor: isHighlighted ? accentColor : theme.colors.border,
             backgroundColor: isHighlighted ? theme.colors.surfaceMuted : theme.colors.surfacePrimary,
           };
+          const typeLabel = entry.logType === 'food'
+            ? t('logs.entryTypes.food', 'Meal')
+            : entry.logType === 'symptom'
+            ? t('logs.entryTypes.symptom', 'Symptom')
+            : entry.logType === 'fast'
+            ? t('logs.entryTypes.fast', 'Fast')
+            : t('logs.entryTypes.ketone', 'Ketone');
           return (
             <Card variant="outline" key={entry.id} style={[styles.logCard, cardDynamicStyle]}>
               <Text style={styles.cardTitle}>
-                {entry.logType === 'food'
-                  ? 'Meal'
-                  : entry.logType === 'symptom'
-                  ? (SYMPTOM_TYPES.find(t => t.key === entry.type)?.label || entry.type)
-                  : entry.logType === 'fast'
-                  ? 'Fast'
-                  : 'Ketone'}
+                {entry.logType === 'symptom'
+                  ? (SYMPTOM_TYPES.find(t => t.key === entry.type)?.label || typeLabel)
+                  : typeLabel}
                 {'  '}
                 <Text style={styles.cardTimestamp}>
                   {new Date(entry.time || entry.end || entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
@@ -395,33 +403,37 @@ export default function LogsScreen() {
               </Text>
               {/* Show pounds of meat if present */}
               {entry.pounds ? (
-                <Text style={styles.cardText}>Pounds of Meat: {entry.pounds}</Text>
+                <Text style={styles.cardText}>{t('logs.details.meat', 'Pounds of Meat: {value}', { value: entry.pounds })}</Text>
               ) : null}
               {/* Show general note if present */}
               {entry.note ? (
-                <Text style={styles.cardText}>Note: {entry.note}</Text>
+                <Text style={styles.cardText}>{t('logs.details.note', 'Note: {note}', { note: entry.note })}</Text>
               ) : null}
               {entry.logType === 'symptom' && (
-                <Text style={styles.cardText}>Severity: {SEVERITIES[entry.severity] || entry.severity}</Text>
+                <Text style={styles.cardText}>{t('logs.details.severity', 'Severity: {severity}', { severity: SEVERITIES[entry.severity] || entry.severity })}</Text>
               )}
               {/* Show ketone value/unit if ketone log */}
               {entry.logType === 'ketone' && (
-                <Text style={styles.cardText}>Ketone: {entry.value} {entry.unit}</Text>
+                <Text style={styles.cardText}>{t('logs.details.ketone', 'Ketone: {value} {unit}', { value: entry.value, unit: entry.unit })}</Text>
               )}
               {entry.logType === 'fast' && (
                 <>
                   <Text style={styles.cardText}>
-                    Start: {new Date(entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                    {t('logs.details.fastStart', 'Start: {value}', { value: new Date(entry.start).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) })}
                   </Text>
                   {entry.end ? (
                     <Text style={styles.cardText}>
-                      End: {new Date(entry.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}
+                      {t('logs.details.fastEnd', 'End: {value}', { value: new Date(entry.end).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) })}
                     </Text>
                   ) : (
-                    <Text style={styles.cardText}>In progress</Text>
+                    <Text style={styles.cardText}>{t('logs.details.fastInProgress', 'In progress')}</Text>
                   )}
                   <Text style={styles.cardText}>
-                    Duration: {entry.end ? `${((new Date(entry.end) - new Date(entry.start)) / 3600000).toFixed(1)}h` : '—'}
+                    {entry.end
+                      ? t('logs.details.fastDuration', 'Duration: {hours}h', {
+                          hours: ((new Date(entry.end) - new Date(entry.start)) / 3600000).toFixed(1),
+                        })
+                      : t('logs.details.fastDurationUnknown', 'Duration: —')}
                   </Text>
                 </>
               )}
@@ -429,16 +441,16 @@ export default function LogsScreen() {
                 <Pressable
                   onPress={() => handleEditPress(entry)}
                   style={[styles.modalButton, styles.modalButtonSpacingRight]}
-                  accessibilityLabel="Edit log"
+                  accessibilityLabel={t('logs.accessibility.editLog', 'Edit log')}
                 >
-                  <Text style={styles.modalButtonPrimaryText}>Edit</Text>
+                  <Text style={styles.modalButtonPrimaryText}>{t('common.edit', 'Edit')}</Text>
                 </Pressable>
                 <Pressable
                   onPress={() => handleEditPress(entry)}
                   style={[styles.modalButton, styles.modalButtonNeutral]}
-                  accessibilityLabel="Delete log"
+                  accessibilityLabel={t('logs.accessibility.deleteLog', 'Delete log')}
                 >
-                  <Text style={styles.modalButtonNeutralText}>Delete</Text>
+                  <Text style={styles.modalButtonNeutralText}>{t('common.delete', 'Delete')}</Text>
                 </Pressable>
               </View>
             </Card>
@@ -447,8 +459,8 @@ export default function LogsScreen() {
         {/* Empty state for no symptoms (if filter is symptom) */}
         {filterType === 'symptom' && logs.length === 0 && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyStateTitle}>No symptoms logged yet</Text>
-            <Text style={styles.emptyStateSubtitle}>Tap + to add your first symptom!</Text>
+            <Text style={styles.emptyStateTitle}>{t('logs.emptySymptoms.title', 'No symptoms logged yet')}</Text>
+            <Text style={styles.emptyStateSubtitle}>{t('logs.emptySymptoms.subtitle', 'Tap + to add your first symptom!')}</Text>
           </View>
         )}
       </ScrollView>
@@ -469,19 +481,19 @@ export default function LogsScreen() {
                   >
                     <Text style={styles.modalTitle}>
                       {editLogType === 'food'
-                        ? 'Edit food log'
+                        ? t('logs.modal.editFood', 'Edit food log')
                         : editLogType === 'symptom'
-                        ? 'Edit symptom log'
+                        ? t('logs.modal.editSymptom', 'Edit symptom log')
                         : editLogType === 'fast'
-                        ? 'Edit fast'
-                        : 'Edit log'}
+                        ? t('logs.modal.editFast', 'Edit fast')
+                        : t('logs.modal.editGeneric', 'Edit log')}
                     </Text>
                 {editLogType === 'food' && (
                   <>
-                    <Text style={styles.fieldLabel}>Type:</Text>
+                    <Text style={styles.fieldLabel}>{t('logs.modal.foodType', 'Type:')}</Text>
                     <View style={styles.selectorRow}>
                       <Chip
-                        label="🍽️ Meal"
+                        label={t('logs.modal.mealChip', '🍽️ Meal')}
                         active={editFoodType === 'meal'}
                         onPress={() => setEditFoodType('meal')}
                         size="lg"
@@ -493,16 +505,16 @@ export default function LogsScreen() {
                 )}
                 {editLogType === 'symptom' && (
                   <>
-                    <Text style={styles.fieldLabel}>Symptom:</Text>
+                    <Text style={styles.fieldLabel}>{t('logs.modal.symptomLabel', 'Symptom:')}</Text>
                     <View style={styles.selectorRow}>
-                      {SYMPTOM_TYPES.map(t => (
+                      {SYMPTOM_TYPES.map(typeOption => (
                         <Chip
-                          key={t.key}
-                          label={t.emoji}
+                          key={typeOption.key}
+                          label={typeOption.emoji}
                           size="lg"
-                          active={editSymptomType === t.key}
-                          onPress={() => setEditSymptomType(t.key)}
-                          accessibilityLabel={t.label}
+                          active={editSymptomType === typeOption.key}
+                          onPress={() => setEditSymptomType(typeOption.key)}
+                          accessibilityLabel={typeOption.label}
                           style={styles.selectorChip}
                           textStyle={styles.symptomEmoji}
                         />
@@ -511,16 +523,16 @@ export default function LogsScreen() {
                     <Text style={styles.symptomLabel}>
                       {SYMPTOM_TYPES.find(t => t.key === editSymptomType)?.label}
                     </Text>
-                    <Text style={styles.fieldLabel}>Severity:</Text>
+                    <Text style={styles.fieldLabel}>{t('logs.modal.severityLabel', 'Severity:')}</Text>
                     <View style={styles.selectorRow}>
-                      {SEVERITIES.map(s => (
+                      {SEVERITIES.map(severityOption => (
                         <Chip
-                          key={s.key}
-                          label={s.label}
+                          key={severityOption.key}
+                          label={severityOption.label}
                           size="lg"
-                          active={editSeverity === s.key}
-                          onPress={() => setEditSeverity(s.key)}
-                          accessibilityLabel={s.label}
+                          active={editSeverity === severityOption.key}
+                          onPress={() => setEditSeverity(severityOption.key)}
+                          accessibilityLabel={severityOption.label}
                           style={styles.selectorChip}
                           textStyle={styles.selectorChipLabel}
                         />
@@ -530,16 +542,16 @@ export default function LogsScreen() {
                 )}
                 {editLogType === 'fast' && (
                   <>
-                    <Text style={styles.fieldLabel}>Start time</Text>
+                    <Text style={styles.fieldLabel}>{t('logs.modal.fastStart', 'Start time')}</Text>
                     <View style={styles.fastButtonRow}>
                       <Button
-                        label={`Start: ${formatDateTime(editFastStart)}`}
+                        label={t('logs.modal.fastStartLabel', 'Start: {value}', { value: formatDateTime(editFastStart) })}
                         variant="secondary"
                         onPress={() => setShowFastStartPicker(true)}
                         style={styles.fastPrimaryButton}
                       />
                       <Button
-                        label="Set to now"
+                        label={t('logs.modal.setToNow', 'Set to now')}
                         variant="ghost"
                         onPress={() => setEditFastStart(new Date())}
                         style={styles.fastGhostButton}
@@ -553,16 +565,18 @@ export default function LogsScreen() {
                       onCancel={() => setShowFastStartPicker(false)}
                       is24Hour
                     />
-                    <Text style={styles.fieldLabel}>End time</Text>
+                    <Text style={styles.fieldLabel}>{t('logs.modal.fastEnd', 'End time')}</Text>
                     <View style={styles.fastButtonRow}>
                       <Button
-                        label={editFastEnd ? `End: ${formatDateTime(editFastEnd)}` : 'Set end time'}
+                        label={editFastEnd
+                          ? t('logs.modal.fastEndLabel', 'End: {value}', { value: formatDateTime(editFastEnd) })
+                          : t('logs.modal.fastEndSet', 'Set end time')}
                         variant="secondary"
                         onPress={() => setShowFastEndPicker(true)}
                         style={styles.fastPrimaryButton}
                       />
                       <Button
-                        label={editFastEnd ? 'Clear end' : 'Set to now'}
+                        label={editFastEnd ? t('logs.modal.clearEnd', 'Clear end') : t('logs.modal.setToNow', 'Set to now')}
                         variant="ghost"
                         onPress={() => setEditFastEnd(editFastEnd ? null : new Date())}
                         style={styles.fastGhostButton}
@@ -580,7 +594,7 @@ export default function LogsScreen() {
                 )}
                 {editLogType !== 'fast' && (
                   <>
-                    <Text style={styles.fieldLabel}>Time:</Text>
+                    <Text style={styles.fieldLabel}>{t('logs.modal.timeLabel', 'Time:')}</Text>
                     <Pressable style={[styles.modalButton, styles.modalButtonBottomSpacing]} onPress={() => setShowEditTimePicker(true)}>
                       <Text style={styles.modalButtonPrimaryText}>
                         {formatDateTime(editTime)}
@@ -596,7 +610,7 @@ export default function LogsScreen() {
                     />
                   </>
                 )}
-                    <Text style={styles.fieldLabel}>Note (optional):</Text>
+                    <Text style={styles.fieldLabel}>{t('logs.modal.noteLabel', 'Note (optional):')}</Text>
                     <View style={styles.inputWrapper}>
                       <TextInput
                         style={styles.noteInput}
@@ -604,8 +618,10 @@ export default function LogsScreen() {
                         onChangeText={setEditNote}
                         value={editNote}
                         placeholderTextColor={theme.colors.textMuted}
-                        placeholder={editLogType === 'fast' ? 'e.g. manual entry, planned extended fast' : 'e.g. high carb, before meds, etc.'}
-                        accessibilityLabel="Log note input"
+                        placeholder={editLogType === 'fast'
+                          ? t('logs.modal.fastNotePlaceholder', 'e.g. manual entry, planned extended fast')
+                          : t('logs.modal.notePlaceholder', 'e.g. high carb, before meds, etc.')}
+                        accessibilityLabel={t('logs.accessibility.noteInput', 'Log note input')}
                       />
                     </View>
                     <View style={styles.modalFooter}>
@@ -619,8 +635,8 @@ export default function LogsScreen() {
                           setFastLog(fastLog.filter(e => e.id !== editLog.id));
                         }
                         setEditModalVisible(false);
-                      }} accessibilityLabel="Delete">
-                        <Text style={styles.modalButtonNeutralText}>Delete</Text>
+                      }} accessibilityLabel={t('logs.accessibility.delete', 'Delete')}>
+                        <Text style={styles.modalButtonNeutralText}>{t('common.delete', 'Delete')}</Text>
                       </Pressable>
                       <Pressable style={styles.modalButton} onPress={() => {
                         // Save changes
@@ -641,7 +657,10 @@ export default function LogsScreen() {
                             } : e));
                         } else if (editLogType === 'fast') {
                           if (editFastEnd && editFastEnd < editFastStart) {
-                            Alert.alert('Invalid time', 'End time cannot be before the start time.');
+                            Alert.alert(
+                              t('logs.modal.invalidTimeTitle', 'Invalid time'),
+                              t('logs.modal.invalidTimeMessage', 'End time cannot be before the start time.'),
+                            );
                             return;
                           }
                           setFastLog(fastLog.map(e => e.id === editLog.id ? {
@@ -652,12 +671,12 @@ export default function LogsScreen() {
                             } : e));
                         }
                         setEditModalVisible(false);
-                      }} accessibilityLabel="Save">
-                        <Text style={styles.modalButtonPrimaryText}>Save</Text>
+                      }} accessibilityLabel={t('logs.accessibility.save', 'Save')}>
+                        <Text style={styles.modalButtonPrimaryText}>{t('common.save', 'Save')}</Text>
                       </Pressable>
                     </View>
-                    <Pressable style={[styles.modalButton, styles.modalButtonNeutral, styles.modalButtonTopMargin]} onPress={() => setEditModalVisible(false)} accessibilityLabel="Cancel">
-                      <Text style={styles.modalButtonNeutralText}>Cancel</Text>
+                    <Pressable style={[styles.modalButton, styles.modalButtonNeutral, styles.modalButtonTopMargin]} onPress={() => setEditModalVisible(false)} accessibilityLabel={t('common.cancel', 'Cancel')}>
+                      <Text style={styles.modalButtonNeutralText}>{t('common.cancel', 'Cancel')}</Text>
                     </Pressable>
                   </ScrollView>
                 </Card>

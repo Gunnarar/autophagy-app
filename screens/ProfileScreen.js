@@ -10,6 +10,7 @@ import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Chip } from '../components/ui/Chip';
 import { useTheme, useThemeMode, useThemedStyles } from '../utils/theme';
+import { getLanguageLabel, useLocalization, useTranslation } from '../contexts/LocalizationContext';
 
 const AVATAR_PLACEHOLDER = 'https://ui-avatars.com/api/?name=Genesis+User&background=b3c7f7&color=fff&size=128';
 
@@ -28,14 +29,16 @@ export default function ProfileScreen({ navigation }) {
   const { theme: currentTheme } = useTheme();
   const styles = useThemedStyles(createStyles);
   const { mode, setMode, availableModes } = useThemeMode();
+  const { t } = useTranslation();
+  const { language, setLanguage, supportedLanguages } = useLocalization();
   const themeLabels = React.useMemo(
     () => ({
-      light: 'Light',
-      dark: 'Dark',
-      blue: 'Blue',
-      red: 'Red',
+      light: t('profile.themeLight', 'Light'),
+      dark: t('profile.themeDark', 'Dark'),
+      blue: t('profile.themeBlue', 'Blue'),
+      red: t('profile.themeRed', 'Red'),
     }),
-    [],
+    [t],
   );
   const themeOptions = React.useMemo(
     () =>
@@ -45,23 +48,27 @@ export default function ProfileScreen({ navigation }) {
       })),
     [availableModes, themeLabels],
   );
+  const languageOptions = React.useMemo(
+    () => supportedLanguages.map(code => ({ key: code, label: getLanguageLabel(code) })),
+    [supportedLanguages],
+  );
 
   if (!user) {
     return (
       <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading profile…</Text>
+        <Text style={styles.loadingText}>{t('profile.loading', 'Loading profile…')}</Text>
       </View>
     );
   }
 
   const handleResetData = () => {
     Alert.alert(
-      'Reset app data',
-      'This will remove all logs, notifications, and profile details. You will be taken back to onboarding.',
+      t('profile.resetTitle', 'Reset app data'),
+      t('profile.resetMessage', 'This will remove all logs, notifications, and profile details. You will be taken back to onboarding.'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel', 'Cancel'), style: 'cancel' },
         {
-          text: 'Reset',
+          text: t('profile.resetConfirm', 'Reset'),
           style: 'destructive',
           onPress: async () => {
             setFoodLog([]);
@@ -88,7 +95,7 @@ export default function ProfileScreen({ navigation }) {
     );
   };
 
-  const firstName = user.name?.split(' ')[0] || 'Genesis user';
+  const firstName = user.name?.split(' ')[0] || t('profile.defaultName', 'Genesis user');
   const weeklyInsights = React.useMemo(() => {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -113,25 +120,25 @@ export default function ProfileScreen({ navigation }) {
   const profileActions = React.useMemo(() => [
     {
       key: 'fastingPrograms',
-      title: 'Fasting programs',
-      subtitle: 'Browse structured plans and challenges',
+      title: t('profile.actions.fastingPrograms.title', 'Fasting programs'),
+      subtitle: t('profile.actions.fastingPrograms.subtitle', 'Browse structured plans and challenges'),
       icon: <MaterialCommunityIcons name="timer-sand" size={22} color={currentTheme.colors.info} />,
       onPress: () => navigation.navigate('FastingPrograms'),
     },
-  ], [currentTheme, navigation]);
+  ], [currentTheme, navigation, t]);
 
   const secondaryActions = [
     {
       key: 'notifications',
-      title: 'Notifications & reminders',
-      subtitle: 'Plan meal windows, meds, and fast alerts',
+      title: t('profile.actions.notifications.title', 'Notifications & reminders'),
+      subtitle: t('profile.actions.notifications.subtitle', 'Plan meal windows, meds, and fast alerts'),
       icon: <Ionicons name="notifications" size={22} color={currentTheme.colors.brandSecondary} />,
       onPress: null,
     },
     {
       key: 'integrations',
-      title: 'Integrations',
-      subtitle: 'Connect HealthKit, Google Fit, or ketone meters',
+      title: t('profile.actions.integrations.title', 'Integrations'),
+      subtitle: t('profile.actions.integrations.subtitle', 'Connect HealthKit, Google Fit, or ketone meters'),
       icon: <MaterialCommunityIcons name="link-variant" size={22} color={currentTheme.colors.brandSecondary} />,
       onPress: null,
     },
@@ -149,22 +156,22 @@ export default function ProfileScreen({ navigation }) {
           <View style={styles.heroTopRow}>
             <Image source={{ uri: AVATAR_PLACEHOLDER }} style={styles.avatar} />
             <View style={styles.heroTextBlock}>
-              <Text style={styles.heroOverline}>Account</Text>
+              <Text style={styles.heroOverline}>{t('profile.heroOverline', 'Account')}</Text>
               <Text style={styles.heroTitle}>{firstName}</Text>
-              <Text style={styles.heroSubtitle}>{user.email || 'No email on file'}</Text>
-              <Text style={styles.heroCaption}>Member since {new Date().getFullYear()}</Text>
+              <Text style={styles.heroSubtitle}>{user.email || t('profile.noEmail', 'No email on file')}</Text>
+              <Text style={styles.heroCaption}>{t('profile.memberSince', 'Member since {year}', { year: new Date().getFullYear() })}</Text>
             </View>
           </View>
           <View style={styles.heroCTA}>
             <Button
-              label="Edit profile"
+              label={t('profile.editProfile', 'Edit profile')}
               variant="primary"
               size="sm"
               onPress={() => navigation.navigate('ProfileDetails')}
               style={styles.heroPrimaryButton}
             />
             <Button
-              label="Contact support"
+              label={t('profile.contactSupport', 'Contact support')}
               variant="secondary"
               size="sm"
               onPress={() => {}}
@@ -174,21 +181,21 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <Card variant="outline" style={styles.summaryCard}>
-        <Text style={styles.sectionTitle}>Weekly highlights</Text>
+        <Text style={styles.sectionTitle}>{t('profile.weeklyHighlights', 'Weekly highlights')}</Text>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{weeklyInsights.fastsCompleted}</Text>
-            <Text style={styles.summaryLabel}>Fasts completed</Text>
+            <Text style={styles.summaryLabel}>{t('profile.fastsCompleted', 'Fasts completed')}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{weeklyInsights.avgKetone}</Text>
-            <Text style={styles.summaryLabel}>Avg ketones</Text>
+            <Text style={styles.summaryLabel}>{t('profile.avgKetone', 'Avg ketones')}</Text>
           </View>
           <View style={styles.summaryDivider} />
           <View style={styles.summaryItem}>
             <Text style={styles.summaryValue}>{weeklyInsights.symptomCount}</Text>
-            <Text style={styles.summaryLabel}>Symptom logs</Text>
+            <Text style={styles.summaryLabel}>{t('profile.symptomLogs', 'Symptom logs')}</Text>
           </View>
         </View>
       </Card>
@@ -212,13 +219,13 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <Card variant="tinted" style={styles.sectionIntroCard}>
-        <Text style={styles.sectionTitle}>Personalization & safety</Text>
-        <Text style={styles.sectionBody}>Configure reminders, accessibility, and connected services to tailor Genesis4PD to your routine.</Text>
+        <Text style={styles.sectionTitle}>{t('profile.personalizationTitle', 'Personalization & safety')}</Text>
+        <Text style={styles.sectionBody}>{t('profile.personalizationSubtitle', 'Configure reminders, accessibility, and connected services to tailor Genesis4PD to your routine.')}</Text>
       </Card>
 
       <Card variant="outline" style={styles.appearanceCard}>
-        <Text style={styles.sectionTitle}>Appearance</Text>
-        <Text style={styles.preferenceSubtitle}>Choose the theme that feels most comfortable while you track your progress.</Text>
+        <Text style={styles.sectionTitle}>{t('profile.appearanceTitle', 'Appearance')}</Text>
+        <Text style={styles.preferenceSubtitle}>{t('profile.appearanceSubtitle', 'Choose the theme that feels most comfortable while you track your progress.')}</Text>
         <View style={styles.themeSelector}>
           {themeOptions.map(option => (
             <Chip
@@ -229,7 +236,26 @@ export default function ProfileScreen({ navigation }) {
               onPress={() => setMode(option.key)}
               style={styles.themeChip}
               textStyle={styles.themeChipLabel}
-              accessibilityLabel={`${option.label} theme`}
+              accessibilityLabel={t('profile.themeAccessibility', '{label} theme', { label: option.label })}
+            />
+          ))}
+        </View>
+      </Card>
+
+      <Card variant="outline" style={styles.appearanceCard}>
+        <Text style={styles.sectionTitle}>{t('profile.languageTitle', 'Language')}</Text>
+        <Text style={styles.preferenceSubtitle}>{t('profile.languageSubtitle', 'Select the language used across the app interface.')}</Text>
+        <View style={styles.themeSelector}>
+          {languageOptions.map(option => (
+            <Chip
+              key={option.key}
+              label={option.label}
+              size="md"
+              active={language === option.key}
+              onPress={() => setLanguage(option.key)}
+              style={styles.themeChip}
+              textStyle={styles.themeChipLabel}
+              accessibilityLabel={t('profile.languageAccessibility', '{label} language', { label: option.label })}
             />
           ))}
         </View>
@@ -255,16 +281,16 @@ export default function ProfileScreen({ navigation }) {
       </View>
 
       <Card variant="outline" style={styles.helpCard}>
-        <Text style={styles.helpTitle}>Need a hand?</Text>
-        <Text style={styles.helpSubtitle}>Email support@genesis4pd.com and we’ll respond within one business day.</Text>
-        <Button label="Email support" variant="primary" size="sm" onPress={() => {}} style={styles.helpButton} />
+        <Text style={styles.helpTitle}>{t('profile.helpTitle', 'Need a hand?')}</Text>
+        <Text style={styles.helpSubtitle}>{t('profile.helpSubtitle', 'Email support@genesis4pd.com and we’ll respond within one business day.')}</Text>
+        <Button label={t('profile.helpButton', 'Email support')} variant="primary" size="sm" onPress={() => {}} style={styles.helpButton} />
       </Card>
 
       <Card variant="outline" style={styles.dangerCard}>
-        <Text style={styles.dangerTitle}>Danger zone</Text>
-        <Text style={styles.dangerSubtitle}>Remove all locally stored data and restart onboarding. This cannot be undone.</Text>
+        <Text style={styles.dangerTitle}>{t('profile.dangerTitle', 'Danger zone')}</Text>
+        <Text style={styles.dangerSubtitle}>{t('profile.dangerSubtitle', 'Remove all locally stored data and restart onboarding. This cannot be undone.')}</Text>
         <Button
-          label="Reset app data"
+          label={t('profile.resetButton', 'Reset app data')}
           variant="danger"
           size="sm"
           leftIcon={<Trash2 color={currentTheme.colors.textOnPrimary} size={18} strokeWidth={2} />}

@@ -12,51 +12,47 @@ export function createInfoNotifications({
   done = {},
   fastRecDismissed = false,
   theme = lightTheme,
+  translate,
 }) {
+  const t = typeof translate === 'function' ? translate : ((key, fallback) => fallback);
   const notifications = [];
   const ongoingFast = fastLog.find(entry => !entry.end);
   const mealTypes = ['meal', 'animalMeat', 'carbMeal'];
 
-  // 1. No meal in 24h
   const lastMeal = foodLog.find(entry => mealTypes.includes(entry.type));
   let noMeal24h = false;
   if (lastMeal?.time) {
     const lastMealTime = new Date(lastMeal.time).getTime();
-    if (!Number.isNaN(lastMealTime)) {
-      noMeal24h = Date.now() - lastMealTime > 24 * 3600 * 1000;
-    } else {
-      noMeal24h = true;
-    }
+    noMeal24h = Number.isNaN(lastMealTime) ? true : Date.now() - lastMealTime > 24 * 3600 * 1000;
   } else {
     noMeal24h = true;
   }
+
   const fastingCardSuppressed = Boolean(fastingDismissedUntil && Date.now() < fastingDismissedUntil);
   if (noMeal24h && !fastingCardSuppressed) {
     notifications.push({
       key: 'no-meal',
       icon: 'alert',
       color: theme.colors.error,
-      title: 'No meal logged in 24h',
-      desc: 'You have not logged a meal in over 24 hours. Please log your meal for accurate tracking.',
+      title: t('info.notifications.noMealTitle', 'No meal logged in 24h'),
+      desc: t('info.notifications.noMealDesc', 'You have not logged a meal in over 24 hours. Please log your meal for accurate tracking.'),
       primaryAction: { type: 'modalAction', payload: 'logMeal' },
       secondaryAction: { type: 'snoozeFastingDismiss', hours: 6 },
     });
   }
 
-  // 2. No symptoms logged today
   const todaysSymptoms = symptomLog.filter(entry => entry.time?.slice(0, 10) === today);
   if (todaysSymptoms.length === 0) {
     notifications.push({
       key: 'no-symptom',
       icon: 'stethoscope',
       color: theme.colors.warning,
-      title: 'No symptoms logged today',
-      desc: 'You have not logged any symptoms today. Logging symptoms helps track your progress.',
+      title: t('info.notifications.noSymptomTitle', 'No symptoms logged today'),
+      desc: t('info.notifications.noSymptomDesc', 'You have not logged any symptoms today. Logging symptoms helps track your progress.'),
       primaryAction: { type: 'modalAction', payload: 'logSymptom' },
     });
   }
 
-  // 3. Next autophagy challenge
   const includeUnifiedRec = Boolean(unifiedRec && !fastRecDismissed);
   if (nextChallenge) {
     const showAutophagyChallenge = ongoingFast ? true : !includeUnifiedRec;
@@ -68,22 +64,27 @@ export function createInfoNotifications({
         key: 'autophagy-challenge',
         icon: 'bacteria',
         color: theme.colors.info,
-        title: 'Autophagy Challenge',
-        desc: `Current fast: ${elapsedHours}h elapsed. Next milestone ${nextChallenge}h.`,
+        title: t('info.notifications.autophagyActiveTitle', 'Autophagy Challenge'),
+        desc: t('info.notifications.autophagyActiveDesc', 'Current fast: {elapsed}h elapsed. Next milestone {target}h.', {
+          elapsed: elapsedHours,
+          target: nextChallenge,
+        }),
       });
     } else if (showAutophagyChallenge) {
       notifications.push({
         key: 'autophagy-challenge',
         icon: 'bacteria',
         color: theme.colors.info,
-        title: 'Next Autophagy Challenge',
-        desc: `Your next challenge: ${nextChallenge}h fast (${currentLevel || 'Current'} level).`,
+        title: t('info.notifications.autophagyNextTitle', 'Next Autophagy Challenge'),
+        desc: t('info.notifications.autophagyNextDesc', 'Your next challenge: {hours}h fast ({level} level).', {
+          hours: nextChallenge,
+          level: currentLevel || t('info.notifications.autophagyCurrentLevel', 'Current'),
+        }),
         primaryAction: { type: 'modalAction', payload: 'logFast' },
       });
     }
   }
 
-  // 4. Fasting streak
   const fastsByDay = fastLog.reduce((acc, entry) => {
     if (!entry.end || !entry.start) return acc;
     const start = new Date(entry.start);
@@ -95,6 +96,7 @@ export function createInfoNotifications({
     }
     return acc;
   }, {});
+
   let streakDay = new Date();
   let fastingStreak = 0;
   for (let i = 0; i < 30; i += 1) {
@@ -106,17 +108,17 @@ export function createInfoNotifications({
       break;
     }
   }
+
   if (fastingStreak >= 3) {
     notifications.push({
       key: 'fasting-streak',
       icon: 'fire',
       color: theme.colors.success,
-      title: 'Fasting Streak',
-      desc: `You are on a ${fastingStreak}-day fasting streak!`,
+      title: t('info.notifications.fastingStreakTitle', 'Fasting Streak'),
+      desc: t('info.notifications.fastingStreakDesc', 'You are on a {days}-day fasting streak!', { days: fastingStreak }),
     });
   }
 
-  // 5. Longest fast
   const longestFastHours = fastLog.reduce((max, entry) => {
     if (!entry.start || !entry.end) return max;
     const start = new Date(entry.start);
@@ -129,12 +131,13 @@ export function createInfoNotifications({
       key: 'longest-fast',
       icon: 'timer-sand',
       color: theme.colors.info,
-      title: 'Longest Fast',
-      desc: `Your longest fast is ${Math.round(longestFastHours)} hours.`,
+      title: t('info.notifications.longestFastTitle', 'Longest Fast'),
+      desc: t('info.notifications.longestFastDesc', 'Your longest fast is {hours} hours.', {
+        hours: Math.round(longestFastHours),
+      }),
     });
   }
 
-  // 6. Meal logging streak
   let mealStreak = 0;
   let mealDay = new Date();
   for (let i = 0; i < 30; i += 1) {
@@ -151,12 +154,11 @@ export function createInfoNotifications({
       key: 'meal-streak',
       icon: 'food',
       color: theme.colors.success,
-      title: 'Meal Logging Streak',
-      desc: `You have logged meals for ${mealStreak} days in a row!`,
+      title: t('info.notifications.mealStreakTitle', 'Meal Logging Streak'),
+      desc: t('info.notifications.mealStreakDesc', 'You have logged meals for {days} days in a row!', { days: mealStreak }),
     });
   }
 
-  // 7. Symptom logging streak
   let symptomStreak = 0;
   let symptomDay = new Date();
   for (let i = 0; i < 30; i += 1) {
@@ -173,36 +175,35 @@ export function createInfoNotifications({
       key: 'symptom-streak',
       icon: 'star',
       color: theme.colors.brandHighlight,
-      title: 'Symptom Logging Achievement',
-      desc: `You have logged symptoms for ${symptomStreak} days in a row!`,
+      title: t('info.notifications.symptomStreakTitle', 'Symptom Logging Achievement'),
+      desc: t('info.notifications.symptomStreakDesc', 'You have logged symptoms for {days} days in a row!', { days: symptomStreak }),
     });
   }
 
-  // 8. Daily recommendations (meditation, exercise, hydration)
   const recommendations = [
     {
       key: 'rec-meditation',
       doneKey: `meditation-${today}`,
       icon: 'meditation',
       color: theme.colors.info,
-      title: 'Try a meditation session',
-      desc: 'Take a few minutes to relax and meditate today.',
+      title: t('info.notifications.meditationTitle', 'Try a meditation session'),
+      desc: t('info.notifications.meditationDesc', 'Take a few minutes to relax and meditate today.'),
     },
     {
       key: 'rec-exercise',
       doneKey: `exercise-${today}`,
       icon: 'walk',
       color: theme.colors.info,
-      title: 'Do gentle exercise',
-      desc: 'A short walk or stretching can help.',
+      title: t('info.notifications.exerciseTitle', 'Do gentle exercise'),
+      desc: t('info.notifications.exerciseDesc', 'A short walk or stretching can help.'),
     },
     {
       key: 'rec-hydration',
       doneKey: `hydration-${today}`,
       icon: 'water',
       color: theme.colors.info,
-      title: 'Drink water',
-      desc: 'Stay hydrated throughout the day.',
+      title: t('info.notifications.hydrationTitle', 'Drink water'),
+      desc: t('info.notifications.hydrationDesc', 'Stay hydrated throughout the day.'),
     },
   ];
 
@@ -219,13 +220,14 @@ export function createInfoNotifications({
     }
   });
 
-  // 9. Unified fast recommendation (if not dismissed)
   if (includeUnifiedRec) {
     notifications.unshift({
       key: 'unified-fast-recommendation',
       icon: 'timer-sand',
       color: unifiedRec.caution ? theme.colors.error : theme.colors.success,
-      title: `Next Recommended Fast: ${unifiedRec.recommendedProgram.duration}h`,
+      title: t('info.notifications.fastingRecTitle', 'Next Recommended Fast: {hours}h', {
+        hours: unifiedRec.recommendedProgram.duration,
+      }),
       desc: unifiedRec.reason,
       benefits: unifiedRec.benefits,
       whatToExpect: unifiedRec.whatToExpect,

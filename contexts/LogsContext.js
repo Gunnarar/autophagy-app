@@ -89,8 +89,8 @@ export function LogsProvider({ children }) {
     return getAutophagyStatus(autophagyProgress);
   }
 
-  function useUnifiedFastRecommendation() {
-    return getUnifiedFastRecommendation(fastLog, foodLog, symptomLog, useAutophagyStatus());
+  function useUnifiedFastRecommendation(translate) {
+    return getUnifiedFastRecommendation(fastLog, foodLog, symptomLog, useAutophagyStatus(), translate);
   }
 
   return (
