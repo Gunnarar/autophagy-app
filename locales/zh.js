@@ -345,6 +345,8 @@ const zh = {
     languageTitle: '语言',
     languageSubtitle: '选择应用界面使用的语言。',
     personalizationTitle: '个性化与安全',
+    personalizationSubtitle:
+      '配置提醒、辅助功能和连接服务，使 Genesis4PD 更符合你的日常节奏。',
     heroTitle: '账户',
     editProfile: '编辑资料',
     contactSupport: '联系支持',

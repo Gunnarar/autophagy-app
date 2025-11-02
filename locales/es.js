@@ -362,6 +362,8 @@ const es = {
     languageTitle: 'Idioma',
     languageSubtitle: 'Selecciona el idioma preferido para la aplicación.',
     personalizationTitle: 'Personalización y seguridad',
+    personalizationSubtitle:
+      'Configura recordatorios, accesibilidad y servicios conectados para adaptar Genesis4PD a tu rutina.',
     heroTitle: 'Cuenta',
     editProfile: 'Editar perfil',
     contactSupport: 'Contactar soporte',

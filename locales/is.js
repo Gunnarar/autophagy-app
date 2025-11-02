@@ -345,6 +345,8 @@ const is = {
     languageTitle: 'Tungumál',
     languageSubtitle: 'Veldu tungumálið sem birtist um allt forritið.',
     personalizationTitle: 'Sérsníðing og öryggi',
+    personalizationSubtitle:
+      'Stilla áminningar, aðgengi og tengdar þjónustur til að laga Genesis4PD að daglegu lífi þínu.',
     heroTitle: 'Aðgangur',
     editProfile: 'Breyta prófíl',
     contactSupport: 'Hafa samband við stuðning',

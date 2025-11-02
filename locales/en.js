@@ -345,6 +345,8 @@ const en = {
     languageTitle: 'Language',
     languageSubtitle: 'Select the language used across the app interface.',
     personalizationTitle: 'Personalization & safety',
+    personalizationSubtitle:
+      'Configure reminders, accessibility, and connected services to tailor Genesis4PD to your routine.',
     heroTitle: 'Account',
     editProfile: 'Edit profile',
     contactSupport: 'Contact support',
